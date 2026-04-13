@@ -15,11 +15,22 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    "strict": true,                               // 모든 엄격한 타입 검사 활성화
+    "noImplicitAny": true,                        // 암시적 any 타입 에러 처리
+    "strictNullChecks": true,                     // null/undefined 잠재적 에러 방지
+    "strictFunctionTypes": true,                  // 함수 파라미터 타입 엄격 검사
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path Alias */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src"]
 }
