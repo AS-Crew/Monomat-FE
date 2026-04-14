@@ -1,22 +1,38 @@
-// src/App.tsx
-import { useStore } from './store/useStore';
+import { useEffect } from 'react';
+import { Home } from './pages/Home';
+import { useAuthStore } from './store/useAuthStore';
+// import { Lobbies } from './pages/Lobbies';
 
 function App() {
-  const { count, increment } = useStore();
+    const initializeSession = useAuthStore((state) => state.initializeSession);
+    const isGuest = useAuthStore((state) => state.isGuest);
 
-  return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h1>🕹️ Monomat Project Foundation</h1>
-        <p>Zustand Count: <strong>{count}</strong></p>
-        <button onClick={increment} style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}>
-          Increment Test
-        </button>
-        <div style={{ marginTop: '20px', color: '#666' }}>
-          {/* TanStack Query가 정상이라면 개발자 도구(F12)에서 에러가 없어야 합니다. */}
-          <small>TanStack Query & Zustand 뼈대 구성 완료</small>
+    // 컴포넌트 마운트 시 정확히 1번만 세션 복구 로직 실행
+    useEffect(() => {
+        initializeSession();
+    }, [initializeSession]);
+
+    return (
+        <div className="w-full min-h-screen bg-black text-white">
+            {/* 세션(isGuest)이 있으면 로비 목록 등으로 보내고,
+        없으면 닉네임 입력 화면(Home)을 보여주는 라우팅 처리 예시입니다.
+      */}
+            {isGuest ? (
+                // <Lobbies />
+                <div className="p-10">
+                    <h2 className="text-2xl text-blue-400">환영합니다, 게임 로비 대기실입니다!</h2>
+                    <button
+                        onClick={() => useAuthStore.getState().clearSession()}
+                        className="mt-4 px-4 py-2 bg-red-600 rounded"
+                    >
+                        로그아웃(세션 초기화)
+                    </button>
+                </div>
+            ) : (
+                <Home />
+            )}
         </div>
-      </div>
-  );
+    );
 }
 
 export default App;
