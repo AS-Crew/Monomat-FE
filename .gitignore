@@ -2,11 +2,10 @@
 logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
+# (아래 yarn, pnpm, lerna 관련 항목은 삭제합니다)
+
+# Dependencies
 node_modules
 dist
 dist-ssr
