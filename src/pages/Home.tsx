@@ -16,7 +16,7 @@ const generateFallbackUUID = () => {
 export const Home = () => {
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // ✅ 2. Zustand 상태 업데이트 함수(Action) 가져오기
+    // 2. Zustand 상태 업데이트 함수(Action) 가져오기
     const setSession = useAuthStore((state) => state.setSession);
 
     const handleNicknameSubmit = (nickname: string) => {
@@ -27,13 +27,13 @@ export const Home = () => {
             return;
         }
 
-        // 1️⃣ UUID 발급 (Secure Context 체크 및 Fallback 적용)
+        // UUID 발급 (Secure Context 체크 및 Fallback 적용)
         const guestUuid =
             typeof crypto !== 'undefined' && crypto.randomUUID
                 ? crypto.randomUUID()
                 : generateFallbackUUID();
 
-        // 2️⃣ localStorage 세션 저장
+        // localStorage 세션 저장
         const sessionData = {
             uuid: guestUuid,
             nickname: trimmedName,
@@ -43,8 +43,8 @@ export const Home = () => {
         localStorage.setItem('monomat_guest_session', JSON.stringify(sessionData));
         console.log('게스트 세션 생성 완료:', sessionData);
 
-        // 3️⃣ Zustand 스토어 업데이트
-        // ✅ 이 함수가 호출되는 순간 isGuest 상태가 true로 바뀌며,
+        // Zustand 스토어 업데이트
+        // 이 함수가 호출되는 순간 isGuest 상태가 true로 바뀌며,
         // App.tsx의 라우팅 로직에 의해 즉시 로비 대기실 화면으로 자동 전환됩니다.
         setSession(guestUuid, trimmedName);
     };
