@@ -19,6 +19,8 @@ interface SocketState {
 
     // uuid를 받아 WebSocket 연결을 시작하는 액션
     connect: (uuid: string) => void;
+
+    disconnect: () => Promise<void>;
 }
 
 // ── 스토어 생성 ───────────────────────────────────────────────────────────────
@@ -83,4 +85,22 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         // 이후 다른 컴포넌트에서 이 클라이언트를 통해 메시지를 보내거나 구독할 수 있습니다.
         set({ stompClient: client });
     },
+
+    // ── disconnect 액션 ────────────────────────────────────────────────────────
+    disconnect: async () => {
+        const { stompClient } = get();
+
+        // 연결된 클라이언트가 없으면 아무것도 하지 않습니다.
+        if (!stompClient) return;
+
+        // STOMP 세션을 비활성화합니다.
+        // deactivate()는 Promise를 반환하므로 완전히 종료될 때까지 기다립니다.
+        await stompClient.deactivate();
+
+        // 스토어 상태를 초기값으로 되돌립니다.
+        set({ stompClient: null, isConnected: false });
+
+        console.info('[Socket] 소켓 연결 해제 완료');
+    },
+
 }));
