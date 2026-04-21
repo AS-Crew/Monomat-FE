@@ -3,9 +3,9 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
-// 백엔드 WebSocketConfig.java에 정의된 엔드포인트와 일치해야 합니다.
-// 추후 배포 환경에서는 .env 파일의 VITE_WS_URL 변수로 교체할 예정입니다.
-const WS_ENDPOINT = 'http://localhost:8080/ws';
+// 환경별 WebSocket 엔드포인트를 .env 파일에서 가져옵니다.
+// 개발: .env.development / 배포: .env.production
+const WS_ENDPOINT = import.meta.env.VITE_WS_URL;
 
 // ── 타입 정의 ─────────────────────────────────────────────────────────────────
 // 이 스토어가 관리할 상태(State)와 액션(Action)의 타입을 정의합니다.
@@ -35,15 +35,21 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
     // ── connect 액션 ───────────────────────────────────────────────────────────
     connect: (uuid: string) => {
+        const existingClient = get().stompClient;
 
         // [멱등성 보장]
-        // .active는 @stomp/stompjs가 제공하는 속성으로,
-        // 클라이언트가 현재 활성화(연결 중 or 연결됨) 상태이면 true를 반환합니다.
-        // React StrictMode는 개발 환경에서 컴포넌트를 2번 마운트하기 때문에
-        // 이 체크가 없으면 소켓이 중복으로 생성될 수 있습니다.
-        if (get().stompClient?.active) {
+        // active 상태면 이미 연결 중이므로 중복 실행을 막습니다.
+        if (existingClient?.active) {
             console.warn('[Socket] 이미 활성화된 세션이 있습니다.');
             return;
+        }
+
+        // [인스턴스 누수 방지]
+        // active는 아니지만 이전 인스턴스가 남아있는 경우 (연결 실패 등)
+        // 새 클라이언트를 만들기 전에 기존 인스턴스를 먼저 정리합니다.
+        if (existingClient) {
+            existingClient.deactivate();
+            set({ stompClient: null, isConnected: false });
         }
 
         const client = new Client({
@@ -61,6 +67,11 @@ export const useSocketStore = create<SocketState>((set, get) => ({
                 'X-Guest-UUID': uuid,
             },
 
+            // [재연결 정책]
+            // 네트워크 일시 단절 시 5초 간격으로 자동 재연결을 시도합니다.
+            // 0으로 설정하면 자동 재연결을 하지 않습니다.
+            reconnectDelay: 5000,
+
             // [연결 성공 콜백]
             // STOMP 세션이 정상적으로 맺어지면 실행됩니다.
             // isConnected를 true로 바꿔 UI가 연결 상태를 인식하게 합니다.
@@ -71,9 +82,25 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
             // [연결 종료 콜백]
             // 정상 종료 또는 예기치 않은 단절 시 실행됩니다.
-            // isConnected를 false로 되돌려 UI가 단절 상태를 인식하게 합니다.
+            // reconnectDelay가 설정되어 있으므로 단절 시 5초 후 자동 재연결을 시도합니다.
             onDisconnect: () => {
-                console.info('[Socket] 연결 종료');
+                console.info('[Socket] 연결 종료 - 5초 후 재연결 시도');
+                set({ isConnected: false });
+            },
+
+            // [STOMP 에러 핸들링]
+            // 서버가 STOMP ERROR 프레임을 보낼 때 실행됩니다.
+            // 예 : 인증 실패, 잘못된 구독 경로 등
+            onStompError: (frame) => {
+                console.error('[Socket] STOMP 에러 발생:', frame.headers['message']);
+                set({ isConnected: false });
+            },
+
+            // [WebSocket 에러 핸들링]
+            // WebSocket 연결 자체가 실패하거나 끊어질 때 실행됩니다.
+            // 예 : 네트워크 단절, 서버 다운
+            onWebSocketError: (event) => {
+                console.error('[Socket] WebSocket 에러 발생:', event);
                 set({ isConnected: false });
             },
         });
