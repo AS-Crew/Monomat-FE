@@ -10,10 +10,10 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "react",
 
     "strict": true,                               // 모든 엄격한 타입 검사 활성화
     "noImplicitAny": true,                        // 암시적 any 타입 에러 처리
