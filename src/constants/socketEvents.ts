@@ -9,7 +9,7 @@
 // 발행 경로 (클라이언트 → 서버)
 // 클라이언트가 서버로 메시지를 보낼 때 사용하는 경로이다.
 // Spring의 @MessageMapping이 /app prefix를 제거한 뒤 경로를 매핑한다.
-export const SOCKER_PUBLISH = {
+export const SOCKET_PUBLISH = {
     // 모든 사용자가 보는 전체 채팅에 메시지를 보낼 때 사용한다.
     CHAT_GLOBAL: '/app/chat/global',
 
@@ -24,7 +24,7 @@ export const SOCKER_PUBLISH = {
 // 이 경로를 구독하면 해당 채널에 새 메시지가 올 때마다 자동으로 수신한다.
 export const SOCKET_SUBSCRIBE = {
     // 전체 채팅 메시지를 수신할 때 사용한다.
-    CHAT_GLOBAL: '/app/chat/global',
+    CHAT_GLOBAL: '/topic/chat/global',
 
     // 특정 로비 (방)의 메시지를 수신할 때 사용한다.
     // 채팅 메시지뿐 아니라 게임 이벤트 (라운드 시작/종료, 정답 알림 등)도

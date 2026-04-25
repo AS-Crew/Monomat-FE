@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { MonomatInput } from '../components/common/MonomatInput';
 import { useAuthStore } from '../store/useAuthStore'; // Zustand 전역 스토어 연결
+import { STORAGE_KEYS } from '../constants/storage';
 
 /**
  * [아키텍처 지식: UUID Fallback 생성기]
@@ -59,7 +60,7 @@ export const Home = () => {
         // 2. localStorage 세션 저장 및 예외 처리 (Graceful Degradation)
         try {
             // 정상적인 상황: 브라우저 스토리지에 데이터를 영구 저장하여 새로고침(Graceful Reconnect) 대비
-            localStorage.setItem('monomat_guest_session', JSON.stringify(sessionData));
+            localStorage.setItem(STORAGE_KEYS.GUEST_SESSION, JSON.stringify(sessionData));
             console.log('게스트 세션 생성 완료:', sessionData);
         } catch (error) {
             // 예외 상황: iOS Safari 시크릿 모드 등에서는 스토리지 할당량이 0일 수 있어 에러가 발생함
