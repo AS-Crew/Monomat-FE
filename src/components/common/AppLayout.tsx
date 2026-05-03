@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { BREAKPOINTS } from '../../constants/layout';
 
 interface AppLayoutProps {
+    /** 레이아웃 내부에 렌더링될 하위 페이지 컴포넌트 또는 요소 */
     children: ReactNode;
 }
 
