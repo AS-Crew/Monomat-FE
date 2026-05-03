@@ -20,17 +20,17 @@ interface ProtectedRouteProps {
  *   </ProtectedRoute>
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-    // Zustand에서 인증 여부를 구독
-    // isGuest가 true = 게스트 또는 정식 회원 세션이 존재하는 상태
     const isGuest = useAuthStore((state) => state.isGuest);
+    const isHydrated = useAuthStore((state) => state.isHydrated);
 
-    // 세션이 없으면 홈으로 강제 이동한다.
-    // replace: true → 브라우저 히스토리에 현재 경로를 남기지 않아
-    // 뒤로가기를 눌렀을 때 보호된 페이지로 돌아오는 것을 방지한다.
+    // 아직 localStorage를 읽어오는 중이면 아무것도 렌더링하지 않는다.
+    if (!isHydrated) {
+        return null;
+    }
+
     if (!isGuest) {
         return <Navigate to="/" replace />;
     }
 
-    // 인증된 사용자는 자식 컴포넌트를 그대로 렌더링한다.
     return <>{children}</>;
 }

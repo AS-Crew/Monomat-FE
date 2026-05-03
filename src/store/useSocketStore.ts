@@ -42,7 +42,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
             // STOMP 연결 시 UUID를 헤더에 포함한다.
             // Spring Security에서 이 값으로 게스트 세션을 식별한다.
-            connectHeaders: { uuid },
+            connectHeaders: { userIdentifier: uuid },
 
             // 연결이 끊어지면 5초 후 자동으로 재연결을 시도
             reconnectDelay: 5000,
