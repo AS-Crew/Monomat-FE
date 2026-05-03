@@ -1,0 +1,21 @@
+/**
+ * 레이아웃 관련 상수 모음
+ * 숫자를 직접 쓰는 매직 넘버를 방지하고, 기준이 바뀔 때 이 파일 하나만 수정하면 된다.
+ */
+
+// 반응형 breakpoint 기준 (단위 : px)
+export const BREAKPOINTS = {
+    // 이 너비 이하는 모바일로 판단하여 PC 접속 안내 페이지를 랜더링한다.
+    MOBILE: 768,
+    // 지원하는 최소 PC 너비 (소형 노트북 기준)
+    MIN_PC: 1024,
+    // 콘텐츠 최대 너비 - 이 이상은 중앙 정렬로 공백 처리
+    MAX_CONTENT: 1536,
+} as const;
+
+// 모바일 접속 안내 문구
+export const MOBILE_GUARD_MESSAGE = {
+    TITLE: 'MONOMAT',
+    DESCRIPTION: 'Monomat은 데스크탑 환경에 최적화되어 있습니다.',
+    GUIDE: 'PC로 접속해 주세요! 💻',
+} as const;
