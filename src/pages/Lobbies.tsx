@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LobbyCard } from '../components/lobby/LobbyCard';
+
+import { NavigationBar } from '../components/common/NavigationBar';
 import { GlobalChat } from '../components/lobby/GlobalChat';
+import { LobbyCard } from '../components/lobby/LobbyCard';
 import { useLobbyList } from '../hooks/useLobbyList';
 import { useSocketStore } from '../store/useSocketStore';
-import { getOrCreateBrowserUserId } from '../utils/browserUserId';
 import type { Lobby } from '../types/lobby';
+import { getOrCreateBrowserUserId } from '../utils/browserUserId';
 
 type SortOption = 'LATEST' | 'MOST_PLAYERS' | 'MOST_EMPTY_SLOTS';
 
@@ -18,8 +20,6 @@ const SORT_LABELS: Record<SortOption, string> = {
 const CATEGORY_FILTERS = ['전체', 'K-POP', 'J-POP', 'POP', 'OST'] as const;
 
 function getCurrentPlayers(lobby: Lobby): number {
-    // 현재 Lobby 타입에 currentPlayers가 없다면 임시값을 사용합니다.
-    // BE 응답에 currentPlayers가 추가되면 아래 로직을 해당 필드 기준으로 교체하면 됩니다.
     return 'currentPlayers' in lobby && typeof lobby.currentPlayers === 'number'
         ? lobby.currentPlayers
         : 1;
@@ -44,60 +44,8 @@ function sortLobbies(lobbies: Lobby[], sortOption: SortOption): Lobby[] {
 
         case 'LATEST':
         default:
-            // 현재 Lobby 타입에 createdAt이 없으므로 서버 응답 순서를 최신순으로 간주합니다.
             return copiedLobbies;
     }
-}
-
-function LobbyHeader() {
-    return (
-        <header className="flex h-20 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-9">
-            <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-blue-500" />
-                <span className="text-2xl font-bold text-gray-800">
-                    Monomat
-                </span>
-            </div>
-
-            <div className="flex items-center gap-4">
-                <button
-                    type="button"
-                    className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50"
-                >
-                    맵 만들기
-                </button>
-
-                <div className="flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2">
-                    <input
-                        type="text"
-                        placeholder="초대 코드"
-                        className="w-28 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
-                    />
-                    <button
-                        type="button"
-                        className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-500"
-                    >
-                        입장
-                    </button>
-                </div>
-
-                <button
-                    type="button"
-                    className="rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-600"
-                >
-                    + 로비 만들기
-                </button>
-
-                <button
-                    type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white"
-                    aria-label="프로필"
-                >
-                    H
-                </button>
-            </div>
-        </header>
-    );
 }
 
 function LobbyFooter() {
@@ -172,7 +120,8 @@ export function Lobbies() {
     const connectSocket = useSocketStore((state) => state.connect);
 
     const [searchKeyword, setSearchKeyword] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORY_FILTERS)[number]>('전체');
+    const [selectedCategory, setSelectedCategory] =
+        useState<(typeof CATEGORY_FILTERS)[number]>('전체');
     const [sortOption, setSortOption] = useState<SortOption>('LATEST');
 
     useEffect(() => {
@@ -221,7 +170,7 @@ export function Lobbies() {
 
     return (
         <div className="flex min-h-screen flex-col bg-[#F5F5F7]">
-            <LobbyHeader />
+            <NavigationBar />
 
             <main className="flex flex-1 gap-5 px-9 py-6">
                 <section className="min-w-0 flex-1">
@@ -229,7 +178,9 @@ export function Lobbies() {
                         <input
                             type="text"
                             value={searchKeyword}
-                            onChange={(event) => setSearchKeyword(event.target.value)}
+                            onChange={(event) =>
+                                setSearchKeyword(event.target.value)
+                            }
                             placeholder="로비 제목 검색"
                             className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 shadow-sm focus:border-blue-400 focus:outline-none"
                         />
