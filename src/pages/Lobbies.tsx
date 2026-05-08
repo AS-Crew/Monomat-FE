@@ -3,115 +3,17 @@ import { useNavigate } from 'react-router-dom';
 
 import { NavigationBar } from '../components/common/NavigationBar';
 import { GlobalChat } from '../components/lobby/GlobalChat';
-import { LobbyCard } from '../components/lobby/LobbyCard';
+import { LobbyFooter } from '../components/lobby/LobbyFooter';
+import { LobbyHeader } from '../components/lobby/LobbyHeader';
+import { LobbyList } from '../components/lobby/LobbyList';
 import { useLobbyList } from '../hooks/useLobbyList';
 import { useSocketStore } from '../store/useSocketStore';
-import type { Lobby } from '../types/lobby';
 import { getOrCreateBrowserUserId } from '../utils/browserUserId';
-
-type SortOption = 'LATEST' | 'MOST_PLAYERS' | 'MOST_EMPTY_SLOTS';
-
-const SORT_LABELS: Record<SortOption, string> = {
-    LATEST: '최신순',
-    MOST_PLAYERS: '인원 많은 순',
-    MOST_EMPTY_SLOTS: '빈 자리 많은 순',
-};
+import { sortLobbies, type LobbySortOption } from '../utils/lobbySort';
 
 const CATEGORY_FILTERS = ['전체', 'K-POP', 'J-POP', 'POP', 'OST'] as const;
 
-function getCurrentPlayers(lobby: Lobby): number {
-    return 'currentPlayers' in lobby && typeof lobby.currentPlayers === 'number'
-        ? lobby.currentPlayers
-        : 1;
-}
-
-function sortLobbies(lobbies: Lobby[], sortOption: SortOption): Lobby[] {
-    const copiedLobbies = [...lobbies];
-
-    switch (sortOption) {
-        case 'MOST_PLAYERS':
-            return copiedLobbies.sort(
-                (left, right) => getCurrentPlayers(right) - getCurrentPlayers(left),
-            );
-
-        case 'MOST_EMPTY_SLOTS':
-            return copiedLobbies.sort(
-                (left, right) =>
-                    right.maxPlayers -
-                    getCurrentPlayers(right) -
-                    (left.maxPlayers - getCurrentPlayers(left)),
-            );
-
-        case 'LATEST':
-        default:
-            return copiedLobbies;
-    }
-}
-
-function LobbyFooter() {
-    return (
-        <footer className="flex h-10 shrink-0 items-center justify-between border-t border-gray-200 bg-white px-10 text-sm text-gray-500">
-            <span>© 2026 Monomat. 실시간 멀티플레이 퀴즈.</span>
-
-            <div className="flex items-center gap-6">
-                <button type="button" className="hover:text-gray-700">
-                    문제 신고
-                </button>
-                <button type="button" className="hover:text-gray-700">
-                    이용약관
-                </button>
-                <button type="button" className="hover:text-gray-700">
-                    개인정보처리방침
-                </button>
-            </div>
-        </footer>
-    );
-}
-
-interface SortDropdownProps {
-    value: SortOption;
-    onChange: (value: SortOption) => void;
-}
-
-function SortDropdown({ value, onChange }: SortDropdownProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    const handleSelect = (nextValue: SortOption) => {
-        onChange(nextValue);
-        setIsOpen(false);
-    };
-
-    return (
-        <div className="relative">
-            <button
-                type="button"
-                onClick={() => setIsOpen((prev) => !prev)}
-                className="min-w-36 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-600 shadow-sm hover:bg-gray-50"
-            >
-                {SORT_LABELS[value]} ▼
-            </button>
-
-            {isOpen && (
-                <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
-                    {(Object.keys(SORT_LABELS) as SortOption[]).map((option) => (
-                        <button
-                            key={option}
-                            type="button"
-                            onClick={() => handleSelect(option)}
-                            className={`block w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 ${
-                                value === option
-                                    ? 'font-semibold text-blue-500'
-                                    : 'text-gray-600'
-                            }`}
-                        >
-                            {SORT_LABELS[option]}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
+type LobbyCategoryFilter = (typeof CATEGORY_FILTERS)[number];
 
 export function Lobbies() {
     const navigate = useNavigate();
@@ -121,8 +23,9 @@ export function Lobbies() {
 
     const [searchKeyword, setSearchKeyword] = useState('');
     const [selectedCategory, setSelectedCategory] =
-        useState<(typeof CATEGORY_FILTERS)[number]>('전체');
-    const [sortOption, setSortOption] = useState<SortOption>('LATEST');
+        useState<LobbyCategoryFilter>('전체');
+    const [sortOption, setSortOption] =
+        useState<LobbySortOption>('LATEST');
 
     useEffect(() => {
         const browserUserId = getOrCreateBrowserUserId();
@@ -132,11 +35,12 @@ export function Lobbies() {
 
     const filteredAndSortedLobbies = useMemo(() => {
         const safeLobbies = lobbies ?? [];
+        const normalizedKeyword = searchKeyword.trim().toLowerCase();
 
         const filteredLobbies = safeLobbies.filter((lobby) => {
             const matchesKeyword = lobby.title
                 .toLowerCase()
-                .includes(searchKeyword.trim().toLowerCase());
+                .includes(normalizedKeyword);
 
             const matchesCategory =
                 selectedCategory === '전체' ||
@@ -174,55 +78,20 @@ export function Lobbies() {
 
             <main className="flex flex-1 gap-5 px-9 py-6">
                 <section className="min-w-0 flex-1">
-                    <div className="mb-4 flex items-center gap-3">
-                        <input
-                            type="text"
-                            value={searchKeyword}
-                            onChange={(event) =>
-                                setSearchKeyword(event.target.value)
-                            }
-                            placeholder="로비 제목 검색"
-                            className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 shadow-sm focus:border-blue-400 focus:outline-none"
-                        />
+                    <LobbyHeader
+                        searchKeyword={searchKeyword}
+                        onSearchKeywordChange={setSearchKeyword}
+                        categories={CATEGORY_FILTERS}
+                        selectedCategory={selectedCategory}
+                        onSelectedCategoryChange={setSelectedCategory}
+                        sortOption={sortOption}
+                        onSortOptionChange={setSortOption}
+                    />
 
-                        <SortDropdown
-                            value={sortOption}
-                            onChange={setSortOption}
-                        />
-                    </div>
-
-                    <div className="mb-5 flex gap-2">
-                        {CATEGORY_FILTERS.map((category) => (
-                            <button
-                                key={category}
-                                type="button"
-                                onClick={() => setSelectedCategory(category)}
-                                className={`rounded-full px-4 py-1.5 text-sm font-medium ${
-                                    selectedCategory === category
-                                        ? 'bg-blue-500 text-white'
-                                        : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                            >
-                                {category}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        {filteredAndSortedLobbies.length > 0 ? (
-                            filteredAndSortedLobbies.map((lobby) => (
-                                <LobbyCard
-                                    key={lobby.code}
-                                    lobby={lobby}
-                                    onEnter={handleEnter}
-                                />
-                            ))
-                        ) : (
-                            <div className="col-span-2 flex h-40 items-center justify-center text-gray-400">
-                                현재 조건에 맞는 로비가 없습니다.
-                            </div>
-                        )}
-                    </div>
+                    <LobbyList
+                        lobbies={filteredAndSortedLobbies}
+                        onEnter={handleEnter}
+                    />
                 </section>
 
                 <aside className="sticky top-6 h-[calc(100vh-8.5rem)] w-96 shrink-0 self-start">
