@@ -55,15 +55,11 @@ function App() {
     }
 
     return (
-        // AppLayout: 전역 레이아웃 너비 기준(min/max)을 담당
-        // App.tsx는 "AppLayout 안에 라우터를 넣는다"는 것만 알면 된다.
-        <AppLayout>
-            <BrowserRouter>
+        <BrowserRouter>
+            <AppLayout>
                 <Routes>
-                    {/* 홈: 닉네임 입력 후 게임 진입 */}
                     <Route path="/" element={<Home />} />
 
-                    {/* 로비 목록: 세션이 없으면 홈으로 리다이렉트 */}
                     <Route
                         path="/lobbies"
                         element={
@@ -73,7 +69,6 @@ function App() {
                         }
                     />
 
-                    {/* 특정 로비 입장: 6자리 초대코드 기반, 세션이 없으면 홈으로 리다이렉트 */}
                     <Route
                         path="/lobby/:inviteCode"
                         element={
@@ -83,8 +78,8 @@ function App() {
                         }
                     />
                 </Routes>
-            </BrowserRouter>
-        </AppLayout>
+            </AppLayout>
+        </BrowserRouter>
     );
 }
 
