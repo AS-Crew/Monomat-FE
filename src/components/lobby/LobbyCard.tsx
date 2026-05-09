@@ -1,4 +1,5 @@
 import type { Lobby, LobbyCategory } from '../../types/lobby';
+import { getCurrentPlayers } from '../../utils/lobbySort';
 
 interface LobbyCardProps {
     lobby: Lobby;
@@ -21,7 +22,11 @@ function StatusBadge({ status }: { status: Lobby['status'] }) {
     );
 }
 
-function CategoryBadge({ category }: { category: LobbyCategory | null | undefined }) {
+function CategoryBadge({
+                           category,
+                       }: {
+    category: LobbyCategory | null | undefined;
+}) {
     if (!category) {
         return null;
     }
@@ -42,8 +47,10 @@ function ProgressBar({
     max: number;
     status: Lobby['status'];
 }) {
-    const percent = Math.round((current / max) * 100);
+    const safeMax = Math.max(max, 1);
+    const percent = Math.min(Math.round((current / safeMax) * 100), 100);
     const isFull = current >= max;
+
     const color =
         status === 'PLAYING'
             ? 'bg-yellow-400'
@@ -62,15 +69,9 @@ function ProgressBar({
 }
 
 export function LobbyCard({ lobby, onEnter }: LobbyCardProps) {
-    const {
-        code,
-        title,
-        status,
-        maxPlayers,
-        category,
-    } = lobby;
+    const { code, title, status, maxPlayers, category } = lobby;
 
-    const currentPlayers = 1;
+    const currentPlayers = getCurrentPlayers(lobby);
     const isFull = currentPlayers >= maxPlayers;
     const isEnterDisabled = isFull || status === 'PLAYING';
 
@@ -87,7 +88,9 @@ export function LobbyCard({ lobby, onEnter }: LobbyCardProps) {
 
             <div className="mb-2 flex items-center justify-between text-sm text-gray-500">
                 <span>👤 host</span>
-                <span>{currentPlayers}/{maxPlayers}명</span>
+                <span>
+                    {currentPlayers}/{maxPlayers}명
+                </span>
             </div>
 
             <ProgressBar

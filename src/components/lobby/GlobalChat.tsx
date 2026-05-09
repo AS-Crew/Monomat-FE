@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { useGlobalChat } from '../../hooks/useGlobalChat';
+
 import { useChatCooldown } from '../../hooks/useChatCooldown';
-import { MonomatInput } from '../common/MonomatInput';
+import { useGlobalChat } from '../../hooks/useGlobalChat';
 import { useSocketStore } from '../../store/useSocketStore';
 import type { ChatMessage } from '../../types/chat';
+import { MonomatInput } from '../common/MonomatInput';
 
 const CHAT_COOLDOWN_MS = 3000;
 const MAX_CHAT_LENGTH = 200;
@@ -20,7 +21,10 @@ function formatTime(timestamp: string): string {
     }
 }
 
-function getConnectionLabel(isConnected: boolean, isReconnecting: boolean): string {
+function getConnectionLabel(
+    isConnected: boolean,
+    isReconnecting: boolean,
+): string {
     if (isConnected) {
         return '연결됨';
     }
@@ -166,7 +170,7 @@ export function GlobalChat() {
                         maxLength={MAX_CHAT_LENGTH}
                         className="
                             flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
-                          text-gray-900 placeholder:text-gray-400
+                            text-gray-900 placeholder:text-gray-400
                             outline-none transition-colors
                             focus:border-blue-500
                             disabled:cursor-not-allowed disabled:opacity-50
