@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { NavigationBar } from '../components/common/NavigationBar';
@@ -7,8 +7,6 @@ import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { LobbyHeader } from '../components/lobby/LobbyHeader';
 import { LobbyList } from '../components/lobby/LobbyList';
 import { useLobbyList } from '../hooks/useLobbyList';
-import { useSocketStore } from '../store/useSocketStore';
-import { getOrCreateBrowserUserId } from '../utils/browserUserId';
 import { sortLobbies, type LobbySortOption } from '../utils/lobbySort';
 
 const CATEGORY_FILTERS = ['전체', 'K-POP', 'J-POP', 'POP', 'OST'] as const;
@@ -19,32 +17,34 @@ export function Lobbies() {
     const navigate = useNavigate();
     const { data: lobbies, isLoading, isError } = useLobbyList();
 
-    const connectSocket = useSocketStore((state) => state.connect);
-
     const [searchKeyword, setSearchKeyword] = useState('');
     const [selectedCategory, setSelectedCategory] =
         useState<LobbyCategoryFilter>('전체');
     const [sortOption, setSortOption] =
         useState<LobbySortOption>('LATEST');
 
-    useEffect(() => {
-        const browserUserId = getOrCreateBrowserUserId();
-
-        connectSocket(browserUserId);
-    }, [connectSocket]);
-
     const filteredAndSortedLobbies = useMemo(() => {
         const safeLobbies = lobbies ?? [];
         const normalizedKeyword = searchKeyword.trim().toLowerCase();
 
         const filteredLobbies = safeLobbies.filter((lobby) => {
-            const matchesKeyword = lobby.title
+            /*
+             * BE 응답이 일시적으로 비어 있거나, 기존 mock 데이터가 남아 있는 경우에도
+             * 로비 목록 화면 전체가 죽지 않도록 title을 안전하게 정규화한다.
+             */
+            const lobbyTitle = lobby.title ?? '';
+
+            const matchesKeyword = lobbyTitle
                 .toLowerCase()
                 .includes(normalizedKeyword);
 
+            /*
+             * 로비 카테고리는 로비 자체의 속성이 아니라 선택된 맵의 카테고리이므로
+             * BE 응답 필드명인 mapCategory를 기준으로 필터링한다.
+             */
             const matchesCategory =
                 selectedCategory === '전체' ||
-                lobby.category === selectedCategory;
+                lobby.mapCategory === selectedCategory;
 
             return matchesKeyword && matchesCategory;
         });
