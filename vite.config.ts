@@ -1,6 +1,8 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+const DEV_SERVER_TARGET = 'http://localhost:8080';
 
 export default defineConfig({
   plugins: [
@@ -8,6 +10,19 @@ export default defineConfig({
     tailwindcss(),
   ],
   define: {
-    global: 'globalThis',  // 이 줄 추가
+    global: 'globalThis',
   },
-})
+  server: {
+    proxy: {
+      '/api': {
+        target: DEV_SERVER_TARGET,
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: DEV_SERVER_TARGET,
+        ws: true,
+        changeOrigin: true,
+      },
+    },
+  },
+});

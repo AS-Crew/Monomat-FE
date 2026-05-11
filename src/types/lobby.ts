@@ -13,7 +13,7 @@ export interface Lobby {
     hostId: string;
     title: string;
     mapId: number | null;
-    category: LobbyCategory | null;
+    mapCategory: LobbyCategory | null;
     maxPlayers: number;
     isPrivate: boolean;
     status: 'WAITING' | 'PLAYING';

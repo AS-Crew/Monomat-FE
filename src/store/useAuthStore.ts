@@ -1,101 +1,91 @@
 import { create } from 'zustand';
-import { z } from 'zod';
 
-import { STORAGE_KEYS, SESSION_EXPIRY_MS } from '../constants/storage';
+import { STORAGE_KEYS } from '../constants/storage';
+import { AUTH_MESSAGES } from '../constants/auth';
+import { guestSessionSchema } from '../schemas/authSchema';
 
-import type { GuestSession } from '../types/auth';
-
-const guestSessionSchema = z.object({
-    uuid: z.uuid({ error: '유효하지 않은 UUID 형식입니다.' }),
-    nickname: z
-        .string()
-        .min(1, { error: '닉네임은 최소 1자 이상이어야 합니다.' })
-        .max(12, { error: '닉네임은 12자 이내여야 합니다.' }),
-    createdAt: z.number().refine(
-        (time) => Date.now() - time <= SESSION_EXPIRY_MS,
-        {
-            error: `세션이 만료되었습니다. (기준: ${
-                SESSION_EXPIRY_MS / (1000 * 60 * 60 * 24)
-            }일)`,
-        },
-    ),
-}) satisfies z.ZodType<GuestSession>;
+import type {
+    GuestSession,
+    UserType,
+} from '../types/auth';
 
 interface AuthState {
-    uuid: string | null;
+    userId: number | null;
+    userIdentifier: string | null;
     nickname: string | null;
+    userType: UserType | null;
+    accessToken: string | null;
+    accessTokenExpiresAt: string | null;
+    refreshToken: string | null;
+    refreshTokenExpiresAt: string | null;
     isGuest: boolean;
     isHydrated: boolean;
-    setSession: (uuid: string, nickname: string) => void;
+    setSession: (session: GuestSession) => void;
     clearSession: () => void;
     initializeSession: () => void;
     updateNickname: (nickname: string) => void;
 }
 
+function createSessionState(session: GuestSession) {
+    return {
+        userId: session.userId,
+        userIdentifier: session.userIdentifier,
+        nickname: session.nickname,
+        userType: session.userType,
+        accessToken: session.accessToken,
+        accessTokenExpiresAt: session.accessTokenExpiresAt,
+        refreshToken: session.refreshToken,
+        refreshTokenExpiresAt: session.refreshTokenExpiresAt,
+        isGuest: session.userType === 'GUEST',
+        isHydrated: true,
+    };
+}
+
+function createEmptyAuthState() {
+    return {
+        userId: null,
+        userIdentifier: null,
+        nickname: null,
+        userType: null,
+        accessToken: null,
+        accessTokenExpiresAt: null,
+        refreshToken: null,
+        refreshTokenExpiresAt: null,
+        isGuest: false,
+        isHydrated: true,
+    };
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-    uuid: null,
+    userId: null,
+    userIdentifier: null,
     nickname: null,
+    userType: null,
+    accessToken: null,
+    accessTokenExpiresAt: null,
+    refreshToken: null,
+    refreshTokenExpiresAt: null,
     isGuest: false,
     isHydrated: false,
 
-    setSession: (uuid, nickname) => {
-        set({
-            uuid,
-            nickname,
-            isGuest: true,
-            isHydrated: true,
-        });
+    setSession: (session) => {
+        try {
+            localStorage.setItem(
+                STORAGE_KEYS.GUEST_SESSION,
+                JSON.stringify(session),
+            );
+        } catch (error) {
+            // localStorage 저장 실패가 즉시 플레이를 막지는 않도록 메모리 상태는 유지한다.
+            // 단, 새로고침 시 세션 복구는 실패할 수 있으므로 로그를 남긴다.
+            console.error('[useAuthStore] 게스트 세션 저장 실패:', error);
+        }
+
+        set(createSessionState(session));
     },
 
     clearSession: () => {
         localStorage.removeItem(STORAGE_KEYS.GUEST_SESSION);
-
-        set({
-            uuid: null,
-            nickname: null,
-            isGuest: false,
-            isHydrated: true,
-        });
-    },
-
-    updateNickname: (nickname) => {
-        const trimmedNickname = nickname.trim();
-        const { uuid } = get();
-
-        if (!uuid || !trimmedNickname) {
-            return;
-        }
-
-        try {
-            const storedData = localStorage.getItem(STORAGE_KEYS.GUEST_SESSION);
-            const parsedData = storedData
-                ? (JSON.parse(storedData) as Partial<GuestSession>)
-                : null;
-
-            const nextSession: GuestSession = {
-                uuid,
-                nickname: trimmedNickname,
-                createdAt:
-                    typeof parsedData?.createdAt === 'number'
-                        ? parsedData.createdAt
-                        : Date.now(),
-            };
-
-            localStorage.setItem(
-                STORAGE_KEYS.GUEST_SESSION,
-                JSON.stringify(nextSession),
-            );
-
-            set({
-                nickname: trimmedNickname,
-            });
-        } catch (error) {
-            console.error('[useAuthStore] 닉네임 변경 저장 실패:', error);
-
-            set({
-                nickname: trimmedNickname,
-            });
-        }
+        set(createEmptyAuthState());
     },
 
     initializeSession: () => {
@@ -107,32 +97,76 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 return;
             }
 
-            const parsed = JSON.parse(storedData) as unknown;
-            const result = guestSessionSchema.safeParse(parsed);
+            const parsedData = JSON.parse(storedData) as unknown;
+            const result = guestSessionSchema.safeParse(parsedData);
 
-            if (result.success) {
-                set({
-                    uuid: result.data.uuid,
-                    nickname: result.data.nickname,
-                    isGuest: true,
-                    isHydrated: true,
-                });
-
-                console.log('세션 복구 완료:', result.data.nickname);
-            } else {
+            if (!result.success) {
                 console.warn(
-                    '세션 무효화 (오염 또는 만료):',
-                    z.treeifyError(result.error),
+                    `[useAuthStore] ${AUTH_MESSAGES.SESSION_RESTORE_FAILED}`,
+                    result.error,
                 );
 
                 localStorage.removeItem(STORAGE_KEYS.GUEST_SESSION);
-                set({ isHydrated: true });
+                set(createEmptyAuthState());
+                return;
             }
+
+            set(createSessionState(result.data));
         } catch (error) {
-            console.error('세션 파싱 중 오류 발생:', error);
+            console.error('[useAuthStore] 세션 복구 중 오류 발생:', error);
 
             localStorage.removeItem(STORAGE_KEYS.GUEST_SESSION);
-            set({ isHydrated: true });
+            set(createEmptyAuthState());
         }
+    },
+
+    updateNickname: (nickname) => {
+        const trimmedNickname = nickname.trim();
+        const {
+            userId,
+            userIdentifier,
+            userType,
+            accessToken,
+            accessTokenExpiresAt,
+            refreshToken,
+            refreshTokenExpiresAt,
+        } = get();
+
+        if (
+            !trimmedNickname ||
+            userId == null ||
+            !userIdentifier ||
+            !userType ||
+            !accessToken ||
+            !accessTokenExpiresAt ||
+            !refreshToken ||
+            !refreshTokenExpiresAt
+        ) {
+            return;
+        }
+
+        const nextSession: GuestSession = {
+            userId,
+            userIdentifier,
+            nickname: trimmedNickname,
+            userType,
+            accessToken,
+            accessTokenExpiresAt,
+            refreshToken,
+            refreshTokenExpiresAt,
+        };
+
+        try {
+            localStorage.setItem(
+                STORAGE_KEYS.GUEST_SESSION,
+                JSON.stringify(nextSession),
+            );
+        } catch (error) {
+            console.error('[useAuthStore] 닉네임 변경 저장 실패:', error);
+        }
+
+        set({
+            nickname: trimmedNickname,
+        });
     },
 }));
