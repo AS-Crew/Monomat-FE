@@ -45,7 +45,7 @@ export function Lobbies() {
             const matchesCategory =
                 selectedCategory === '전체' ||
                 lobby.mapCategory === selectedCategory;
-            
+
             return matchesKeyword && matchesCategory;
         });
 

@@ -69,7 +69,7 @@ function ProgressBar({
 }
 
 export function LobbyCard({ lobby, onEnter }: LobbyCardProps) {
-    const { code, title, status, maxPlayers, category } = lobby;
+    const { code, title, status, maxPlayers, mapCategory } = lobby;
 
     const currentPlayers = getCurrentPlayers(lobby);
     const isFull = currentPlayers >= maxPlayers;
@@ -79,7 +79,7 @@ export function LobbyCard({ lobby, onEnter }: LobbyCardProps) {
         <div className="flex flex-col justify-between rounded-xl bg-white p-5 text-left shadow-sm">
             <div className="mb-3 flex items-center gap-2">
                 <StatusBadge status={status} />
-                <CategoryBadge category={category} />
+                <CategoryBadge category={mapCategory} />
             </div>
 
             <p className="mb-4 text-left text-base font-semibold text-gray-900">
