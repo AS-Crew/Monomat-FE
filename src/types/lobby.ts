@@ -15,6 +15,7 @@ export interface Lobby {
     mapId: number | null;
     mapCategory: LobbyCategory | null;
     maxPlayers: number;
+    currentPlayers: number;
     isPrivate: boolean;
     status: 'WAITING' | 'PLAYING';
 }

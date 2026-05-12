@@ -6,9 +6,7 @@ export type LobbySortOption =
     | 'MOST_EMPTY_SLOTS';
 
 export function getCurrentPlayers(lobby: Lobby): number {
-    return 'currentPlayers' in lobby && typeof lobby.currentPlayers === 'number'
-        ? lobby.currentPlayers
-        : 1;
+    return lobby.currentPlayers;
 }
 
 export function sortLobbies(
