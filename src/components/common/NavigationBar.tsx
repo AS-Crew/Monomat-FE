@@ -1,10 +1,9 @@
-import { type KeyboardEvent, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { InviteCodeJoinModal } from '../lobby/InviteCodeJoinModal';
 import { useAuthStore } from '../../store/useAuthStore';
 import { AccountModal } from './AccountModal';
-
-const INVITE_CODE_LENGTH = 6;
 
 export function NavigationBar() {
     const navigate = useNavigate();
@@ -12,7 +11,7 @@ export function NavigationBar() {
     const nickname = useAuthStore((state) => state.nickname);
     const isGuest = useAuthStore((state) => state.isGuest);
 
-    const [inviteCode, setInviteCode] = useState('');
+    const [isInviteCodeModalOpen, setIsInviteCodeModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const displayNickname = nickname ?? 'Guest';
@@ -23,29 +22,6 @@ export function NavigationBar() {
 
     const handleLogoClick = () => {
         navigate('/lobbies');
-    };
-
-    const handleInviteCodeSubmit = () => {
-        const normalizedInviteCode = inviteCode.trim();
-
-        if (normalizedInviteCode.length !== INVITE_CODE_LENGTH) {
-            alert(`${INVITE_CODE_LENGTH}자리 초대 코드를 입력해주세요.`);
-            return;
-        }
-
-        navigate(`/lobby/${normalizedInviteCode}`);
-    };
-
-    const handleInviteCodeKeyDown = (
-        event: KeyboardEvent<HTMLInputElement>,
-    ) => {
-        if (event.nativeEvent.isComposing) {
-            return;
-        }
-
-        if (event.key === 'Enter') {
-            handleInviteCodeSubmit();
-        }
     };
 
     const handleCreateMapClick = () => {
@@ -82,29 +58,13 @@ export function NavigationBar() {
                         </button>
                     )}
 
-                    <div className="flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2">
-                        <span className="mr-2 text-sm text-gray-900">▣</span>
-
-                        <input
-                            type="text"
-                            value={inviteCode}
-                            maxLength={INVITE_CODE_LENGTH}
-                            onChange={(event) =>
-                                setInviteCode(event.target.value)
-                            }
-                            onKeyDown={handleInviteCodeKeyDown}
-                            placeholder="초대 코드"
-                            className="w-28 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
-                        />
-
-                        <button
-                            type="button"
-                            onClick={handleInviteCodeSubmit}
-                            className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-500 hover:bg-gray-200"
-                        >
-                            입장
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setIsInviteCodeModalOpen(true)}
+                        className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+                    >
+                        ▣ 초대 코드 입장
+                    </button>
 
                     <button
                         type="button"
@@ -124,6 +84,11 @@ export function NavigationBar() {
                     </button>
                 </div>
             </header>
+
+            <InviteCodeJoinModal
+                isOpen={isInviteCodeModalOpen}
+                onClose={() => setIsInviteCodeModalOpen(false)}
+            />
 
             <AccountModal
                 isOpen={isAccountModalOpen}
