@@ -21,9 +21,7 @@ const normalizeBaseUrl = (baseUrl?: string) => {
         return '';
     }
 
-    return baseUrl.endsWith('/')
-        ? baseUrl.slice(0, -1)
-        : baseUrl;
+    return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 };
 
 const createApiEndpoint = (path: string) => {
@@ -35,5 +33,10 @@ export const WS_ENDPOINT = rawWsUrl;
 export const API_ENDPOINTS = {
     AUTH: {
         GUEST: createApiEndpoint('/api/auth/guest'),
+    },
+
+    LOBBY: {
+        JOIN: createApiEndpoint('/api/lobbies/join'),
+        LIST: createApiEndpoint('/api/lobbies'),
     },
 } as const;
