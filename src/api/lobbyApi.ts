@@ -9,7 +9,9 @@ import {
 import type {
     JoinLobbyRequest,
     JoinLobbyResponse,
-    Lobby,
+    LobbyListItem,
+    LobbyListQueryParams,
+    LobbyPageResponse,
 } from '../types/lobby';
 
 const JSON_CONTENT_TYPE = 'application/json';
@@ -17,8 +19,48 @@ const JSON_CONTENT_TYPE = 'application/json';
 const DEFAULT_JOIN_LOBBY_ERROR_MESSAGE = '로비 입장에 실패했습니다.';
 const DEFAULT_FETCH_LOBBY_LIST_ERROR_MESSAGE = '로비 목록을 불러오는 데 실패했습니다.';
 
-export async function fetchLobbyList(): Promise<Lobby[]> {
-    const response = await fetchWithAuth(API_ENDPOINTS.LOBBY.LIST);
+function appendNonEmptyParam(
+    searchParams: URLSearchParams,
+    key: string,
+    value: string | undefined,
+) {
+    const trimmedValue = value?.trim();
+
+    if (trimmedValue) {
+        searchParams.set(key, trimmedValue);
+    }
+}
+
+function appendNumberParam(
+    searchParams: URLSearchParams,
+    key: string,
+    value: number | undefined,
+) {
+    if (typeof value === 'number') {
+        searchParams.set(key, String(value));
+    }
+}
+
+function createLobbyListUrl(params: LobbyListQueryParams = {}) {
+    const searchParams = new URLSearchParams();
+
+    appendNonEmptyParam(searchParams, 'keyword', params.keyword);
+    appendNonEmptyParam(searchParams, 'mapCategory', params.mapCategory);
+    appendNonEmptyParam(searchParams, 'sort', params.sort);
+    appendNumberParam(searchParams, 'page', params.page);
+    appendNumberParam(searchParams, 'size', params.size);
+
+    const queryString = searchParams.toString();
+
+    return queryString
+        ? `${API_ENDPOINTS.LOBBY.LIST}?${queryString}`
+        : API_ENDPOINTS.LOBBY.LIST;
+}
+
+export async function fetchLobbyList(
+    params?: LobbyListQueryParams,
+): Promise<LobbyPageResponse<LobbyListItem>> {
+    const response = await fetchWithAuth(createLobbyListUrl(params));
 
     if (!response.ok) {
         throw await createApiError(
