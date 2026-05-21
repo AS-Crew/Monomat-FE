@@ -33,6 +33,10 @@ export const WS_ENDPOINT = rawWsUrl;
 export const API_ENDPOINTS = {
     AUTH: {
         GUEST: createApiEndpoint('/api/auth/guest'),
+        LOGIN: createApiEndpoint('/api/auth/login'),
+        REGISTER: createApiEndpoint('/api/auth/register'),
+        REFRESH: createApiEndpoint('/api/auth/refresh'),
+        LOGOUT: createApiEndpoint('/api/auth/logout'),
     },
 
     LOBBY: {

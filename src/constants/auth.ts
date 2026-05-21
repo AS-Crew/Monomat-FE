@@ -16,6 +16,9 @@ export const AUTH_MESSAGES = {
     INVALID_NICKNAME_WHITESPACE: '공백이 포함된 닉네임은 사용할 수 없습니다.',
     GUEST_LOGIN_FAILED: '게스트 입장에 실패했습니다. 잠시 후 다시 시도해주세요.',
     INVALID_GUEST_LOGIN_RESPONSE: '서버 응답 형식이 올바르지 않습니다.',
+    SESSION_EXPIRED: '인증 세션이 만료되었습니다. 다시 입장해주세요.',
+    SESSION_REFRESH_FAILED: '인증 세션 갱신에 실패했습니다.',
+    INVALID_REFRESH_RESPONSE: '토큰 갱신 응답 형식이 올바르지 않습니다.',
     SESSION_RESTORE_FAILED: '저장된 게스트 세션을 복구하지 못했습니다.',
 } as const;
 
