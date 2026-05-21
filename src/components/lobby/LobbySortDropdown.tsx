@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { LobbySortOption } from '../../utils/lobbySort';
+import type { LobbySortOption } from '../../types/lobby';
 
-export type { LobbySortOption } from '../../utils/lobbySort';
+export type { LobbySortOption } from '../../types/lobby';
 
 const SORT_LABELS: Record<LobbySortOption, string> = {
     LATEST: '최신순',

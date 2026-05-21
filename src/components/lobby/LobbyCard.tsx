@@ -1,23 +1,26 @@
-import type { Lobby, LobbyCategory } from '../../types/lobby';
-import { getCurrentPlayers } from '../../utils/lobbySort';
+import type { LobbyCategory, LobbyListItem } from '../../types/lobby';
 
 interface LobbyCardProps {
-    lobby: Lobby;
+    lobby: LobbyListItem;
     onEnter: (code: string) => void;
 }
 
-function StatusBadge({ status }: { status: Lobby['status'] }) {
+function StatusBadge({ status }: { status: LobbyListItem['status'] }) {
     const isWaiting = status === 'WAITING';
+    const isPlaying = status === 'PLAYING';
+    const label = isWaiting ? '대기중' : isPlaying ? '진행중' : '상태확인중';
 
     return (
         <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 isWaiting
                     ? 'bg-green-100 text-green-600'
-                    : 'bg-yellow-100 text-yellow-600'
+                    : isPlaying
+                        ? 'bg-yellow-100 text-yellow-600'
+                        : 'bg-gray-100 text-gray-500'
             }`}
         >
-            ● {isWaiting ? '대기중' : '진행중'}
+            ● {label}
         </span>
     );
 }
@@ -39,13 +42,13 @@ function CategoryBadge({
 }
 
 function ProgressBar({
-                         current,
-                         max,
-                         status,
-                     }: {
+    current,
+    max,
+    status,
+}: {
     current: number;
     max: number;
-    status: Lobby['status'];
+    status: LobbyListItem['status'];
 }) {
     const safeMax = Math.max(max, 1);
     const percent = Math.min(Math.round((current / safeMax) * 100), 100);
@@ -71,7 +74,7 @@ function ProgressBar({
 export function LobbyCard({ lobby, onEnter }: LobbyCardProps) {
     const { code, title, status, maxPlayers, mapCategory } = lobby;
 
-    const currentPlayers = getCurrentPlayers(lobby);
+    const { currentPlayers } = lobby;
     const isFull = currentPlayers >= maxPlayers;
     const isEnterDisabled = isFull || status === 'PLAYING';
 

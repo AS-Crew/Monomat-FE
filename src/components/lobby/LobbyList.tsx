@@ -1,9 +1,9 @@
-import type { Lobby } from '../../types/lobby';
+import type { LobbyListItem } from '../../types/lobby';
 import { LobbyCard } from './LobbyCard';
 import { LobbyEmptyState } from './LobbyEmptyState';
 
 interface LobbyListProps {
-    lobbies: Lobby[];
+    lobbies: LobbyListItem[];
     onEnter: (code: string) => void;
 }
 

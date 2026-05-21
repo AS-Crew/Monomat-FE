@@ -7,15 +7,26 @@ import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { LobbyHeader } from '../components/lobby/LobbyHeader';
 import { LobbyList } from '../components/lobby/LobbyList';
 import { useLobbyList } from '../hooks/useLobbyList';
-import { sortLobbies, type LobbySortOption } from '../utils/lobbySort';
+import {
+    SORT_QUERY_MAP,
+    type LobbyCategory,
+    type LobbySortOption,
+} from '../types/lobby';
 
 const CATEGORY_FILTERS = ['전체', 'K-POP', 'J-POP', 'POP', 'OST'] as const;
+const DEFAULT_LOBBY_LIST_PAGE = 0;
+const DEFAULT_LOBBY_LIST_SIZE = 20;
 
 type LobbyCategoryFilter = (typeof CATEGORY_FILTERS)[number];
 
+function toMapCategory(
+    category: LobbyCategoryFilter,
+): LobbyCategory | undefined {
+    return category === '전체' ? undefined : category;
+}
+
 export function Lobbies() {
     const navigate = useNavigate();
-    const { data: lobbies, isLoading, isError } = useLobbyList();
 
     const [searchKeyword, setSearchKeyword] = useState('');
     const [selectedCategory, setSelectedCategory] =
@@ -23,34 +34,16 @@ export function Lobbies() {
     const [sortOption, setSortOption] =
         useState<LobbySortOption>('LATEST');
 
-    const filteredAndSortedLobbies = useMemo(() => {
-        const safeLobbies = lobbies ?? [];
-        const normalizedKeyword = searchKeyword.trim().toLowerCase();
+    const lobbyListQueryParams = useMemo(() => ({
+        keyword: searchKeyword.trim(),
+        mapCategory: toMapCategory(selectedCategory),
+        sort: SORT_QUERY_MAP[sortOption],
+        page: DEFAULT_LOBBY_LIST_PAGE,
+        size: DEFAULT_LOBBY_LIST_SIZE,
+    }), [searchKeyword, selectedCategory, sortOption]);
 
-        const filteredLobbies = safeLobbies.filter((lobby) => {
-            /*
-             * BE 응답이 일시적으로 비어 있거나, 기존 mock 데이터가 남아 있는 경우에도
-             * 로비 목록 화면 전체가 죽지 않도록 title을 안전하게 정규화한다.
-             */
-            const lobbyTitle = lobby.title ?? '';
-
-            const matchesKeyword = lobbyTitle
-                .toLowerCase()
-                .includes(normalizedKeyword);
-
-            /*
-             * 로비 카테고리는 로비 자체의 속성이 아니라 선택된 맵의 카테고리이므로
-             * BE 응답 필드명인 mapCategory를 기준으로 필터링한다.
-             */
-            const matchesCategory =
-                selectedCategory === '전체' ||
-                lobby.mapCategory === selectedCategory;
-
-            return matchesKeyword && matchesCategory;
-        });
-
-        return sortLobbies(filteredLobbies, sortOption);
-    }, [lobbies, searchKeyword, selectedCategory, sortOption]);
+    const { data, isLoading, isError } = useLobbyList(lobbyListQueryParams);
+    const lobbies = data?.items ?? [];
 
     const handleEnter = (code: string) => {
         navigate(`/lobby/${code}`);
@@ -89,7 +82,7 @@ export function Lobbies() {
                     />
 
                     <LobbyList
-                        lobbies={filteredAndSortedLobbies}
+                        lobbies={lobbies}
                         onEnter={handleEnter}
                     />
                 </section>
