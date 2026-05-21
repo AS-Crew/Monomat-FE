@@ -63,3 +63,24 @@ export interface JoinLobbyResponse {
     mapTitle: string | null;
     mapCategory: LobbyCategory | null;
 }
+
+export interface CreateLobbyRequest {
+    title: string;
+    maxPlayers: number;
+    isPrivate: boolean;
+    mapId: number | null;
+    roundCount?: number | null;
+    timeLimitSeconds?: number | null;
+}
+
+export interface CreateLobbyResponse {
+    lobbyId: number;
+    inviteCode: string;
+    title: string;
+    maxPlayers: number;
+    isPrivate: boolean;
+    status: LobbyStatus;
+    mapId: number | null;
+    mapTitle: string | null;
+    mapCategory: LobbyCategory | null;
+}

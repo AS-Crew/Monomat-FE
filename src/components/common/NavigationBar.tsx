@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { CreateLobbyModal } from '../lobby/CreateLobbyModal';
 import { InviteCodeJoinModal } from '../lobby/InviteCodeJoinModal';
 import { useAuthStore } from '../../store/useAuthStore';
 import { AccountModal } from './AccountModal';
+import type { CreateLobbyResponse } from '../../types/lobby';
 
 export function NavigationBar() {
     const navigate = useNavigate();
@@ -12,6 +14,7 @@ export function NavigationBar() {
     const isGuest = useAuthStore((state) => state.isGuest);
 
     const [isInviteCodeModalOpen, setIsInviteCodeModalOpen] = useState(false);
+    const [isCreateLobbyModalOpen, setIsCreateLobbyModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const displayNickname = nickname ?? 'Guest';
@@ -29,7 +32,11 @@ export function NavigationBar() {
     };
 
     const handleCreateLobbyClick = () => {
-        alert('로비 만들기 기능은 추후 로비 생성 기능과 연결합니다.');
+        setIsCreateLobbyModalOpen(true);
+    };
+
+    const handleLobbyCreated = (response: CreateLobbyResponse) => {
+        navigate(`/lobby/${response.inviteCode}`);
     };
 
     return (
@@ -88,6 +95,12 @@ export function NavigationBar() {
             <InviteCodeJoinModal
                 isOpen={isInviteCodeModalOpen}
                 onClose={() => setIsInviteCodeModalOpen(false)}
+            />
+
+            <CreateLobbyModal
+                isOpen={isCreateLobbyModalOpen}
+                onClose={() => setIsCreateLobbyModalOpen(false)}
+                onCreated={handleLobbyCreated}
             />
 
             <AccountModal

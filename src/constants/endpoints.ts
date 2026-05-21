@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
     },
 
     LOBBY: {
+        CREATE: createApiEndpoint('/api/lobbies'),
         JOIN: createApiEndpoint('/api/lobbies/join'),
         LIST: createApiEndpoint('/api/lobbies'),
     },
