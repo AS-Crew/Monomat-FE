@@ -2,11 +2,14 @@ import { API_ENDPOINTS } from '../constants/endpoints';
 import { fetchWithAuth } from './apiClient';
 import { createApiError } from './apiError';
 import {
+    createLobbyResponseSchema,
     joinLobbyResponseSchema,
     lobbyListResponseSchema,
 } from '../schemas/lobbySchema';
 
 import type {
+    CreateLobbyRequest,
+    CreateLobbyResponse,
     JoinLobbyRequest,
     JoinLobbyResponse,
     LobbyListItem,
@@ -16,6 +19,7 @@ import type {
 
 const JSON_CONTENT_TYPE = 'application/json';
 
+const DEFAULT_CREATE_LOBBY_ERROR_MESSAGE = '로비 생성에 실패했습니다.';
 const DEFAULT_JOIN_LOBBY_ERROR_MESSAGE = '로비 입장에 실패했습니다.';
 const DEFAULT_FETCH_LOBBY_LIST_ERROR_MESSAGE = '로비 목록을 불러오는 데 실패했습니다.';
 
@@ -79,6 +83,39 @@ export async function fetchLobbyList(
         );
 
         throw new Error('로비 목록 응답 형식이 올바르지 않습니다.');
+    }
+
+    return parsed.data;
+}
+
+export async function createLobby(
+    request: CreateLobbyRequest,
+): Promise<CreateLobbyResponse> {
+    const response = await fetchWithAuth(API_ENDPOINTS.LOBBY.CREATE, {
+        method: 'POST',
+        headers: {
+            'Content-Type': JSON_CONTENT_TYPE,
+        },
+        body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            DEFAULT_CREATE_LOBBY_ERROR_MESSAGE,
+        );
+    }
+
+    const payload = (await response.json()) as unknown;
+    const parsed = createLobbyResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error(
+            '[lobbyApi] 로비 생성 응답 검증 실패:',
+            parsed.error,
+        );
+
+        throw new Error('로비 생성 응답 형식이 올바르지 않습니다.');
     }
 
     return parsed.data;
