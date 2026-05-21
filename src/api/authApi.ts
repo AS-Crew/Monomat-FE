@@ -2,27 +2,20 @@
 
 import { API_ENDPOINTS } from '../constants/endpoints';
 import { AUTH_MESSAGES } from '../constants/auth';
-import { guestSessionSchema } from '../schemas/authSchema';
+import { createApiError, ApiError } from './apiError';
+import {
+    guestSessionSchema,
+    refreshTokenResponseSchema,
+} from '../schemas/authSchema';
 
 import type {
     GuestLoginRequest,
     GuestLoginResponse,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
 } from '../types/auth';
 
 const JSON_CONTENT_TYPE = 'application/json';
-
-async function parseErrorMessage(response: Response): Promise<string> {
-    try {
-        const payload = await response.json() as {
-            message?: string;
-            error?: string;
-        };
-
-        return payload.message ?? payload.error ?? AUTH_MESSAGES.GUEST_LOGIN_FAILED;
-    } catch {
-        return AUTH_MESSAGES.GUEST_LOGIN_FAILED;
-    }
-}
 
 export async function loginAsGuest(
     request: GuestLoginRequest,
@@ -36,7 +29,10 @@ export async function loginAsGuest(
     });
 
     if (!response.ok) {
-        throw new Error(await parseErrorMessage(response));
+        throw await createApiError(
+            response,
+            AUTH_MESSAGES.GUEST_LOGIN_FAILED,
+        );
     }
 
     const payload = await response.json() as unknown;
@@ -49,6 +45,39 @@ export async function loginAsGuest(
         );
 
         throw new Error(AUTH_MESSAGES.INVALID_GUEST_LOGIN_RESPONSE);
+    }
+
+    return parsed.data;
+}
+
+export async function refreshAuthSession(
+    request: RefreshTokenRequest,
+): Promise<RefreshTokenResponse> {
+    const response = await fetch(API_ENDPOINTS.AUTH.REFRESH, {
+        method: 'POST',
+        headers: {
+            'Content-Type': JSON_CONTENT_TYPE,
+        },
+        body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            AUTH_MESSAGES.SESSION_REFRESH_FAILED,
+        );
+    }
+
+    const payload = await response.json() as unknown;
+    const parsed = refreshTokenResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error(
+            '[authApi] 토큰 갱신 응답 검증 실패:',
+            parsed.error,
+        );
+
+        throw new ApiError(500, AUTH_MESSAGES.INVALID_REFRESH_RESPONSE);
     }
 
     return parsed.data;

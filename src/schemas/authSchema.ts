@@ -2,13 +2,23 @@
 
 import { z } from 'zod';
 
-export const guestSessionSchema = z.object({
-    userId: z.number().int().positive(),
-    nickname: z.string().min(1),
-    userType: z.enum(['REGISTERED', 'GUEST']),
-    userIdentifier: z.uuid(),
+export const authTokenSetSchema = z.object({
     accessToken: z.string().min(1),
     accessTokenExpiresAt: z.string().min(1),
     refreshToken: z.string().min(1),
     refreshTokenExpiresAt: z.string().min(1),
 });
+
+export const authSessionSchema = authTokenSetSchema.extend({
+    userId: z.number().int().positive(),
+    nickname: z.string().min(1),
+    userType: z.enum(['REGISTERED', 'GUEST']),
+    userIdentifier: z.uuid(),
+});
+
+export const guestSessionSchema = authSessionSchema;
+
+export const refreshTokenResponseSchema = z.union([
+    authSessionSchema,
+    authTokenSetSchema,
+]);

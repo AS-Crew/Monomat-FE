@@ -6,15 +6,26 @@ export interface GuestLoginRequest {
     nickname: string;
 }
 
-export interface GuestSession {
-    userId: number;
-    nickname: string;
-    userType: UserType;
-    userIdentifier: string;
+export interface AuthTokenSet {
     accessToken: string;
     accessTokenExpiresAt: string;
     refreshToken: string;
     refreshTokenExpiresAt: string;
 }
+
+export interface AuthSession extends AuthTokenSet {
+    userId: number;
+    nickname: string;
+    userType: UserType;
+    userIdentifier: string;
+}
+
+export interface RefreshTokenRequest {
+    refreshToken: string;
+}
+
+export type RefreshTokenResponse = AuthSession | AuthTokenSet;
+
+export type GuestSession = AuthSession;
 
 export type GuestLoginResponse = GuestSession;
