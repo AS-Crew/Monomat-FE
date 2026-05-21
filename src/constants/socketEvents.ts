@@ -30,4 +30,15 @@ export const SOCKET_SUBSCRIBE = {
     // 채팅 메시지뿐 아니라 게임 이벤트 (라운드 시작/종료, 정답 알림 등)도
     // 이 채널로 수신하며, 메시지 안에 type 필드로 어떤 종류인지 구분한다.
     LOBBY: (code: string) => `/topic/lobby/${code}`,
+
+    // 특정 로비의 참여자/ready 등 상태 변경 알림을 수신한다.
+    LOBBY_REFRESH: (code: string) => `/topic/lobby/${code}/refresh`,
+
+    // 특정 로비의 게임 시작 이벤트를 수신한다.
+    LOBBY_GAME: (code: string) => `/topic/lobby/${code}/game`,
+} as const;
+
+export const SOCKET_MESSAGES = {
+    REFRESH_LOBBY_INFO: 'REFRESH_LOBBY_INFO',
+    GAME_STARTED: 'GAME_STARTED',
 } as const;
