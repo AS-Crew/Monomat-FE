@@ -22,6 +22,13 @@ export const loginResponseSchema = authSessionSchema.extend({
     userType: z.literal('REGISTERED'),
 });
 
+export const registerResponseSchema = z.object({
+    userId: z.number().int().positive(),
+    loginId: z.string().min(1),
+    nickname: z.string().min(1),
+    userType: z.literal('REGISTERED'),
+});
+
 export const refreshTokenResponseSchema = z.union([
     authSessionSchema,
     authTokenSetSchema,

@@ -62,6 +62,7 @@ export const Home = () => {
     const accessToken = useAuthStore((state) => state.accessToken);
     const isHydrated = useAuthStore((state) => state.isHydrated);
     const [authMode, setAuthMode] = useState<AuthMode>('member');
+    const isRegisterMode = authMode === 'register';
 
     const description =
         authMode === 'member'
@@ -76,6 +77,17 @@ export const Home = () => {
 
     if (!isHydrated || accessToken) {
         return null;
+    }
+
+    if (isRegisterMode) {
+        return (
+            <main className="flex min-h-screen min-w-0 items-start justify-center bg-[var(--monomat-page-bg)] px-5 pt-[124px]">
+                <NicknameForm
+                    mode={authMode}
+                    onModeChange={setAuthMode}
+                />
+            </main>
+        );
     }
 
     return (

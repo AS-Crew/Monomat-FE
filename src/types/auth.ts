@@ -11,6 +11,12 @@ export interface LoginRequest {
     password: string;
 }
 
+export interface RegisterRequest {
+    loginId: string;
+    password: string;
+    nickname: string;
+}
+
 export interface AuthTokenSet {
     accessToken: string;
     accessTokenExpiresAt: string;
@@ -36,3 +42,10 @@ export type GuestSession = AuthSession;
 export type GuestLoginResponse = GuestSession;
 
 export type LoginResponse = AuthSession;
+
+export interface RegisterResponse {
+    userId: number;
+    loginId: string;
+    nickname: string;
+    userType: 'REGISTERED';
+}
