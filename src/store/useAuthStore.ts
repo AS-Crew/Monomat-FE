@@ -2,10 +2,10 @@ import { create } from 'zustand';
 
 import { STORAGE_KEYS } from '../constants/storage';
 import { AUTH_MESSAGES } from '../constants/auth';
-import { guestSessionSchema } from '../schemas/authSchema';
+import { authSessionSchema } from '../schemas/authSchema';
 
 import type {
-    GuestSession,
+    AuthSession,
     UserType,
 } from '../types/auth';
 
@@ -20,13 +20,13 @@ interface AuthState {
     refreshTokenExpiresAt: string | null;
     isGuest: boolean;
     isHydrated: boolean;
-    setSession: (session: GuestSession) => void;
+    setSession: (session: AuthSession) => void;
     clearSession: () => void;
     initializeSession: () => void;
     updateNickname: (nickname: string) => void;
 }
 
-function createSessionState(session: GuestSession) {
+function createSessionState(session: AuthSession) {
     return {
         userId: session.userId,
         userIdentifier: session.userIdentifier,
@@ -77,7 +77,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         } catch (error) {
             // localStorage 저장 실패가 즉시 플레이를 막지는 않도록 메모리 상태는 유지한다.
             // 단, 새로고침 시 세션 복구는 실패할 수 있으므로 로그를 남긴다.
-            console.error('[useAuthStore] 게스트 세션 저장 실패:', error);
+            console.error('[useAuthStore] 인증 세션 저장 실패:', error);
         }
 
         set(createSessionState(session));
@@ -98,7 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             }
 
             const parsedData = JSON.parse(storedData) as unknown;
-            const result = guestSessionSchema.safeParse(parsedData);
+            const result = authSessionSchema.safeParse(parsedData);
 
             if (!result.success) {
                 console.warn(
@@ -145,7 +145,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             return;
         }
 
-        const nextSession: GuestSession = {
+        const nextSession: AuthSession = {
             userId,
             userIdentifier,
             nickname: trimmedNickname,

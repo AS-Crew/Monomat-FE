@@ -5,12 +5,15 @@ import { AUTH_MESSAGES } from '../constants/auth';
 import { createApiError, ApiError } from './apiError';
 import {
     guestSessionSchema,
+    loginResponseSchema,
     refreshTokenResponseSchema,
 } from '../schemas/authSchema';
 
 import type {
     GuestLoginRequest,
     GuestLoginResponse,
+    LoginRequest,
+    LoginResponse,
     RefreshTokenRequest,
     RefreshTokenResponse,
 } from '../types/auth';
@@ -45,6 +48,39 @@ export async function loginAsGuest(
         );
 
         throw new Error(AUTH_MESSAGES.INVALID_GUEST_LOGIN_RESPONSE);
+    }
+
+    return parsed.data;
+}
+
+export async function login(
+    request: LoginRequest,
+): Promise<LoginResponse> {
+    const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
+        method: 'POST',
+        headers: {
+            'Content-Type': JSON_CONTENT_TYPE,
+        },
+        body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            AUTH_MESSAGES.LOGIN_FAILED,
+        );
+    }
+
+    const payload = await response.json() as unknown;
+    const parsed = loginResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error(
+            '[authApi] 로그인 응답 검증 실패:',
+            parsed.error,
+        );
+
+        throw new ApiError(500, AUTH_MESSAGES.INVALID_LOGIN_RESPONSE);
     }
 
     return parsed.data;

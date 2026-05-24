@@ -18,6 +18,10 @@ export const authSessionSchema = authTokenSetSchema.extend({
 
 export const guestSessionSchema = authSessionSchema;
 
+export const loginResponseSchema = authSessionSchema.extend({
+    userType: z.literal('REGISTERED'),
+});
+
 export const refreshTokenResponseSchema = z.union([
     authSessionSchema,
     authTokenSetSchema,
