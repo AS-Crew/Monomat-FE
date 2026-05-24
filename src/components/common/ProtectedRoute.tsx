@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 /**
  * [라우트 가드 컴포넌트]
  *
- * Zustand의 useAuthStore에서 isGuest 상태를 읽어
+ * Zustand의 useAuthStore에서 세션 상태를 읽어 게스트/회원 모두 허용한다.
  * 세션이 있으면 자식을 렌더링하고, 없으면 홈('/')으로 리다이렉트한다.
  *
  * 사용 예시:
@@ -20,7 +20,7 @@ interface ProtectedRouteProps {
  *   </ProtectedRoute>
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-    const isGuest = useAuthStore((state) => state.isGuest);
+    const accessToken = useAuthStore((state) => state.accessToken);
     const isHydrated = useAuthStore((state) => state.isHydrated);
 
     // 아직 localStorage를 읽어오는 중이면 아무것도 렌더링하지 않는다.
@@ -28,7 +28,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         return null;
     }
 
-    if (!isGuest) {
+    if (!accessToken) {
         return <Navigate to="/" replace />;
     }
 

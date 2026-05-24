@@ -12,10 +12,3 @@ export const BREAKPOINTS = {
     // 콘텐츠 최대 너비 - 이 이상은 중앙 정렬로 공백 처리
     MAX_CONTENT: 1536,
 } as const;
-
-// 모바일 접속 안내 문구
-export const MOBILE_GUARD_MESSAGE = {
-    TITLE: 'MONOMAT',
-    DESCRIPTION: 'Monomat은 데스크탑 환경에 최적화되어 있습니다.',
-    GUIDE: 'PC로 접속해 주세요! 💻',
-} as const;

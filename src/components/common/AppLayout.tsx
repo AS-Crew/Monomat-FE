@@ -12,7 +12,6 @@ export function AppLayout({ children }: AppLayoutProps) {
             className="min-h-screen w-full mx-auto bg-[#F5F5F7] text-[#333338]"
             style={{
                 maxWidth: `${BREAKPOINTS.MAX_CONTENT}px`,
-                minWidth: `${BREAKPOINTS.MIN_PC}px`,
             }}
         >
             {children}
