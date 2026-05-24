@@ -12,13 +12,43 @@ export class ApiError extends Error {
 
 function getStringField(
     payload: Record<string, unknown>,
-    fieldName: 'message' | 'error',
+    fieldName: 'message' | 'error' | 'detail',
 ) {
     const value = payload[fieldName];
 
     return typeof value === 'string' && value.trim()
         ? value
         : null;
+}
+
+function getStringFromArrayField(
+    payload: Record<string, unknown>,
+    fieldName: 'errors' | 'fieldErrors',
+) {
+    const value = payload[fieldName];
+
+    if (!Array.isArray(value)) {
+        return null;
+    }
+
+    const firstMessage = value
+        .map((item) => {
+            if (typeof item === 'string') {
+                return item.trim();
+            }
+
+            if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                return '';
+            }
+
+            const record = item as Record<string, unknown>;
+            const message = record.message ?? record.defaultMessage;
+
+            return typeof message === 'string' ? message.trim() : '';
+        })
+        .find(Boolean);
+
+    return firstMessage ?? null;
 }
 
 export async function parseApiErrorMessage(
@@ -37,6 +67,9 @@ export async function parseApiErrorMessage(
         return (
             getStringField(record, 'message') ??
             getStringField(record, 'error') ??
+            getStringField(record, 'detail') ??
+            getStringFromArrayField(record, 'errors') ??
+            getStringFromArrayField(record, 'fieldErrors') ??
             fallbackMessage
         );
     } catch {
