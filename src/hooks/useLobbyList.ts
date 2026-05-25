@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { fetchLobbyList } from '../api/lobbyApi';
+import {
+    DEFAULT_LOBBY_LIST_PAGE,
+    DEFAULT_LOBBY_LIST_SIZE,
+} from '../constants/lobby';
 
 import type {
     LobbyListItem,
     LobbyListQueryParams,
     LobbyPageResponse,
 } from '../types/lobby';
-
-const DEFAULT_LOBBY_LIST_PAGE = 0;
-const DEFAULT_LOBBY_LIST_SIZE = 20;
 
 /**
  * 컴포넌트에서 로비 목록 데이터를 쉽게 가져오고 상태를 관리하기 위한 커스텀 훅

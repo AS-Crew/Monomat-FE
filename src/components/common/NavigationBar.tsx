@@ -1,17 +1,23 @@
 import { useState } from 'react';
+import { Copy, Map, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { CreateLobbyModal } from '../lobby/CreateLobbyModal';
 import { InviteCodeJoinModal } from '../lobby/InviteCodeJoinModal';
+import {
+    LOBBY_NAVIGATION_LABELS,
+    LOBBY_ROUTES,
+} from '../../constants/lobby';
 import { useAuthStore } from '../../store/useAuthStore';
 import { AccountModal } from './AccountModal';
+import { MonomatLogo } from './MonomatLogo';
 import type { CreateLobbyResponse } from '../../types/lobby';
 
 export function NavigationBar() {
     const navigate = useNavigate();
 
     const nickname = useAuthStore((state) => state.nickname);
-    const isGuest = useAuthStore((state) => state.isGuest);
+    const userType = useAuthStore((state) => state.userType);
 
     const [isInviteCodeModalOpen, setIsInviteCodeModalOpen] = useState(false);
     const [isCreateLobbyModalOpen, setIsCreateLobbyModalOpen] = useState(false);
@@ -20,15 +26,19 @@ export function NavigationBar() {
     const displayNickname = nickname ?? 'Guest';
     const avatarText = displayNickname.charAt(0).toUpperCase();
 
-    const accountType = isGuest ? 'guest' : 'member';
-    const canCreateMap = accountType === 'member';
+    const accountType = userType === 'GUEST' ? 'guest' : 'member';
+    const canCreateMap = userType === 'REGISTERED';
+    const createMapRoute = LOBBY_ROUTES.CREATE_MAP;
+    const canNavigateToCreateMap = createMapRoute != null;
 
     const handleLogoClick = () => {
-        navigate('/lobbies');
+        navigate(LOBBY_ROUTES.LIST);
     };
 
     const handleCreateMapClick = () => {
-        alert('맵 만들기 기능은 정식 회원 전용 기능입니다.');
+        if (createMapRoute) {
+            navigate(createMapRoute);
+        }
     };
 
     const handleCreateLobbyClick = () => {
@@ -36,59 +46,78 @@ export function NavigationBar() {
     };
 
     const handleLobbyCreated = (response: CreateLobbyResponse) => {
-        navigate(`/lobby/${response.inviteCode}`);
+        navigate(LOBBY_ROUTES.ROOM(response.inviteCode));
     };
 
     return (
         <>
-            <header className="flex h-20 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-9">
-                <button
-                    type="button"
-                    onClick={handleLogoClick}
-                    className="flex items-center gap-3"
-                    aria-label="로비 목록으로 이동"
-                >
-                    <div className="h-10 w-10 rounded-lg bg-[#0B1E46]" />
-                    <span className="text-2xl font-bold text-gray-800">
-                        Monomat
-                    </span>
-                </button>
+            <header className="h-[77px] shrink-0 border border-[color:var(--monomat-border-default)] bg-white">
+                <div className="mx-auto flex h-full w-[1440px] items-center justify-between px-[33px]">
+                    <button
+                        type="button"
+                        onClick={handleLogoClick}
+                        className="ml-[6px] h-[37px] w-[170px]"
+                        aria-label={LOBBY_NAVIGATION_LABELS.LOGO_ARIA_LABEL}
+                    >
+                        <MonomatLogo />
+                    </button>
 
-                <div className="flex items-center gap-4">
-                    {canCreateMap && (
+                    <div className="flex items-center gap-[22px]">
+                        {canCreateMap && (
+                            <button
+                                type="button"
+                                onClick={handleCreateMapClick}
+                                aria-disabled={!canNavigateToCreateMap}
+                                title={
+                                    canNavigateToCreateMap
+                                        ? undefined
+                                        : LOBBY_NAVIGATION_LABELS.CREATE_MAP_PENDING_TITLE
+                                }
+                                className="flex h-10 w-[129px] items-center justify-center gap-[13px] rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base font-bold leading-none text-black transition hover:bg-[var(--monomat-page-bg)]"
+                            >
+                                <Map size={17} strokeWidth={2.4} />
+                                <span>
+                                    {LOBBY_NAVIGATION_LABELS.CREATE_MAP}
+                                </span>
+                            </button>
+                        )}
+
                         <button
                             type="button"
-                            onClick={handleCreateMapClick}
-                            className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+                            onClick={() => setIsInviteCodeModalOpen(true)}
+                            className="flex h-10 w-[177px] items-center justify-start rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base leading-none transition hover:bg-[var(--monomat-page-bg)]"
                         >
-                            🗺️ 맵 만들기
+                            <Copy
+                                className="ml-[13px] text-black"
+                                size={18}
+                                strokeWidth={2.2}
+                            />
+                            <span className="ml-[18px] text-[var(--monomat-border-input)]">
+                                {LOBBY_NAVIGATION_LABELS.INVITE_CODE}
+                            </span>
+                            <span className="ml-[18px] flex h-[22px] w-9 items-center justify-center rounded-full bg-[var(--monomat-page-bg)] text-[11px] text-[var(--monomat-text-muted)]">
+                                {LOBBY_NAVIGATION_LABELS.INVITE_CODE_JOIN}
+                            </span>
                         </button>
-                    )}
 
-                    <button
-                        type="button"
-                        onClick={() => setIsInviteCodeModalOpen(true)}
-                        className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50"
-                    >
-                        ▣ 초대 코드 입장
-                    </button>
+                        <button
+                            type="button"
+                            onClick={handleCreateLobbyClick}
+                            className="flex h-10 w-[120px] items-center justify-center gap-1 rounded-lg bg-[var(--monomat-primary)] text-base font-bold leading-none text-white transition hover:bg-[var(--monomat-primary-hover)]"
+                        >
+                            <Plus size={15} strokeWidth={2.8} />
+                            <span>{LOBBY_NAVIGATION_LABELS.CREATE_LOBBY}</span>
+                        </button>
 
-                    <button
-                        type="button"
-                        onClick={handleCreateLobbyClick}
-                        className="rounded-lg bg-[#0B1E46] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#12306B]"
-                    >
-                        + 로비 만들기
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => setIsAccountModalOpen(true)}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B1E46] text-sm font-bold text-white"
-                        aria-label="내 계정 열기"
-                    >
-                        {avatarText}
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsAccountModalOpen(true)}
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--monomat-primary)] text-xl font-extrabold leading-none text-white"
+                            aria-label={LOBBY_NAVIGATION_LABELS.ACCOUNT_ARIA_LABEL}
+                        >
+                            {avatarText}
+                        </button>
+                    </div>
                 </div>
             </header>
 
