@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { Send } from 'lucide-react';
 
 import { useChatCooldown } from '../../hooks/useChatCooldown';
 import { useGlobalChat } from '../../hooks/useGlobalChat';
 import { useSocketStore } from '../../store/useSocketStore';
+import { GLOBAL_CHAT_COPY } from '../../constants/lobby';
 import type { ChatMessage } from '../../types/chat';
 import { MonomatInput } from '../common/MonomatInput';
 
@@ -26,14 +28,14 @@ function getConnectionLabel(
     isReconnecting: boolean,
 ): string {
     if (isConnected) {
-        return '연결됨';
+        return GLOBAL_CHAT_COPY.CONNECTED;
     }
 
     if (isReconnecting) {
-        return '재연결 중...';
+        return GLOBAL_CHAT_COPY.RECONNECTING;
     }
 
-    return '연결 끊김';
+    return GLOBAL_CHAT_COPY.DISCONNECTED;
 }
 
 function MessageItem({ message }: { message: ChatMessage }) {
@@ -41,24 +43,24 @@ function MessageItem({ message }: { message: ChatMessage }) {
 
     if (isSystemMessage) {
         return (
-            <div className="py-0.5 text-center text-xs text-gray-400 italic">
+            <div className="py-1 text-center text-xs text-[var(--monomat-text-muted)]">
                 {message.content}
             </div>
         );
     }
 
     return (
-        <div className="py-1">
-            <div className="flex items-baseline gap-1.5">
-                <span className="max-w-[120px] truncate text-sm font-semibold text-blue-600">
+        <div className="py-2">
+            <div className="flex items-baseline gap-3">
+                <span className="max-w-[170px] truncate text-[15px] font-semibold leading-none text-[var(--monomat-primary)]">
                     {message.sender}
                 </span>
-                <span className="shrink-0 text-xs text-gray-400">
+                <span className="shrink-0 text-xs leading-none text-[#73788A]">
                     {formatTime(message.timestamp)}
                 </span>
             </div>
 
-            <p className="break-words text-sm leading-snug text-gray-800">
+            <p className="mt-2 break-words text-base leading-[19px] text-black">
                 {message.content}
             </p>
         </div>
@@ -67,13 +69,13 @@ function MessageItem({ message }: { message: ChatMessage }) {
 
 function ReconnectOverlay() {
     return (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/55 backdrop-blur-[1px]">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/65 backdrop-blur-[1px]">
             <div
-                className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500"
+                className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--monomat-border-default)] border-t-[var(--monomat-primary)]"
                 aria-hidden="true"
             />
-            <p className="text-sm font-semibold text-gray-700">
-                재연결 중...
+            <p className="text-sm font-semibold text-[var(--monomat-text-strong)]">
+                {GLOBAL_CHAT_COPY.RECONNECTING}
             </p>
         </div>
     );
@@ -124,30 +126,30 @@ export function GlobalChat() {
     };
 
     return (
-        <div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-[color:var(--monomat-border-input)] bg-white shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
             {isReconnecting && <ReconnectOverlay />}
 
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3">
-                <span className="text-sm font-bold text-gray-800">
-                    전체 채팅
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-[color:var(--monomat-border-input)] px-[18px]">
+                <span className="text-base font-semibold leading-none text-black">
+                    {GLOBAL_CHAT_COPY.TITLE}
                 </span>
 
                 <div className="flex items-center gap-1.5">
                     <span
-                        className={`h-2 w-2 rounded-full ${
-                            isConnected ? 'bg-green-500' : 'bg-gray-300'
+                        className={`h-[9px] w-[9px] rounded-full ${
+                            isConnected ? 'bg-[#00A259]' : 'bg-[var(--monomat-border-input)]'
                         }`}
                     />
-                    <span className="text-xs text-gray-400">
+                    <span className="text-base leading-none text-[#B9B9B9]">
                         {getConnectionLabel(isConnected, isReconnecting)}
                     </span>
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-4 py-2">
+            <div className="min-h-0 flex-1 overflow-y-auto px-[18px] py-[9px]">
                 {messages.length === 0 ? (
-                    <p className="mt-8 text-center text-xs text-gray-400">
-                        아직 채팅이 없습니다.
+                    <p className="mt-8 text-center text-sm text-[var(--monomat-border-input)]">
+                        {GLOBAL_CHAT_COPY.EMPTY}
                     </p>
                 ) : (
                     messages.map((message, index) => (
@@ -158,21 +160,25 @@ export function GlobalChat() {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="shrink-0 border-t border-gray-100 px-3 py-3">
-                <div className="flex items-center gap-2">
+            <div className="h-[70px] shrink-0 border-t border-[color:var(--monomat-border-input)] px-[22px] py-2.5">
+                <div className="flex h-[50px] items-center gap-[9px]">
                     <MonomatInput
                         type="text"
                         value={inputValue}
                         onChange={(event) => setInputValue(event.target.value)}
                         onEnter={handleSend}
-                        placeholder={isConnected ? '메시지를 입력하세요' : '연결 중...'}
+                        placeholder={
+                            isConnected
+                                ? GLOBAL_CHAT_COPY.INPUT_PLACEHOLDER
+                                : GLOBAL_CHAT_COPY.CONNECTING_PLACEHOLDER
+                        }
                         disabled={!isConnected || isCoolingDown}
                         maxLength={MAX_CHAT_LENGTH}
                         className="
-                            flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
-                            text-gray-900 placeholder:text-gray-400
+                            h-[50px] min-w-0 flex-1 rounded-xl border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)]
+                            px-[11px] text-sm text-[var(--monomat-text-strong)] placeholder:text-[var(--monomat-border-input)]
                             outline-none transition-colors
-                            focus:border-blue-500
+                            focus:border-[color:var(--monomat-primary)]
                             disabled:cursor-not-allowed disabled:opacity-50
                         "
                     />
@@ -182,41 +188,26 @@ export function GlobalChat() {
                         onClick={() => handleSend(inputValue)}
                         disabled={!canSubmit}
                         className="
-                            flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500
-                            transition-all hover:bg-blue-600 active:scale-95
-                            disabled:cursor-not-allowed disabled:bg-gray-200
+                            flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-xl bg-[var(--monomat-primary)]
+                            transition-all hover:bg-[var(--monomat-primary-hover)] active:scale-95
+                            disabled:cursor-not-allowed disabled:bg-[var(--monomat-border-input)]
                         "
-                        aria-label="메시지 전송"
+                        aria-label={GLOBAL_CHAT_COPY.SEND_ARIA_LABEL}
                     >
-                        <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            className="text-white"
+                        <Send
+                            className="-rotate-12 text-white"
+                            size={24}
+                            strokeWidth={2.2}
                             aria-hidden="true"
-                        >
-                            <path
-                                d="M22 2L11 13"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                            <path
-                                d="M22 2L15 22L11 13L2 9L22 2Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
+                        />
                     </button>
                 </div>
 
                 {isCoolingDown && (
-                    <p className="mt-2 text-xs text-orange-500">
-                        연속 전송 방지를 위해 {remainingSeconds}초 후 다시 보낼 수 있습니다.
+                    <p className="mt-1 text-xs text-[#F28C1A]">
+                        {GLOBAL_CHAT_COPY.COOLDOWN_PREFIX}{' '}
+                        {remainingSeconds}
+                        {GLOBAL_CHAT_COPY.COOLDOWN_SUFFIX}
                     </p>
                 )}
             </div>

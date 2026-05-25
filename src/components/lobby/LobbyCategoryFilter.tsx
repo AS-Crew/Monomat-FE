@@ -7,19 +7,19 @@ interface LobbyCategoryFilterProps<TCategory extends string> {
 export function LobbyCategoryFilter<TCategory extends string>({
                                                                   categories,
                                                                   selectedCategory,
-                                                                  onChange,
-                                                              }: LobbyCategoryFilterProps<TCategory>) {
+                                                              onChange,
+                                                          }: LobbyCategoryFilterProps<TCategory>) {
     return (
-        <div className="mb-5 flex gap-2">
+        <div className="mb-[18px] flex h-8 items-center gap-[9px]">
             {categories.map((category) => (
                 <button
                     key={category}
                     type="button"
                     onClick={() => onChange(category)}
-                    className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+                    className={`h-8 rounded-full px-[15px] text-[13px] leading-none transition ${
                         selectedCategory === category
-                            ? 'bg-blue-500 text-white'
-                            : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                            ? 'bg-[var(--monomat-primary)] font-semibold text-white'
+                            : 'border border-[color:var(--monomat-border-input)] bg-white font-normal text-[var(--monomat-text-muted)] hover:bg-[var(--monomat-page-bg)]'
                     }`}
                 >
                     {category}

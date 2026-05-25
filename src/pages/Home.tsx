@@ -16,6 +16,7 @@ import {
     HOME_FEATURES,
 } from '../constants/home';
 import { useAuthStore } from '../store/useAuthStore';
+import { MonomatLogoMark } from '../components/common/MonomatLogo';
 
 const FEATURE_ICON: Record<
     (typeof HOME_FEATURES)[number]['iconName'],
@@ -25,37 +26,6 @@ const FEATURE_ICON: Record<
     rocket: Rocket,
     users: Users,
 };
-
-function MonomatLogoMark() {
-    return (
-        <svg
-            aria-hidden
-            className="h-10 w-10 shrink-0 lg:h-12 lg:w-12"
-            viewBox="0 0 48 48"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-        >
-            <rect
-                x="1.5"
-                y="1.5"
-                width="45"
-                height="45"
-                rx="11"
-                fill="#FEFEFE"
-                stroke="#3873E5"
-                strokeWidth="3"
-            />
-            <path
-                d="M20.25 8.95C18.75 8.08 16.88 9.16 16.88 10.89V25.11C16.88 26.84 18.75 27.92 20.25 27.05L32.58 19.94C34.08 19.07 34.08 16.93 32.58 16.06L20.25 8.95Z"
-                fill="#3873E5"
-            />
-            <rect x="11" y="31" width="3.5" height="9" rx="1.75" fill="#3873E5" />
-            <rect x="18" y="28" width="3.5" height="12" rx="1.75" fill="#3873E5" />
-            <rect x="26" y="32" width="3.5" height="9" rx="1.75" fill="#3873E5" />
-            <rect x="33.75" y="30" width="3.5" height="10" rx="1.75" fill="#3873E5" />
-        </svg>
-    );
-}
 
 export const Home = () => {
     const navigate = useNavigate();
@@ -94,7 +64,7 @@ export const Home = () => {
         <main className="grid min-h-screen min-w-0 grid-cols-1 bg-[var(--monomat-page-bg)] md:grid-cols-[minmax(300px,42vw)_minmax(0,1fr)] lg:grid-cols-[minmax(380px,42vw)_minmax(0,1fr)] xl:grid-cols-[600px_minmax(0,1fr)]">
             <section className="flex min-w-0 flex-col bg-[#1F2433] px-6 py-10 text-white sm:px-10 md:px-8 md:py-14 lg:px-12 lg:py-20 xl:px-[60px] xl:py-[106px]">
                 <div className="flex min-w-0 items-center gap-3 lg:gap-[13px]">
-                    <MonomatLogoMark />
+                    <MonomatLogoMark className="h-10 w-10 lg:h-12 lg:w-12" />
                     <span className="min-w-0 text-[24px] font-extrabold leading-none lg:text-[28px]">
                         {HOME_COPY.SERVICE_NAME}
                     </span>
