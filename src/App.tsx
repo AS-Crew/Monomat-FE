@@ -8,6 +8,7 @@ import { useSocket } from './hooks/useSocket';
 // 공통 컴포넌트
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AppLayout } from './components/common/AppLayout';
+import { ViewportGuard } from './components/common/ViewportGuard';
 
 // 페이지 컴포넌트
 import { Home } from './pages/Home';
@@ -18,9 +19,10 @@ import { LobbyRoom } from './pages/LobbyRoom';
  * [애플리케이션 루트 컴포넌트]
  *
  * 이 컴포넌트의 책임:
- *   1. 앱 최초 진입 시 localStorage에서 게스트 세션을 복구 (initializeSession)
- *   2. 세션이 확인된 후 WebSocket 연결 시작 (useSocket)
- *   3. URL 경로에 따라 적절한 페이지 컴포넌트를 렌더링 (Routes/Route)
+ *   1. 지원 viewport인지 확인한 뒤 기존 앱을 마운트 (ViewportGuard)
+ *   2. guard 통과 후 localStorage에서 게스트 세션을 복구 (initializeSession)
+ *   3. 세션이 확인된 후 WebSocket 연결 시작 (useSocket)
+ *   4. URL 경로에 따라 적절한 페이지 컴포넌트를 렌더링 (Routes/Route)
  *
  * 이 컴포넌트가 하지 않는 것:
  *   - 인증 가드 로직 → ProtectedRoute가 담당
@@ -28,6 +30,14 @@ import { LobbyRoom } from './pages/LobbyRoom';
  *   - 전역 레이아웃 기준 → AppLayout이 담당
  */
 function App() {
+    return (
+        <ViewportGuard>
+            <AppRoutes />
+        </ViewportGuard>
+    );
+}
+
+function AppRoutes() {
     const initializeSession = useAuthStore((state) => state.initializeSession);
 
     useEffect(() => {
