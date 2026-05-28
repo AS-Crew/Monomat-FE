@@ -2,6 +2,7 @@ import { type FormEvent } from 'react';
 
 import {
     AUTH_LABELS,
+    AUTH_MESSAGES,
     REGISTER_POLICY,
 } from '../../constants/auth';
 import { MonomatLogoMark } from '../common/MonomatLogo';
@@ -36,6 +37,19 @@ function RegisterErrorMessage({ message }: { message: string | null }) {
     );
 }
 
+function isPasswordConfirmError(message: string | null) {
+    return message === AUTH_MESSAGES.EMPTY_PASSWORD_CONFIRM ||
+        message === AUTH_MESSAGES.PASSWORD_CONFIRM_MISMATCH;
+}
+
+function SignupDivider() {
+    return (
+        <div className="flex h-5 w-full items-center">
+            <span className="h-px w-full bg-[var(--monomat-border-default)]" />
+        </div>
+    );
+}
+
 export function RegisterForm({
     loginId,
     password,
@@ -54,9 +68,15 @@ export function RegisterForm({
         event.preventDefault();
         onSubmit();
     };
+    const passwordConfirmErrorMessage = isPasswordConfirmError(errorMessage)
+        ? errorMessage
+        : null;
+    const formErrorMessage = passwordConfirmErrorMessage
+        ? null
+        : errorMessage;
 
     return (
-        <div className="w-full max-w-[480px] min-w-0 rounded-2xl bg-white px-10 pb-[22px] pt-[29px] text-[var(--monomat-text-strong)] shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
+        <div className="min-h-[651px] w-full max-w-[480px] min-w-0 rounded-2xl bg-white px-10 pb-5 pt-[27px] text-[var(--monomat-text-strong)] shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
             <div className="mx-auto flex h-[37px] w-[170px] items-center justify-center gap-[10px]">
                 <MonomatLogoMark />
                 <span className="text-[28px] font-extrabold leading-none text-black">
@@ -74,7 +94,7 @@ export function RegisterForm({
             </header>
 
             <form onSubmit={handleSubmit} className="mt-[15px] min-w-0 text-left">
-                <RegisterErrorMessage message={errorMessage} />
+                <RegisterErrorMessage message={formErrorMessage} />
 
                 <label
                     htmlFor="register-login-id"
@@ -111,12 +131,23 @@ export function RegisterForm({
                     className="h-11 w-full rounded-lg border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-3 text-sm text-[var(--monomat-text-strong)] outline-none transition placeholder:text-[var(--monomat-border-input)] focus:border-[color:var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
-                <label
-                    htmlFor="register-password-confirm"
-                    className="mb-[5px] mt-[15px] block text-sm font-medium leading-[17px] text-black"
-                >
-                    {AUTH_LABELS.PASSWORD_CONFIRM}
-                </label>
+                <div className="mb-[5px] mt-[15px] grid min-h-[17px] min-w-0 grid-cols-[77px_minmax(0,1fr)] items-start gap-4">
+                    <label
+                        htmlFor="register-password-confirm"
+                        className="whitespace-nowrap text-sm font-medium leading-[17px] text-black"
+                    >
+                        {AUTH_LABELS.PASSWORD_CONFIRM}
+                    </label>
+
+                    {passwordConfirmErrorMessage ? (
+                        <p
+                            role="alert"
+                            className="flex h-[17px] min-w-0 items-center justify-center rounded-lg bg-[#FFEAEC] px-2 text-center text-[10px] font-medium leading-[17px] text-[#FD2B48]"
+                        >
+                            {passwordConfirmErrorMessage}
+                        </p>
+                    ) : null}
+                </div>
                 <input
                     id="register-password-confirm"
                     type="password"
@@ -128,9 +159,13 @@ export function RegisterForm({
                     className="h-11 w-full rounded-lg border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-3 text-sm text-[var(--monomat-text-strong)] outline-none transition placeholder:text-[var(--monomat-border-input)] focus:border-[color:var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
+                <div className="mt-[18px]">
+                    <SignupDivider />
+                </div>
+
                 <label
                     htmlFor="register-nickname"
-                    className="mb-[5px] mt-[22px] block text-sm font-medium leading-[17px] text-black"
+                    className="mb-[5px] mt-[9px] block text-sm font-medium leading-[17px] text-black"
                 >
                     {AUTH_LABELS.NICKNAME}
                 </label>
@@ -140,21 +175,23 @@ export function RegisterForm({
                     value={nickname}
                     maxLength={REGISTER_POLICY.NICKNAME_MAX_LENGTH}
                     disabled={isSubmitting}
-                    placeholder={AUTH_LABELS.NICKNAME_PLACEHOLDER}
+                    placeholder={AUTH_LABELS.REGISTER_NICKNAME_PLACEHOLDER}
                     onChange={(event) => onNicknameChange(event.target.value)}
                     className="h-11 w-full rounded-lg border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-3 text-sm text-[var(--monomat-text-strong)] outline-none transition placeholder:text-[var(--monomat-border-input)] focus:border-[color:var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
-                <div className="mt-[25px] h-px w-full bg-[var(--monomat-border-default)]" />
+                <div className="mt-[8px]">
+                    <SignupDivider />
+                </div>
 
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="mt-3 h-12 w-full min-w-0 rounded-lg bg-[var(--monomat-primary)] px-3 text-[15px] font-bold leading-5 text-white transition hover:bg-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)]"
+                    className="mt-[9px] h-12 w-full min-w-0 rounded-lg bg-[var(--monomat-primary)] px-3 text-[15px] font-bold leading-5 text-white transition hover:bg-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)]"
                 >
                     {isSubmitting
                         ? AUTH_LABELS.SIGNUP_SUBMITTING
-                        : AUTH_LABELS.SIGNUP}
+                        : AUTH_LABELS.SIGNUP_BUTTON}
                 </button>
             </form>
 
