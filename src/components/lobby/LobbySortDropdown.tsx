@@ -24,15 +24,15 @@ export function LobbySortDropdown({
     };
 
     return (
-        <div className="relative">
+        <div className="relative w-full shrink-0 sm:w-[166px]">
             <button
                 type="button"
                 onClick={() => setIsOpen((prev) => !prev)}
-                className="flex h-11 w-[161px] items-center justify-center rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base font-normal leading-none text-[var(--monomat-text-muted)] transition hover:bg-[var(--monomat-page-bg)]"
+                className="flex h-11 w-full items-center justify-center rounded-lg border border-[color:var(--monomat-border-input)] bg-white px-4 text-base font-normal leading-none text-[var(--monomat-text-muted)] transition hover:bg-[var(--monomat-page-bg)]"
             >
-                <span>정렬: {LOBBY_SORT_LABELS[value]}</span>
+                <span className="min-w-0 truncate">{LOBBY_SORT_LABELS[value]}</span>
                 <ChevronDown
-                    className="ml-2"
+                    className="ml-auto shrink-0"
                     size={18}
                     strokeWidth={2}
                     aria-hidden="true"
@@ -40,7 +40,7 @@ export function LobbySortDropdown({
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 z-20 mt-2 w-[188px] overflow-hidden rounded-lg border border-[color:var(--monomat-border-input)] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+                <div className="absolute right-0 z-20 mt-2 w-full min-w-[188px] overflow-hidden rounded-lg border border-[color:var(--monomat-border-input)] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
                     {(Object.keys(LOBBY_SORT_LABELS) as LobbySortOption[]).map(
                         (option) => (
                             <button

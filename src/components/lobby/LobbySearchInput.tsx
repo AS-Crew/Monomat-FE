@@ -12,7 +12,7 @@ export function LobbySearchInput({
                                      onChange,
                                  }: LobbySearchInputProps) {
     return (
-        <label className="flex h-11 w-[728px] items-center rounded-[10px] border border-[color:var(--monomat-border-input)] bg-white">
+        <label className="flex h-11 min-w-0 flex-1 items-center rounded-lg border border-[color:var(--monomat-border-input)] bg-white">
             <Search
                 className="ml-[11px] shrink-0 text-[#2B3F6C]"
                 size={24}

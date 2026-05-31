@@ -23,10 +23,10 @@ export function LobbyHeader<TCategory extends string>({
                                                           onSelectedCategoryChange,
                                                           sortOption,
                                                           onSortOptionChange,
-                                                      }: LobbyHeaderProps<TCategory>) {
+}: LobbyHeaderProps<TCategory>) {
     return (
-        <header className="mb-4">
-            <div className="mb-[18px] flex h-11 items-center gap-[5px]">
+        <header className="mb-[18px]">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
                 <LobbySearchInput
                     value={searchKeyword}
                     onChange={onSearchKeywordChange}

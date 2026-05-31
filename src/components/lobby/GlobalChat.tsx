@@ -12,15 +12,16 @@ const CHAT_COOLDOWN_MS = 3000;
 const MAX_CHAT_LENGTH = 200;
 
 function formatTime(timestamp: string): string {
-    try {
-        return new Date(timestamp).toLocaleTimeString('ko-KR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-        });
-    } catch {
+    const date = new Date(timestamp);
+
+    if (Number.isNaN(date.getTime())) {
         return '';
     }
+
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `[${hours}:${minutes}]`;
 }
 
 function getConnectionLabel(
@@ -38,29 +39,42 @@ function getConnectionLabel(
     return GLOBAL_CHAT_COPY.DISCONNECTED;
 }
 
+function getSenderDisplayName(message: ChatMessage): string {
+    const nickname = message.senderNickname?.trim();
+
+    return nickname || GLOBAL_CHAT_COPY.UNKNOWN_SENDER;
+}
+
 function MessageItem({ message }: { message: ChatMessage }) {
-    const isSystemMessage = message.type === 'ENTER' || message.type === 'LEAVE';
+    const isSystemMessage =
+        message.type === 'SYSTEM' ||
+        message.type === 'ENTER' ||
+        message.type === 'LEAVE' ||
+        message.type === 'KICK' ||
+        message.type === 'READY_CHANGED' ||
+        message.type === 'HOST_CHANGED';
+    const sentTime = message.sentAt ?? message.timestamp;
 
     if (isSystemMessage) {
         return (
-            <div className="py-1 text-center text-xs text-[var(--monomat-text-muted)]">
+            <div className="whitespace-normal break-words break-all py-1 text-center text-xs text-[var(--monomat-text-muted)]">
                 {message.content}
             </div>
         );
     }
 
     return (
-        <div className="py-2">
-            <div className="flex items-baseline gap-3">
-                <span className="max-w-[170px] truncate text-[15px] font-semibold leading-none text-[var(--monomat-primary)]">
-                    {message.sender}
+        <div className="min-w-0 py-2">
+            <div className="flex min-w-0 items-baseline gap-2">
+                <span className="min-w-0 max-w-[calc(100%-64px)] overflow-hidden text-ellipsis whitespace-nowrap text-[15px] font-semibold leading-none text-[var(--monomat-primary)]">
+                    {getSenderDisplayName(message)}
                 </span>
-                <span className="shrink-0 text-xs leading-none text-[#73788A]">
-                    {formatTime(message.timestamp)}
+                <span className="shrink-0 whitespace-nowrap text-xs leading-none text-[#73788A]">
+                    {formatTime(sentTime)}
                 </span>
             </div>
 
-            <p className="mt-2 break-words text-base leading-[19px] text-black">
+            <p className="mt-2 min-w-0 whitespace-normal break-words break-all text-[15px] leading-5 text-black">
                 {message.content}
             </p>
         </div>
@@ -129,18 +143,18 @@ export function GlobalChat() {
         <div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-[color:var(--monomat-border-input)] bg-white shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
             {isReconnecting && <ReconnectOverlay />}
 
-            <div className="flex h-14 shrink-0 items-center justify-between border-b border-[color:var(--monomat-border-input)] px-[18px]">
-                <span className="text-base font-semibold leading-none text-black">
+            <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[color:var(--monomat-border-input)] px-[18px]">
+                <span className="shrink-0 text-base font-semibold leading-none text-black">
                     {GLOBAL_CHAT_COPY.TITLE}
                 </span>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex min-w-0 items-center gap-1.5">
                     <span
                         className={`h-[9px] w-[9px] rounded-full ${
                             isConnected ? 'bg-[#00A259]' : 'bg-[var(--monomat-border-input)]'
                         }`}
                     />
-                    <span className="text-base leading-none text-[#B9B9B9]">
+                    <span className="truncate text-sm leading-none text-[#B9B9B9] sm:text-base">
                         {getConnectionLabel(isConnected, isReconnecting)}
                     </span>
                 </div>

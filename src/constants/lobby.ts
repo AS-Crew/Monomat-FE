@@ -26,7 +26,6 @@ export const LOBBY_CATEGORY_FILTERS = [
     'K-POP',
     'J-POP',
     'POP',
-    'OST',
 ] as const;
 
 export const LOBBY_ALL_CATEGORY_FILTER = LOBBY_CATEGORY_FILTERS[0];
@@ -38,7 +37,7 @@ export const LOBBY_SORT_LABELS = {
 } as const;
 
 export const DEFAULT_LOBBY_LIST_PAGE = 0;
-export const DEFAULT_LOBBY_LIST_SIZE = 20;
+export const DEFAULT_LOBBY_LIST_SIZE = 6;
 
 export const LOBBY_NAVIGATION_LABELS = {
     LOGO_ARIA_LABEL: '로비 목록으로 이동',
@@ -79,6 +78,13 @@ export const LOBBY_CARD_LABELS = {
     ENTER: '입장',
     ENTER_UNAVAILABLE: '입장불가',
     PLAYER_UNIT: '명',
+    UNKNOWN_HOST: '방장 정보 없음',
+} as const;
+
+export const LOBBY_PAGINATION_LABELS = {
+    PREVIOUS: '이전 페이지',
+    NEXT: '다음 페이지',
+    PAGE: (page: number) => `${page}페이지`,
 } as const;
 
 export const LOBBY_LIST_ERROR_COPY = {
@@ -99,6 +105,7 @@ export const LOBBY_SEARCH_COPY = {
 export const GLOBAL_CHAT_COPY = {
     TITLE: '전체 채팅',
     EMPTY: '아직 채팅이 없습니다.',
+    UNKNOWN_SENDER: '알 수 없는 사용자',
     INPUT_PLACEHOLDER: '메시지 입력',
     CONNECTING_PLACEHOLDER: '연결 중...',
     CONNECTED: '연결됨',

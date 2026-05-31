@@ -54,18 +54,18 @@ export function NavigationBar() {
 
     return (
         <>
-            <header className="h-[75px] shrink-0 border border-[color:var(--monomat-border-default)] bg-white">
-                <div className="mx-auto flex h-full w-full max-w-[1440px] items-center justify-between px-[29px]">
+            <header className="min-h-[75px] shrink-0 border border-[color:var(--monomat-border-default)] bg-white">
+                <div className="mx-auto flex min-h-[75px] w-full max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
                     <button
                         type="button"
                         onClick={handleLogoClick}
-                        className="h-10 w-[190px]"
+                        className="h-10 w-[190px] shrink-0"
                         aria-label={LOBBY_NAVIGATION_LABELS.LOGO_ARIA_LABEL}
                     >
                         <MonomatLogo />
                     </button>
 
-                    <div className="flex items-center gap-[22px]">
+                    <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3 lg:gap-[22px]">
                         {canCreateMap && (
                             <button
                                 type="button"
@@ -76,7 +76,7 @@ export function NavigationBar() {
                                         ? undefined
                                         : LOBBY_NAVIGATION_LABELS.CREATE_MAP_PENDING_TITLE
                                 }
-                                className="flex h-10 w-[129px] items-center justify-center gap-[13px] rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base font-bold leading-none text-black transition hover:bg-[var(--monomat-page-bg)]"
+                                className="flex h-10 w-[130px] shrink-0 items-center justify-center gap-2 rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base font-bold leading-none text-black transition hover:bg-[var(--monomat-page-bg)]"
                             >
                                 <Map size={17} strokeWidth={2.4} />
                                 <span>
@@ -88,17 +88,17 @@ export function NavigationBar() {
                         <button
                             type="button"
                             onClick={() => setIsInviteCodeModalOpen(true)}
-                            className="flex h-10 w-[180px] items-center justify-start rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base leading-none transition hover:bg-[var(--monomat-page-bg)]"
+                            className="flex h-10 w-[180px] max-w-full shrink-0 items-center rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base leading-none transition hover:bg-[var(--monomat-page-bg)]"
                         >
                             <Copy
-                                className="ml-[13px] text-black"
+                                className="ml-[13px] shrink-0 text-black"
                                 size={18}
                                 strokeWidth={2.2}
                             />
-                            <span className="ml-[18px] text-[var(--monomat-border-input)]">
+                            <span className="ml-[18px] min-w-0 truncate text-[var(--monomat-border-input)]">
                                 {LOBBY_NAVIGATION_LABELS.INVITE_CODE}
                             </span>
-                            <span className="ml-[18px] flex h-[22px] w-9 items-center justify-center rounded-full bg-[var(--monomat-page-bg)] text-[11px] text-[var(--monomat-text-muted)]">
+                            <span className="ml-auto mr-[9px] flex h-[22px] w-9 shrink-0 items-center justify-center rounded-full bg-[var(--monomat-page-bg)] text-[11px] text-[var(--monomat-text-muted)]">
                                 {LOBBY_NAVIGATION_LABELS.INVITE_CODE_JOIN}
                             </span>
                         </button>
@@ -106,7 +106,7 @@ export function NavigationBar() {
                         <button
                             type="button"
                             onClick={handleCreateLobbyClick}
-                            className="flex h-10 w-[120px] items-center justify-center gap-1 rounded-lg bg-[var(--monomat-primary)] text-base font-bold leading-none text-white transition hover:bg-[var(--monomat-primary-hover)]"
+                            className="flex h-10 w-[120px] shrink-0 items-center justify-center gap-1 rounded-lg bg-[var(--monomat-primary)] text-base font-bold leading-none text-white transition hover:bg-[var(--monomat-primary-hover)]"
                         >
                             <Plus size={15} strokeWidth={2.8} />
                             <span>{LOBBY_NAVIGATION_LABELS.CREATE_LOBBY}</span>
@@ -115,7 +115,7 @@ export function NavigationBar() {
                         <button
                             type="button"
                             onClick={() => setIsAccountModalOpen(true)}
-                            className={`flex h-10 w-10 items-center justify-center rounded-full text-xl font-extrabold leading-none text-white ${avatarClassName}`}
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl font-extrabold leading-none text-white ${avatarClassName}`}
                             aria-label={LOBBY_NAVIGATION_LABELS.ACCOUNT_ARIA_LABEL}
                         >
                             {avatarText}

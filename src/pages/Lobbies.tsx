@@ -36,6 +36,7 @@ export function Lobbies() {
         useState<LobbyCategoryFilter>(LOBBY_ALL_CATEGORY_FILTER);
     const [sortOption, setSortOption] =
         useState<LobbySortOption>('LATEST');
+    const [currentPage, setCurrentPage] = useState(DEFAULT_LOBBY_LIST_PAGE);
 
     const lobbyListQueryParams = useMemo(() => {
         const mapCategory = toMapCategory(selectedCategory);
@@ -44,10 +45,10 @@ export function Lobbies() {
             keyword: searchKeyword.trim(),
             ...(mapCategory ? { mapCategory } : {}),
             sort: SORT_QUERY_MAP[sortOption],
-            page: DEFAULT_LOBBY_LIST_PAGE,
+            page: currentPage,
             size: DEFAULT_LOBBY_LIST_SIZE,
         };
-    }, [searchKeyword, selectedCategory, sortOption]);
+    }, [currentPage, searchKeyword, selectedCategory, sortOption]);
 
     const {
         data,
@@ -56,37 +57,57 @@ export function Lobbies() {
         refetch,
     } = useLobbyList(lobbyListQueryParams);
     const lobbies = data?.items ?? [];
+    const page = data?.page ?? currentPage;
+    const hasNext = data?.hasNext ?? false;
+
+    const handleSearchKeywordChange = (value: string) => {
+        setSearchKeyword(value);
+        setCurrentPage(DEFAULT_LOBBY_LIST_PAGE);
+    };
+
+    const handleSelectedCategoryChange = (value: LobbyCategoryFilter) => {
+        setSelectedCategory(value);
+        setCurrentPage(DEFAULT_LOBBY_LIST_PAGE);
+    };
+
+    const handleSortOptionChange = (value: LobbySortOption) => {
+        setSortOption(value);
+        setCurrentPage(DEFAULT_LOBBY_LIST_PAGE);
+    };
 
     const handleEnter = (code: string) => {
         navigate(LOBBY_ROUTES.ROOM(code));
     };
 
     return (
-        <div className="flex min-h-screen min-w-[1440px] flex-col bg-[var(--monomat-page-bg)] text-left">
+        <div className="flex min-h-screen flex-col bg-[var(--monomat-page-bg)] text-left">
             <NavigationBar />
 
-            <main className="mx-auto grid w-[1440px] flex-1 grid-cols-[894px_451px] gap-[27px] px-[35px] pb-[25px] pt-6">
+            <main className="mx-auto grid w-full max-w-[1440px] flex-1 grid-cols-1 gap-5 px-4 pb-6 pt-5 sm:px-6 lg:px-8 xl:grid-cols-[minmax(0,880px)_minmax(320px,460px)] xl:gap-5 xl:px-10 xl:pb-[27px] xl:pt-7">
                 <section className="min-w-0">
                     <LobbyHeader
                         searchKeyword={searchKeyword}
-                        onSearchKeywordChange={setSearchKeyword}
+                        onSearchKeywordChange={handleSearchKeywordChange}
                         categories={LOBBY_CATEGORY_FILTERS}
                         selectedCategory={selectedCategory}
-                        onSelectedCategoryChange={setSelectedCategory}
+                        onSelectedCategoryChange={handleSelectedCategoryChange}
                         sortOption={sortOption}
-                        onSortOptionChange={setSortOption}
+                        onSortOptionChange={handleSortOptionChange}
                     />
 
                     <LobbyList
                         lobbies={lobbies}
                         isLoading={isLoading}
                         isError={isError}
+                        page={page}
+                        hasNext={hasNext}
                         onRetry={() => void refetch()}
                         onEnter={handleEnter}
+                        onPageChange={setCurrentPage}
                     />
                 </section>
 
-                <aside className="h-[733px] w-[451px] shrink-0">
+                <aside className="min-h-[520px] w-full min-w-0 xl:h-[730px]">
                     <GlobalChat />
                 </aside>
             </main>
