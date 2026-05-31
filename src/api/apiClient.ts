@@ -212,8 +212,15 @@ export async function fetchWithAuth(
             ? currentAccessToken
             : (await getRefreshPromise()).accessToken;
 
-    return fetch(
+    const retryResponse = await fetch(
         input,
         createRequestInit(input, init, retryAccessToken),
     );
+
+    if (retryResponse.status === 401) {
+        useAuthStore.getState().clearSession();
+        redirectToAuthEntry();
+    }
+
+    return retryResponse;
 }
