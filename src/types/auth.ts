@@ -31,11 +31,17 @@ export interface AuthSession extends AuthTokenSet {
     userIdentifier: string;
 }
 
+export interface RefreshSessionResponse extends AuthTokenSet {
+    userId: number;
+    userType: UserType;
+    userIdentifier: string;
+}
+
 export interface RefreshTokenRequest {
     refreshToken: string;
 }
 
-export type RefreshTokenResponse = AuthSession | AuthTokenSet;
+export type RefreshTokenResponse = RefreshSessionResponse | AuthTokenSet;
 
 export type GuestSession = AuthSession;
 
@@ -48,4 +54,10 @@ export interface RegisterResponse {
     loginId: string;
     nickname: string;
     userType: 'REGISTERED';
+}
+
+export interface AuthErrorResponse {
+    code?: string;
+    message: string;
+    field?: 'loginId' | 'password' | 'nickname' | 'refreshToken' | null;
 }

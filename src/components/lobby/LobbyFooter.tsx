@@ -1,7 +1,7 @@
 export function LobbyFooter() {
     return (
-        <footer className="h-[41px] shrink-0 border border-[color:var(--monomat-border-default)] bg-white text-sm leading-none text-[var(--monomat-text-muted)]">
-            <div className="mx-auto flex h-full w-[1440px] items-center justify-between px-[35px]">
+        <footer className="h-10 shrink-0 border border-[color:var(--monomat-border-default)] bg-white text-sm leading-none text-[var(--monomat-text-muted)]">
+            <div className="mx-auto flex h-full w-full max-w-[1440px] items-center justify-between px-[29px]">
                 <span>© 2026 Monomat. 실시간 멀티플레이 퀴즈.</span>
 
                 <div className="flex items-center gap-[30px]">

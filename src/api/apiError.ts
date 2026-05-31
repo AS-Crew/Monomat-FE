@@ -2,23 +2,53 @@ export const DEFAULT_API_ERROR_MESSAGE = '요청 처리 중 오류가 발생했�
 
 export class ApiError extends Error {
     status: number;
+    code?: string;
+    field?: string;
 
-    constructor(status: number, message: string) {
+    constructor(
+        status: number,
+        message: string,
+        code?: string,
+        field?: string,
+    ) {
         super(message);
         this.name = 'ApiError';
         this.status = status;
+        this.code = code;
+        this.field = field;
     }
+}
+
+interface ApiErrorPayload {
+    message: string;
+    code?: string;
+    field?: string;
 }
 
 function getStringField(
     payload: Record<string, unknown>,
-    fieldName: 'message' | 'error' | 'detail',
+    fieldName: 'message' | 'error' | 'detail' | 'code' | 'field',
 ) {
     const value = payload[fieldName];
 
     return typeof value === 'string' && value.trim()
         ? value
         : null;
+}
+
+function getNullableStringField(
+    payload: Record<string, unknown>,
+    fieldName: 'field',
+) {
+    const value = payload[fieldName];
+
+    if (value == null) {
+        return undefined;
+    }
+
+    return typeof value === 'string' && value.trim()
+        ? value
+        : undefined;
 }
 
 function getStringFromArrayField(
@@ -62,18 +92,49 @@ export async function parseApiErrorMessage(
             return fallbackMessage;
         }
 
-        const record = payload as Record<string, unknown>;
+        return parseApiErrorPayloadFromRecord(
+            payload as Record<string, unknown>,
+            fallbackMessage,
+        ).message;
+    } catch {
+        return fallbackMessage;
+    }
+}
 
-        return (
+function parseApiErrorPayloadFromRecord(
+    record: Record<string, unknown>,
+    fallbackMessage: string,
+): ApiErrorPayload {
+    return {
+        message:
             getStringField(record, 'message') ??
             getStringField(record, 'error') ??
             getStringField(record, 'detail') ??
             getStringFromArrayField(record, 'errors') ??
             getStringFromArrayField(record, 'fieldErrors') ??
-            fallbackMessage
+            fallbackMessage,
+        code: getStringField(record, 'code') ?? undefined,
+        field: getNullableStringField(record, 'field'),
+    };
+}
+
+async function parseApiErrorPayload(
+    response: Response,
+    fallbackMessage = DEFAULT_API_ERROR_MESSAGE,
+): Promise<ApiErrorPayload> {
+    try {
+        const payload = await response.clone().json() as unknown;
+
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+            return { message: fallbackMessage };
+        }
+
+        return parseApiErrorPayloadFromRecord(
+            payload as Record<string, unknown>,
+            fallbackMessage,
         );
     } catch {
-        return fallbackMessage;
+        return { message: fallbackMessage };
     }
 }
 
@@ -81,8 +142,12 @@ export async function createApiError(
     response: Response,
     fallbackMessage = DEFAULT_API_ERROR_MESSAGE,
 ): Promise<ApiError> {
+    const payload = await parseApiErrorPayload(response, fallbackMessage);
+
     return new ApiError(
         response.status,
-        await parseApiErrorMessage(response, fallbackMessage),
+        payload.message,
+        payload.code,
+        payload.field,
     );
 }

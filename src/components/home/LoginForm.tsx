@@ -1,12 +1,15 @@
 import { type FormEvent } from 'react';
 
 import { AUTH_LABELS } from '../../constants/auth';
+import { AuthFieldHeader } from './AuthErrorMessage';
 
 interface LoginFormProps {
     loginId: string;
     password: string;
     autoLogin: boolean;
     isSubmitting: boolean;
+    errorMessage: string | null;
+    errorField: string | null;
     onLoginIdChange: (value: string) => void;
     onPasswordChange: (value: string) => void;
     onAutoLoginChange: (value: boolean) => void;
@@ -18,6 +21,8 @@ export function LoginForm({
     password,
     autoLogin,
     isSubmitting,
+    errorMessage,
+    errorField,
     onLoginIdChange,
     onPasswordChange,
     onAutoLoginChange,
@@ -27,15 +32,16 @@ export function LoginForm({
         event.preventDefault();
         onSubmit();
     };
+    const loginIdError = errorField === 'loginId' ? errorMessage : null;
+    const passwordError = errorField === 'password' ? errorMessage : null;
 
     return (
         <form onSubmit={handleSubmit} className="min-w-0 text-left">
-            <label
+            <AuthFieldHeader
                 htmlFor="login-id"
-                className="mb-2 block text-xs font-semibold text-[var(--monomat-text-muted)]"
-            >
-                {AUTH_LABELS.LOGIN_ID}
-            </label>
+                label={AUTH_LABELS.LOGIN_ID}
+                errorMessage={loginIdError}
+            />
             <input
                 id="login-id"
                 type="text"
@@ -44,15 +50,15 @@ export function LoginForm({
                 disabled={isSubmitting}
                 placeholder={AUTH_LABELS.LOGIN_ID_PLACEHOLDER}
                 onChange={(event) => onLoginIdChange(event.target.value)}
-                className="h-11 w-full rounded-lg border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-4 text-sm text-[var(--monomat-text-strong)] outline-none transition placeholder:text-[var(--monomat-border-input)] focus:border-[color:var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-11 w-full min-w-0 rounded-lg border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-5 text-sm font-medium text-[var(--monomat-text-strong)] outline-none transition placeholder:text-[var(--monomat-border-input)] focus:border-[color:var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             />
 
-            <label
+            <div className="mt-[27px]" />
+            <AuthFieldHeader
                 htmlFor="login-password"
-                className="mb-2 mt-[22px] block text-xs font-semibold text-[var(--monomat-text-muted)]"
-            >
-                {AUTH_LABELS.PASSWORD}
-            </label>
+                label={AUTH_LABELS.PASSWORD}
+                errorMessage={passwordError}
+            />
             <input
                 id="login-password"
                 type="password"
@@ -60,10 +66,10 @@ export function LoginForm({
                 disabled={isSubmitting}
                 placeholder={AUTH_LABELS.PASSWORD_PLACEHOLDER}
                 onChange={(event) => onPasswordChange(event.target.value)}
-                className="h-11 w-full rounded-lg border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-4 text-sm text-[var(--monomat-text-strong)] outline-none transition placeholder:text-[var(--monomat-border-input)] focus:border-[color:var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-11 w-full min-w-0 rounded-lg border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-5 text-sm font-medium text-[var(--monomat-text-strong)] outline-none transition placeholder:text-[var(--monomat-border-input)] focus:border-[color:var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             />
 
-            <label className="mt-[18px] flex h-5 items-center gap-2 text-[13px] font-medium text-[var(--monomat-text-muted)]">
+            <label className="mt-[22px] flex h-4 items-center gap-[6px] text-xs font-medium text-[var(--monomat-text-muted)]">
                 <input
                     type="checkbox"
                     checked={autoLogin}
@@ -77,7 +83,7 @@ export function LoginForm({
             <button
                 type="submit"
                 disabled={isSubmitting}
-                className="mt-[22px] min-h-12 w-full min-w-0 rounded-lg bg-[var(--monomat-primary)] px-3 text-[15px] font-bold leading-5 text-white transition hover:bg-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)]"
+                className="mt-[27px] min-h-12 w-full min-w-0 rounded-lg bg-[var(--monomat-primary)] px-3 text-[15px] font-bold leading-5 text-white transition hover:bg-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)]"
             >
                 {isSubmitting
                     ? AUTH_LABELS.LOGIN_SUBMITTING
