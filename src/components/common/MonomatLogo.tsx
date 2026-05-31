@@ -1,5 +1,7 @@
 interface MonomatLogoProps {
     className?: string;
+    variant?: 'black' | 'white';
+    size?: 'default' | 'small';
 }
 
 interface MonomatLogoMarkProps {
@@ -67,11 +69,22 @@ export function MonomatLogoMark({
     );
 }
 
-export function MonomatLogo({ className = '' }: MonomatLogoProps) {
+export function MonomatLogo({
+    className = '',
+    variant = 'black',
+    size = 'default',
+}: MonomatLogoProps) {
+    const isSmall = size === 'small';
+    const markClassName = isSmall ? 'h-9 w-9' : 'h-10 w-10';
+    const textClassName = isSmall
+        ? 'text-[26px]'
+        : 'text-[28px]';
+    const textColorClassName = variant === 'white' ? 'text-white' : 'text-black';
+
     return (
-        <span className={`flex items-center gap-3 ${className}`}>
-            <MonomatLogoMark />
-            <span className="text-[28px] font-extrabold leading-none text-black">
+        <span className={`flex items-center gap-[10px] ${className}`}>
+            <MonomatLogoMark className={markClassName} />
+            <span className={`${textClassName} font-extrabold leading-none ${textColorClassName}`}>
                 Monomat
             </span>
         </span>

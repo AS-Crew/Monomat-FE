@@ -16,6 +16,12 @@ export const authSessionSchema = authTokenSetSchema.extend({
     userIdentifier: z.uuid(),
 });
 
+export const refreshSessionResponseSchema = authTokenSetSchema.extend({
+    userId: z.number().int().positive(),
+    userType: z.enum(['REGISTERED', 'GUEST']),
+    userIdentifier: z.uuid(),
+});
+
 export const guestSessionSchema = authSessionSchema;
 
 export const loginResponseSchema = authSessionSchema.extend({
@@ -30,6 +36,17 @@ export const registerResponseSchema = z.object({
 });
 
 export const refreshTokenResponseSchema = z.union([
-    authSessionSchema,
+    refreshSessionResponseSchema,
     authTokenSetSchema,
 ]);
+
+export const authErrorResponseSchema = z.object({
+    code: z.string().min(1).optional(),
+    message: z.string().min(1),
+    field: z.enum([
+        'loginId',
+        'password',
+        'nickname',
+        'refreshToken',
+    ]).nullable().optional(),
+});

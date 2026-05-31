@@ -4,6 +4,7 @@ import { useGuestSession } from '../../hooks/useGuestSession';
 import { useMemberLoginSession } from '../../hooks/useMemberLoginSession';
 import { useRegisterSession } from '../../hooks/useRegisterSession';
 import { AUTH_LABELS, AUTH_MESSAGES } from '../../constants/auth';
+import { AuthGlobalErrorMessage } from './AuthErrorMessage';
 import { GuestForm } from './GuestForm';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
@@ -22,23 +23,20 @@ const MODE_LABEL: Record<Exclude<AuthMode, 'register'>, string> = {
     guest: AUTH_LABELS.GUEST_LOGIN,
 };
 
-function FeedbackMessage({
+function SuccessMessage({
     message,
-    variant,
 }: {
     message: string | null;
-    variant: 'error' | 'success';
 }) {
     if (!message) {
         return null;
     }
 
-    const className = variant === 'error'
-        ? 'mb-4 rounded-lg bg-[#FFEAEC] px-3 py-2 text-left text-[11px] font-medium leading-[15px] text-[#FD2B48]'
-        : 'mb-4 rounded-lg bg-[var(--monomat-primary-light)] px-3 py-2 text-left text-[11px] font-medium leading-[15px] text-[var(--monomat-primary)]';
-
     return (
-        <div role="alert" className={className}>
+        <div
+            role="status"
+            className="mb-4 rounded-lg bg-[var(--monomat-primary-light)] px-3 py-2 text-left text-[11px] font-medium leading-[15px] text-[var(--monomat-primary)]"
+        >
             {message}
         </div>
     );
@@ -76,9 +74,16 @@ export function AuthEntryForm({
     const activeErrorMessage = isMemberMode
         ? memberSession.errorMessage
         : guestSession.errorMessage;
+    const activeErrorField = isMemberMode
+        ? memberSession.errorField
+        : guestSession.errorField;
+    const activeGlobalErrorMessage = activeErrorField
+        ? null
+        : activeErrorMessage;
     const isActiveSubmitting = isMemberMode
         ? memberSession.isSubmitting
         : guestSession.isSubmitting;
+    const hasTopFeedback = Boolean(activeGlobalErrorMessage || successMessage);
 
     const clearAllFeedback = () => {
         memberSession.clearErrorMessage();
@@ -145,6 +150,7 @@ export function AuthEntryForm({
                 nickname={registerNickname}
                 isSubmitting={registerSession.isSubmitting}
                 errorMessage={registerSession.errorMessage}
+                errorField={registerSession.errorField}
                 onLoginIdChange={(value) => {
                     registerSession.clearErrorMessage();
                     setLoginId(value);
@@ -168,15 +174,15 @@ export function AuthEntryForm({
     }
 
     return (
-        <div className="w-full max-w-[480px] min-w-0 rounded-2xl bg-[var(--monomat-surface)] px-5 pb-8 pt-8 text-[var(--monomat-text-strong)] shadow-[0_18px_42px_rgba(12,17,28,0.12)] sm:px-8 sm:pb-10 sm:pt-10 lg:px-10 lg:pb-12 lg:pt-11">
-            <header className="mb-[22px] text-center">
-                <h2 className="mb-2 break-keep text-2xl font-extrabold leading-9 !text-[var(--monomat-text-strong)] lg:leading-10">
+        <div className="w-full max-w-[480px] min-w-0 rounded-2xl bg-[var(--monomat-surface)] px-5 py-8 text-[var(--monomat-text-strong)] shadow-[0_4px_24px_rgba(0,0,0,0.18)] sm:min-h-[690px] sm:px-[30px] sm:pb-[57px] sm:pt-14">
+            <header className="mb-[24px] text-center">
+                <h2 className="mb-[21px] break-keep text-2xl font-extrabold leading-7 !text-black">
                     {isMemberMode
                         ? AUTH_LABELS.LOGIN
                         : AUTH_LABELS.GUEST_LOGIN}
                 </h2>
 
-                <p className="break-keep text-sm font-medium leading-5 text-[var(--monomat-text-muted)]">
+                <p className="break-keep text-sm font-medium leading-[17px] text-[var(--monomat-text-muted)]">
                     {AUTH_LABELS.WELCOME}
                 </p>
             </header>
@@ -184,7 +190,9 @@ export function AuthEntryForm({
             <div
                 role="tablist"
                 aria-label="로그인 방식 선택"
-                className="mb-6 grid min-h-11 grid-cols-2 rounded-[10px] bg-[var(--monomat-page-bg)] p-1"
+                className={`grid min-h-[45px] grid-cols-2 rounded-lg bg-[var(--monomat-page-bg)] p-[5px] ${
+                    hasTopFeedback ? 'mb-[19px]' : 'mb-[43px]'
+                }`}
             >
                 {ENTRY_MODES.map((authMode) => {
                     const isSelected = mode === authMode;
@@ -199,8 +207,8 @@ export function AuthEntryForm({
                             onClick={() => handleModeChange(authMode)}
                             className={`min-h-9 min-w-0 rounded-lg px-2 text-sm leading-5 transition disabled:cursor-not-allowed ${
                                 isSelected
-                                    ? 'bg-white font-semibold text-[var(--monomat-text-strong)] shadow-sm'
-                                    : 'font-medium text-[var(--monomat-text-muted)] hover:text-[var(--monomat-text-strong)]'
+                                    ? 'bg-white font-semibold text-black shadow-[0_1px_4px_rgba(0,0,0,0.22)]'
+                                    : 'font-semibold text-[var(--monomat-text-muted)] hover:text-[var(--monomat-text-strong)]'
                             }`}
                         >
                             {MODE_LABEL[authMode]}
@@ -209,8 +217,11 @@ export function AuthEntryForm({
                 })}
             </div>
 
-            <FeedbackMessage message={activeErrorMessage} variant="error" />
-            <FeedbackMessage message={successMessage} variant="success" />
+            <AuthGlobalErrorMessage
+                message={activeGlobalErrorMessage}
+                className="mb-[19px]"
+            />
+            <SuccessMessage message={successMessage} />
 
             {isMemberMode ? (
                 <LoginForm
@@ -218,6 +229,8 @@ export function AuthEntryForm({
                     password={memberPassword}
                     autoLogin={autoLogin}
                     isSubmitting={memberSession.isSubmitting}
+                    errorMessage={memberSession.errorMessage}
+                    errorField={memberSession.errorField}
                     onLoginIdChange={(value) => {
                         memberSession.clearErrorMessage();
                         setSuccessMessage(null);
@@ -237,6 +250,8 @@ export function AuthEntryForm({
                 <GuestForm
                     nickname={guestNickname}
                     isSubmitting={guestSession.isSubmitting}
+                    errorMessage={guestSession.errorMessage}
+                    errorField={guestSession.errorField}
                     onNicknameChange={(value) => {
                         guestSession.clearErrorMessage();
                         setSuccessMessage(null);

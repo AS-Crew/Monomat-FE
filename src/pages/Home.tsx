@@ -16,7 +16,7 @@ import {
     HOME_FEATURES,
 } from '../constants/home';
 import { useAuthStore } from '../store/useAuthStore';
-import { MonomatLogoMark } from '../components/common/MonomatLogo';
+import { MonomatLogo } from '../components/common/MonomatLogo';
 
 const FEATURE_ICON: Record<
     (typeof HOME_FEATURES)[number]['iconName'],
@@ -51,7 +51,7 @@ export const Home = () => {
 
     if (isRegisterMode) {
         return (
-            <main className="flex min-h-screen min-w-0 items-start justify-center bg-[var(--monomat-page-bg)] px-5 pt-[124px]">
+            <main className="flex min-h-screen min-w-0 items-start justify-center bg-[var(--monomat-page-bg)] px-5 py-8 sm:py-[72px] lg:pt-[105px]">
                 <NicknameForm
                     mode={authMode}
                     onModeChange={setAuthMode}
@@ -61,14 +61,12 @@ export const Home = () => {
     }
 
     return (
-        <main className="grid min-h-screen min-w-0 grid-cols-1 bg-[var(--monomat-page-bg)] md:grid-cols-[minmax(300px,42vw)_minmax(0,1fr)] lg:grid-cols-[minmax(380px,42vw)_minmax(0,1fr)] xl:grid-cols-[600px_minmax(0,1fr)]">
-            <section className="flex min-w-0 flex-col bg-[#1F2433] px-6 py-10 text-white sm:px-10 md:px-8 md:py-14 lg:px-12 lg:py-20 xl:px-[60px] xl:py-[106px]">
-                <div className="flex min-w-0 items-center gap-3 lg:gap-[13px]">
-                    <MonomatLogoMark className="h-10 w-10 lg:h-12 lg:w-12" />
-                    <span className="min-w-0 text-[24px] font-extrabold leading-none lg:text-[28px]">
-                        {HOME_COPY.SERVICE_NAME}
-                    </span>
-                </div>
+        <main className="grid min-h-screen min-w-0 grid-cols-1 bg-[var(--monomat-page-bg)] md:grid-cols-[minmax(360px,39vw)_minmax(0,1fr)] xl:grid-cols-[560px_minmax(0,1fr)]">
+            <section className="flex min-w-0 flex-col bg-[#0F172A] px-5 py-8 text-white sm:px-10 sm:py-12 md:px-8 md:py-14 lg:px-12 lg:py-20 xl:px-[60px] xl:py-[140px]">
+                <MonomatLogo
+                    variant="white"
+                    className="min-w-0"
+                />
 
                 <div className="mt-10 min-w-0 max-w-[440px] text-left sm:mt-14 md:mt-16 lg:mt-20 xl:mt-[98px]">
                     <h1 className="m-0 whitespace-pre-line break-keep text-[32px] font-extrabold leading-[44px] tracking-normal !text-white sm:text-[36px] sm:leading-[50px] md:text-[34px] md:leading-[48px] lg:text-[40px] lg:leading-[56px]">
@@ -104,7 +102,7 @@ export const Home = () => {
                 </div>
             </section>
 
-            <section className="flex min-w-0 items-start justify-center bg-[var(--monomat-page-bg)] px-5 py-8 sm:px-8 sm:py-10 md:px-6 md:pt-14 lg:px-8 lg:pt-20 xl:px-10 xl:pt-[106px]">
+            <section className="flex min-w-0 items-start justify-center bg-[var(--monomat-page-bg)] px-5 py-8 sm:px-8 sm:py-12 md:px-6 md:pt-[72px] lg:px-8 lg:pt-[105px] xl:px-10">
                 <NicknameForm
                     mode={authMode}
                     onModeChange={setAuthMode}

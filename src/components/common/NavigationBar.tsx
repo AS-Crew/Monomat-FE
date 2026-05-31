@@ -25,6 +25,9 @@ export function NavigationBar() {
 
     const displayNickname = nickname ?? 'Guest';
     const avatarText = displayNickname.charAt(0).toUpperCase();
+    const avatarClassName = userType === 'GUEST'
+        ? 'bg-[#7359D9]'
+        : 'bg-[var(--monomat-primary)]';
 
     const accountType = userType === 'GUEST' ? 'guest' : 'member';
     const canCreateMap = userType === 'REGISTERED';
@@ -51,12 +54,12 @@ export function NavigationBar() {
 
     return (
         <>
-            <header className="h-[77px] shrink-0 border border-[color:var(--monomat-border-default)] bg-white">
-                <div className="mx-auto flex h-full w-[1440px] items-center justify-between px-[33px]">
+            <header className="h-[75px] shrink-0 border border-[color:var(--monomat-border-default)] bg-white">
+                <div className="mx-auto flex h-full w-full max-w-[1440px] items-center justify-between px-[29px]">
                     <button
                         type="button"
                         onClick={handleLogoClick}
-                        className="ml-[6px] h-[37px] w-[170px]"
+                        className="h-10 w-[190px]"
                         aria-label={LOBBY_NAVIGATION_LABELS.LOGO_ARIA_LABEL}
                     >
                         <MonomatLogo />
@@ -85,7 +88,7 @@ export function NavigationBar() {
                         <button
                             type="button"
                             onClick={() => setIsInviteCodeModalOpen(true)}
-                            className="flex h-10 w-[177px] items-center justify-start rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base leading-none transition hover:bg-[var(--monomat-page-bg)]"
+                            className="flex h-10 w-[180px] items-center justify-start rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base leading-none transition hover:bg-[var(--monomat-page-bg)]"
                         >
                             <Copy
                                 className="ml-[13px] text-black"
@@ -112,7 +115,7 @@ export function NavigationBar() {
                         <button
                             type="button"
                             onClick={() => setIsAccountModalOpen(true)}
-                            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--monomat-primary)] text-xl font-extrabold leading-none text-white"
+                            className={`flex h-10 w-10 items-center justify-center rounded-full text-xl font-extrabold leading-none text-white ${avatarClassName}`}
                             aria-label={LOBBY_NAVIGATION_LABELS.ACCOUNT_ARIA_LABEL}
                         >
                             {avatarText}

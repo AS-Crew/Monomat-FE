@@ -11,19 +11,28 @@ export const GUEST_NICKNAME_POLICY = {
 } as const;
 
 export const REGISTER_POLICY = {
+    LOGIN_ID_MIN_LENGTH: 4,
     LOGIN_ID_MAX_LENGTH: 50,
+    LOGIN_ID_PATTERN: /^[A-Za-z0-9]+$/,
+    PASSWORD_MIN_LENGTH: 8,
     PASSWORD_MAX_LENGTH: 100,
-    NICKNAME_MAX_LENGTH: 8,
+    PASSWORD_WHITESPACE_PATTERN: /\s/,
+    NICKNAME_MIN_LENGTH: 2,
+    NICKNAME_MAX_LENGTH: 12,
 } as const;
 
 export const AUTH_MESSAGES = {
-    EMPTY_NICKNAME: '닉네임을 입력해주세요.',
-    INVALID_NICKNAME_LENGTH: `닉네임은 ${GUEST_NICKNAME_POLICY.MIN_LENGTH}~${GUEST_NICKNAME_POLICY.MAX_LENGTH}자 이내로 입력해주세요.`,
+    EMPTY_NICKNAME: '닉네임은 비어 있을 수 없습니다.',
+    INVALID_NICKNAME_LENGTH: `닉네임은 ${GUEST_NICKNAME_POLICY.MIN_LENGTH}자 이상 ${GUEST_NICKNAME_POLICY.MAX_LENGTH}자 이하로 입력해주세요.`,
     INVALID_NICKNAME_WHITESPACE: '공백이 포함된 닉네임은 사용할 수 없습니다.',
     GUEST_LOGIN_FAILED: '게스트 입장에 실패했습니다. 잠시 후 다시 시도해주세요.',
     INVALID_GUEST_LOGIN_RESPONSE: '서버 응답 형식이 올바르지 않습니다.',
-    EMPTY_LOGIN_ID: '아이디를 입력해주세요.',
-    EMPTY_PASSWORD: '비밀번호를 입력해주세요.',
+    EMPTY_LOGIN_ID: '로그인 ID를 입력해주세요.',
+    INVALID_LOGIN_ID_LENGTH: `로그인 ID는 ${REGISTER_POLICY.LOGIN_ID_MIN_LENGTH}자 이상 ${REGISTER_POLICY.LOGIN_ID_MAX_LENGTH}자 이하로 입력해주세요.`,
+    INVALID_LOGIN_ID_FORMAT: '로그인 ID는 영문과 숫자만 사용할 수 있습니다.',
+    EMPTY_PASSWORD: '비밀번호는 비어 있을 수 없습니다.',
+    INVALID_PASSWORD_LENGTH: `비밀번호는 ${REGISTER_POLICY.PASSWORD_MIN_LENGTH}자 이상 ${REGISTER_POLICY.PASSWORD_MAX_LENGTH}자 이하여야 합니다.`,
+    INVALID_PASSWORD_WHITESPACE: '비밀번호에는 공백을 사용할 수 없습니다.',
     EMPTY_PASSWORD_CONFIRM: '비밀번호 확인을 입력해주세요.',
     PASSWORD_CONFIRM_MISMATCH: '비밀번호가 일치하지 않습니다.',
     LOGIN_FAILED: '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.',
@@ -35,6 +44,14 @@ export const AUTH_MESSAGES = {
     SESSION_REFRESH_FAILED: '인증 세션 갱신에 실패했습니다.',
     INVALID_REFRESH_RESPONSE: '토큰 갱신 응답 형식이 올바르지 않습니다.',
     SESSION_RESTORE_FAILED: '저장된 인증 세션을 복구하지 못했습니다.',
+    LOGIN_EXPIRED: '로그인이 만료되었습니다. 다시 로그인해주세요.',
+} as const;
+
+export const AUTH_ERROR_CODES = {
+    INVALID_REFRESH_TOKEN: 'AUTH_INVALID_REFRESH_TOKEN',
+    SESSION_EXPIRED: 'AUTH_SESSION_EXPIRED',
+    UNAUTHENTICATED: 'AUTH_UNAUTHENTICATED',
+    INVALID_AUTHORIZATION: 'AUTH_INVALID_AUTHORIZATION',
 } as const;
 
 export const AUTH_LABELS = {
@@ -42,7 +59,7 @@ export const AUTH_LABELS = {
     GUEST_LOGIN: '게스트 입장',
     WELCOME: 'Monomat에 오신 것을 환영합니다',
     LOGIN_ID: '아이디',
-    LOGIN_ID_PLACEHOLDER: '로그인 ID를 입력하세요',
+    LOGIN_ID_PLACEHOLDER: '아이디를 입력하세요',
     REGISTER_LOGIN_ID_PLACEHOLDER: '영문/숫자 4자 이상 입력해주세요',
     PASSWORD: '비밀번호',
     PASSWORD_PLACEHOLDER: '비밀번호를 입력하세요',
@@ -55,13 +72,13 @@ export const AUTH_LABELS = {
     QUICK_GUEST_START: '게스트로 빠르게 시작',
     NICKNAME: '닉네임',
     NICKNAME_PLACEHOLDER: '게임에서 사용할 닉네임을 입력하세요',
-    REGISTER_NICKNAME_PLACEHOLDER: '게임에서 사용할 닉네임을 입력해주세요',
-    SUBMIT: '게임 참가하기',
+    REGISTER_NICKNAME_PLACEHOLDER: '게임에서 사용할 닉네임을 입력하세요',
+    SUBMIT: '게임 참여하기',
     SUBMITTING: '입장 중...',
     OR: '또는',
     SIGNUP_HINT: '계정이 없으신가요?',
     SIGNUP: '회원가입',
-    SIGNUP_DESCRIPTION: '회원가입하고 나만의 맵을 만들어보세요.',
+    SIGNUP_DESCRIPTION: '회원가입하고 나만의 맵을 만들어보세요',
     SIGNUP_BUTTON: '가입하기',
     SIGNUP_SUBMITTING: '가입 중...',
     ALREADY_HAVE_ACCOUNT: '이미 계정이 있으신가요?',

@@ -1,15 +1,24 @@
 import { refreshAuthSession } from './authApi';
 import { ApiError } from './apiError';
-import { AUTH_MESSAGES } from '../constants/auth';
+import { AUTH_ERROR_CODES, AUTH_MESSAGES } from '../constants/auth';
 import { useAuthStore } from '../store/useAuthStore';
 
 import type {
     AuthSession,
+    RefreshSessionResponse,
     RefreshTokenResponse,
     UserType,
 } from '../types/auth';
 
 const AUTHORIZATION_HEADER = 'Authorization';
+const AUTH_ENTRY_PATH = '/';
+
+const AUTH_EXPIRED_ERROR_CODES = new Set<string>([
+    AUTH_ERROR_CODES.INVALID_REFRESH_TOKEN,
+    AUTH_ERROR_CODES.SESSION_EXPIRED,
+    AUTH_ERROR_CODES.UNAUTHENTICATED,
+    AUTH_ERROR_CODES.INVALID_AUTHORIZATION,
+]);
 
 let refreshPromise: Promise<AuthSession> | null = null;
 
@@ -59,6 +68,26 @@ function createRequestInit(
     };
 }
 
+function redirectToAuthEntry() {
+    if (
+        typeof window !== 'undefined' &&
+        window.location.pathname !== AUTH_ENTRY_PATH
+    ) {
+        window.location.replace(AUTH_ENTRY_PATH);
+    }
+}
+
+function shouldRedirectToAuthEntry(error: unknown) {
+    if (!(error instanceof ApiError)) {
+        return true;
+    }
+
+    return (
+        error.status === 401 ||
+        (error.code != null && AUTH_EXPIRED_ERROR_CODES.has(error.code))
+    );
+}
+
 function hasSessionIdentityFields(
     state: SessionIdentityState,
 ): state is ValidSessionIdentityState {
@@ -70,33 +99,48 @@ function hasSessionIdentityFields(
     );
 }
 
-function isAuthSession(response: RefreshTokenResponse): response is AuthSession {
+function isRefreshSessionResponse(
+    response: RefreshTokenResponse,
+): response is RefreshSessionResponse {
     return 'userId' in response;
 }
 
 function createSessionFromRefreshResponse(
     response: RefreshTokenResponse,
 ): AuthSession | null {
-    if (isAuthSession(response)) {
-        return response;
-    }
-
     const state = useAuthStore.getState();
 
-    if (!hasSessionIdentityFields(state)) {
-        return null;
+    if (isRefreshSessionResponse(response)) {
+        if (!state.nickname) {
+            return null;
+        }
+
+        return {
+            userId: response.userId,
+            nickname: state.nickname,
+            userType: response.userType,
+            userIdentifier: response.userIdentifier,
+            accessToken: response.accessToken,
+            accessTokenExpiresAt: response.accessTokenExpiresAt,
+            refreshToken: response.refreshToken,
+            refreshTokenExpiresAt: response.refreshTokenExpiresAt,
+        };
     }
 
-    return {
-        userId: state.userId,
-        nickname: state.nickname,
-        userType: state.userType,
-        userIdentifier: state.userIdentifier,
-        accessToken: response.accessToken,
-        accessTokenExpiresAt: response.accessTokenExpiresAt,
-        refreshToken: response.refreshToken,
-        refreshTokenExpiresAt: response.refreshTokenExpiresAt,
-    };
+    if (hasSessionIdentityFields(state)) {
+        return {
+            userId: state.userId,
+            nickname: state.nickname,
+            userType: state.userType,
+            userIdentifier: state.userIdentifier,
+            accessToken: response.accessToken,
+            accessTokenExpiresAt: response.accessTokenExpiresAt,
+            refreshToken: response.refreshToken,
+            refreshTokenExpiresAt: response.refreshTokenExpiresAt,
+        };
+    }
+
+    return null;
 }
 
 async function refreshSession(): Promise<AuthSession> {
@@ -104,7 +148,12 @@ async function refreshSession(): Promise<AuthSession> {
 
     if (!refreshToken) {
         useAuthStore.getState().clearSession();
-        throw new ApiError(401, AUTH_MESSAGES.SESSION_EXPIRED);
+        redirectToAuthEntry();
+        throw new ApiError(
+            401,
+            AUTH_MESSAGES.LOGIN_EXPIRED,
+            AUTH_ERROR_CODES.SESSION_EXPIRED,
+        );
     }
 
     try {
@@ -114,7 +163,11 @@ async function refreshSession(): Promise<AuthSession> {
         const nextSession = createSessionFromRefreshResponse(refreshResponse);
 
         if (!nextSession) {
-            throw new ApiError(401, AUTH_MESSAGES.INVALID_REFRESH_RESPONSE);
+            throw new ApiError(
+                401,
+                AUTH_MESSAGES.INVALID_REFRESH_RESPONSE,
+                AUTH_ERROR_CODES.SESSION_EXPIRED,
+            );
         }
 
         useAuthStore.getState().setSession(nextSession);
@@ -122,6 +175,9 @@ async function refreshSession(): Promise<AuthSession> {
         return nextSession;
     } catch (error) {
         useAuthStore.getState().clearSession();
+        if (shouldRedirectToAuthEntry(error)) {
+            redirectToAuthEntry();
+        }
         throw error;
     }
 }
