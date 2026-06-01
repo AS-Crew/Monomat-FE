@@ -13,7 +13,7 @@ import type {
     LobbySortQuery,
 } from '../../types/lobby';
 
-const LOBBY_CATEGORIES = ['K-POP', 'J-POP', 'POP', 'OST'] as const;
+const LOBBY_CATEGORIES = ['K-POP', 'J-POP', 'POP'] as const;
 const LOBBY_SORT_QUERIES = [
     'latest',
     'most_players',

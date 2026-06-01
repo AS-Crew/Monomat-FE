@@ -1,10 +1,10 @@
 export function LobbyFooter() {
     return (
-        <footer className="h-10 shrink-0 border border-[color:var(--monomat-border-default)] bg-white text-sm leading-none text-[var(--monomat-text-muted)]">
-            <div className="mx-auto flex h-full w-full max-w-[1440px] items-center justify-between px-[29px]">
+        <footer className="shrink-0 border border-[color:var(--monomat-border-default)] bg-white text-sm leading-none text-[var(--monomat-text-muted)]">
+            <div className="mx-auto flex min-h-10 w-full max-w-[1440px] flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between md:gap-4 md:py-0 lg:px-8 xl:px-10">
                 <span>© 2026 Monomat. 실시간 멀티플레이 퀴즈.</span>
 
-                <div className="flex items-center gap-[30px]">
+                <div className="flex flex-wrap items-center gap-x-[30px] gap-y-2">
                     <button type="button" className="hover:text-[var(--monomat-text-strong)]">
                         문의
                     </button>

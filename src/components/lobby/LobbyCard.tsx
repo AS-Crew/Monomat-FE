@@ -3,6 +3,7 @@ import {
     LOBBY_STATUS_META,
 } from '../../constants/lobby';
 import type { LobbyCategory, LobbyListItem } from '../../types/lobby';
+import { Flag, UserRound } from 'lucide-react';
 
 interface LobbyCardProps {
     lobby: LobbyListItem;
@@ -18,9 +19,7 @@ function StatusBadge({ status }: { status: LobbyListItem['status'] }) {
                 : LOBBY_STATUS_META.UNKNOWN;
 
     return (
-        <span
-            className={`inline-flex h-[22px] w-[60px] items-center justify-center rounded-full text-[11px] font-semibold leading-none ${meta.badgeClassName}`}
-        >
+        <span className={`inline-flex h-[22px] w-[60px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold leading-none ${meta.badgeClassName}`}>
             ● {meta.label}
         </span>
     );
@@ -36,7 +35,7 @@ function CategoryBadge({
     }
 
     return (
-        <span className="inline-flex h-[22px] min-w-[47px] items-center justify-center rounded-full bg-[var(--monomat-primary-light)] px-2 text-[11px] font-semibold leading-none text-[var(--monomat-primary)]">
+        <span className="inline-flex h-[22px] min-w-[50px] shrink-0 items-center justify-center rounded-full bg-[var(--monomat-primary-light)] px-2 text-[11px] font-semibold leading-none text-[var(--monomat-primary)]">
             {category}
         </span>
     );
@@ -62,7 +61,7 @@ function ProgressBar({
             : LOBBY_STATUS_META.WAITING.progressClassName;
 
     return (
-        <div className="h-[5px] w-[397px] rounded-full bg-[var(--monomat-page-bg)]">
+        <div className="h-[5px] w-full rounded-full bg-[var(--monomat-page-bg)]">
             <div
                 className={`h-[5px] rounded-full ${progressClassName}`}
                 style={{ width: `${percent}%` }}
@@ -72,33 +71,40 @@ function ProgressBar({
 }
 
 export function LobbyCard({ lobby, onEnter }: LobbyCardProps) {
-    const { code, hostId, title, status, maxPlayers, mapCategory } = lobby;
+    const { code, title, status, maxPlayers, mapCategory } = lobby;
 
     const { currentPlayers } = lobby;
     const isFull = currentPlayers >= maxPlayers;
     const isEnterDisabled = isFull || status === 'PLAYING';
 
     return (
-        <article className="relative h-[168px] overflow-hidden rounded-xl bg-white text-left shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
-            <div className="absolute left-[14px] top-[14px] flex h-[22px] items-center gap-1.5">
+        <article className="flex min-h-[170px] min-w-0 flex-col rounded-xl bg-white p-[15px] text-left shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
+            <div className="flex min-w-0 items-center gap-1.5">
                 <StatusBadge status={status} />
                 <CategoryBadge category={mapCategory} />
             </div>
 
-            <p className="absolute left-[14px] top-[70px] h-[14px] w-[328px] truncate text-sm font-bold leading-none text-[var(--monomat-text-strong)]">
-                {title}
-            </p>
+            <div className="mt-[34px] min-w-0">
+                <p className="truncate text-base font-extrabold leading-[19px] text-black">
+                    {title}
+                </p>
+            </div>
 
-            <p className="absolute left-[14px] top-[96px] max-w-[220px] truncate text-[13px] font-medium leading-4 text-[var(--monomat-text-muted)]">
-                👤 {hostId}
-            </p>
+            <div className="mt-1.5 flex min-w-0 items-center justify-between gap-3">
+                <p className="flex min-w-0 items-center gap-1 truncate text-xs font-medium leading-[14px] text-[var(--monomat-text-muted)]">
+                    <UserRound size={13} strokeWidth={2} aria-hidden="true" />
+                    <span className="min-w-0 truncate">
+                        {LOBBY_CARD_LABELS.UNKNOWN_HOST}
+                    </span>
+                </p>
 
-            <p className="absolute right-5 top-[101px] text-xs font-medium leading-[14px] text-[var(--monomat-text-muted)]">
-                {currentPlayers}/{maxPlayers}
-                {LOBBY_CARD_LABELS.PLAYER_UNIT}
-            </p>
+                <p className="shrink-0 text-[10px] font-medium leading-[14px] text-[var(--monomat-text-muted)]">
+                    {currentPlayers}/{maxPlayers}
+                    {LOBBY_CARD_LABELS.PLAYER_UNIT}
+                </p>
+            </div>
 
-            <div className="absolute left-[14px] top-[118px]">
+            <div className="mt-2">
                 <ProgressBar
                     current={currentPlayers}
                     max={maxPlayers}
@@ -106,24 +112,29 @@ export function LobbyCard({ lobby, onEnter }: LobbyCardProps) {
                 />
             </div>
 
-            <span className="absolute left-[316px] top-[135px] text-sm leading-[17px] text-[#CCD1D9]">
-                ⚑
-            </span>
+            <div className="mt-auto flex items-center justify-end gap-3 pt-3">
+                <Flag
+                    className="text-[#CCD1D9]"
+                    size={14}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                />
 
-            <button
-                type="button"
-                onClick={() => onEnter(code)}
-                disabled={isEnterDisabled}
-                className={`absolute left-[335px] top-[130px] h-7 w-[76px] rounded-lg text-xs font-bold leading-none text-white transition ${
-                    isEnterDisabled
-                        ? 'cursor-not-allowed bg-[var(--monomat-border-input)]'
-                        : 'bg-[var(--monomat-primary)] hover:bg-[var(--monomat-primary-hover)]'
-                }`}
-            >
-                {isEnterDisabled
-                    ? LOBBY_CARD_LABELS.ENTER_UNAVAILABLE
-                    : LOBBY_CARD_LABELS.ENTER}
-            </button>
+                <button
+                    type="button"
+                    onClick={() => onEnter(code)}
+                    disabled={isEnterDisabled}
+                    className={`h-7 w-[76px] shrink-0 rounded-lg text-xs font-bold leading-none text-white transition ${
+                        isEnterDisabled
+                            ? 'cursor-not-allowed bg-[var(--monomat-border-input)]'
+                            : 'bg-[var(--monomat-primary)] hover:bg-[var(--monomat-primary-hover)]'
+                    }`}
+                >
+                    {isEnterDisabled
+                        ? LOBBY_CARD_LABELS.ENTER_UNAVAILABLE
+                        : LOBBY_CARD_LABELS.ENTER}
+                </button>
+            </div>
         </article>
     );
 }

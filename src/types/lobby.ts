@@ -1,6 +1,6 @@
 // 게임 로비 (대기방)와 관련된 타입을 정의한다.
 
-export type LobbyCategory = 'K-POP' | 'J-POP' | 'POP' | 'OST';
+export type LobbyCategory = 'K-POP' | 'J-POP' | 'POP';
 
 export type LobbyStatus = 'WAITING' | 'PLAYING' | (string & {});
 
