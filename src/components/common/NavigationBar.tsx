@@ -54,7 +54,7 @@ export function NavigationBar() {
 
     return (
         <>
-            <header className="min-h-[75px] shrink-0 border border-[color:var(--monomat-border-default)] bg-white">
+            <header className="sticky top-0 z-30 min-h-[75px] shrink-0 border border-[color:var(--monomat-border-default)] bg-white">
                 <div className="mx-auto flex min-h-[75px] w-full max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
                     <button
                         type="button"
