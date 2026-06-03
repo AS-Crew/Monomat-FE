@@ -26,6 +26,8 @@ export const LOBBY_CATEGORY_FILTERS = [
     'K-POP',
     'J-POP',
     'POP',
+    'OST',
+    '애니',
 ] as const;
 
 export const LOBBY_ALL_CATEGORY_FILTER = LOBBY_CATEGORY_FILTERS[0];
