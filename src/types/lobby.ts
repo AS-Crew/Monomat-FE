@@ -26,7 +26,8 @@ export interface LobbyPageResponse<T> {
 
 export interface LobbyListItem {
     code: string;
-    hostId: string;
+    hostId?: string | null;
+    hostNickname?: string | null;
     title: string;
     mapId: number | null;
     mapTitle: string | null;
