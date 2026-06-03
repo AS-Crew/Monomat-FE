@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-export const lobbyCategorySchema = z.enum(['K-POP', 'J-POP', 'POP']);
+export const lobbyCategorySchema = z.enum([
+    'K-POP',
+    'J-POP',
+    'POP',
+    'OST',
+    '애니',
+]);
 
 export const lobbyStatusSchema = z.string().min(1);
 
