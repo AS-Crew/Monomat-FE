@@ -13,7 +13,7 @@ import type {
 const AUTHORIZATION_HEADER = 'Authorization';
 const AUTH_ENTRY_PATH = '/';
 
-const AUTH_EXPIRED_ERROR_CODES = new Set<string>([
+const AUTH_REFRESHABLE_ERROR_CODES = new Set<string>([
     AUTH_ERROR_CODES.INVALID_REFRESH_TOKEN,
     AUTH_ERROR_CODES.SESSION_EXPIRED,
     AUTH_ERROR_CODES.UNAUTHENTICATED,
@@ -84,8 +84,38 @@ function shouldRedirectToAuthEntry(error: unknown) {
 
     return (
         error.status === 401 ||
-        (error.code != null && AUTH_EXPIRED_ERROR_CODES.has(error.code))
+        (error.code != null && AUTH_REFRESHABLE_ERROR_CODES.has(error.code))
     );
+}
+
+async function resolveErrorCode(response: Response): Promise<string | null> {
+    try {
+        const payload = await response.clone().json() as unknown;
+
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+            return null;
+        }
+
+        const code = (payload as Record<string, unknown>).code;
+
+        return typeof code === 'string' && code.trim()
+            ? code
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+async function shouldRefreshForUnauthorizedResponse(
+    response: Response,
+): Promise<boolean> {
+    const code = await resolveErrorCode(response);
+
+    if (!code) {
+        return true;
+    }
+
+    return AUTH_REFRESHABLE_ERROR_CODES.has(code);
 }
 
 function hasSessionIdentityFields(
@@ -206,6 +236,10 @@ export async function fetchWithAuth(
         return response;
     }
 
+    if (!(await shouldRefreshForUnauthorizedResponse(response))) {
+        return response;
+    }
+
     const currentAccessToken = useAuthStore.getState().accessToken;
     const retryAccessToken =
         currentAccessToken && currentAccessToken !== requestAccessToken
@@ -217,7 +251,10 @@ export async function fetchWithAuth(
         createRequestInit(input, init, retryAccessToken),
     );
 
-    if (retryResponse.status === 401) {
+    if (
+        retryResponse.status === 401 &&
+        await shouldRefreshForUnauthorizedResponse(retryResponse)
+    ) {
         useAuthStore.getState().clearSession();
         redirectToAuthEntry();
     }

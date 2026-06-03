@@ -47,4 +47,10 @@ export const API_ENDPOINTS = {
         READY: (code: string) => createApiEndpoint(`/api/lobbies/${code}/ready`),
         START: (code: string) => createApiEndpoint(`/api/lobbies/${code}/start`),
     },
+
+    USER: {
+        ME: createApiEndpoint('/api/users/me'),
+        NICKNAME: createApiEndpoint('/api/users/me/nickname'),
+        PASSWORD: createApiEndpoint('/api/users/me/password'),
+    },
 } as const;

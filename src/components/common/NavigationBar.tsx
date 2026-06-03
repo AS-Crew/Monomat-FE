@@ -29,7 +29,7 @@ export function NavigationBar() {
         ? 'bg-[#7359D9]'
         : 'bg-[var(--monomat-primary)]';
 
-    const accountType = userType === 'GUEST' ? 'guest' : 'member';
+    const accountType = userType === 'REGISTERED' ? 'member' : 'guest';
     const canCreateMap = userType === 'REGISTERED';
     const createMapRoute = LOBBY_ROUTES.CREATE_MAP;
     const canNavigateToCreateMap = createMapRoute != null;
