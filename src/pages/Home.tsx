@@ -5,7 +5,7 @@ import {
     Users,
     type LucideIcon,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
     NicknameForm,
@@ -27,11 +27,31 @@ const FEATURE_ICON: Record<
     users: Users,
 };
 
+interface HomeLocationState {
+    authMode?: AuthMode;
+}
+
+function getRequestedAuthMode(state: unknown): AuthMode | null {
+    if (
+        state &&
+        typeof state === 'object' &&
+        'authMode' in state &&
+        (state as HomeLocationState).authMode === 'register'
+    ) {
+        return 'register';
+    }
+
+    return null;
+}
+
 export const Home = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const accessToken = useAuthStore((state) => state.accessToken);
     const isHydrated = useAuthStore((state) => state.isHydrated);
-    const [authMode, setAuthMode] = useState<AuthMode>('member');
+    const [authMode, setAuthMode] = useState<AuthMode>(
+        () => getRequestedAuthMode(location.state) ?? 'member',
+    );
     const isRegisterMode = authMode === 'register';
 
     const description =
