@@ -74,6 +74,8 @@ export function LobbyCard({ lobby, onEnter }: LobbyCardProps) {
     const { code, title, status, maxPlayers, mapCategory } = lobby;
 
     const { currentPlayers } = lobby;
+    const hostDisplayName =
+        lobby.hostNickname?.trim() || LOBBY_CARD_LABELS.UNKNOWN_HOST;
     const isFull = currentPlayers >= maxPlayers;
     const isEnterDisabled = isFull || status === 'PLAYING';
 
@@ -94,7 +96,7 @@ export function LobbyCard({ lobby, onEnter }: LobbyCardProps) {
                 <p className="flex min-w-0 items-center gap-1 truncate text-xs font-medium leading-[14px] text-[var(--monomat-text-muted)]">
                     <UserRound size={13} strokeWidth={2} aria-hidden="true" />
                     <span className="min-w-0 truncate">
-                        {LOBBY_CARD_LABELS.UNKNOWN_HOST}
+                        {hostDisplayName}
                     </span>
                 </p>
 

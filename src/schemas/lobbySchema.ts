@@ -30,7 +30,8 @@ export const createLobbyResponseSchema = z.object({
 
 export const lobbyListItemSchema = z.object({
     code: z.string().min(1),
-    hostId: z.string().min(1),
+    hostId: z.string().min(1).nullable().optional(),
+    hostNickname: z.string().nullable().optional(),
     title: z.string().min(1),
     mapId: z.number().int().positive().nullable(),
     mapTitle: z.string().min(1).nullable(),
