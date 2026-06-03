@@ -15,6 +15,7 @@ import {
 } from '../../api/userApi';
 import { GUEST_NICKNAME_POLICY } from '../../constants/auth';
 import { useAuthStore } from '../../store/useAuthStore';
+import { validateGuestNickname } from '../../utils/validateNickname';
 import { MonomatInput } from './MonomatInput';
 
 type AccountType = 'guest' | 'member';
@@ -139,7 +140,6 @@ function AccountModalContent({
 
     useEffect(() => {
         setNicknameInput(displayNickname);
-        setNicknameMessage(null);
     }, [displayNickname]);
 
     useEffect(() => {
@@ -162,7 +162,8 @@ function AccountModalContent({
 
     const handleRegisterClick = () => {
         handleClose();
-        navigate('/register');
+        clearSession();
+        navigate('/', { state: { authMode: 'register' } });
     };
 
     const handleLogout = () => {
@@ -171,21 +172,20 @@ function AccountModalContent({
         navigate('/');
     };
 
-    const handleGuestNicknameSave = () => {
-        const trimmedNickname = nicknameInput.trim();
+    const handleGuestNicknameSave = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
 
-        if (!trimmedNickname) {
-            setNicknameMessage({
-                tone: 'error',
-                text: '닉네임을 입력해주세요.',
-            });
+        if (isNicknameSubmitting) {
             return;
         }
 
-        if (trimmedNickname.length > GUEST_NICKNAME_POLICY.MAX_LENGTH) {
+        const trimmedNickname = nicknameInput.trim();
+        const validationMessage = validateGuestNickname(trimmedNickname);
+
+        if (validationMessage) {
             setNicknameMessage({
                 tone: 'error',
-                text: `닉네임은 ${GUEST_NICKNAME_POLICY.MAX_LENGTH}자 이내로 입력해주세요.`,
+                text: validationMessage,
             });
             return;
         }
@@ -297,14 +297,14 @@ function AccountModalContent({
     if (accountType === 'guest') {
         return (
             <div
-                className="relative w-[480px] max-w-[calc(100vw-32px)] rounded-2xl bg-white px-10 py-8 text-[var(--monomat-text-strong)] shadow-xl"
+                className="relative flex h-[380px] w-[480px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-2xl bg-white px-[29px] pb-[26px] pt-7 text-[var(--monomat-text-strong)] shadow-xl"
                 onClick={(event) => event.stopPropagation()}
             >
                 <button
                     type="button"
                     onClick={handleClose}
                     disabled={isSubmitting}
-                    className="absolute right-6 top-6 text-3xl leading-none text-[var(--monomat-text-muted)] transition hover:text-[var(--monomat-text-strong)] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="absolute right-[29px] top-[29px] flex h-6 w-6 items-center justify-center text-[18px] leading-none text-[var(--monomat-text-muted)] transition hover:text-[var(--monomat-text-strong)] disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="계정 모달 닫기"
                 >
                     ×
@@ -314,67 +314,76 @@ function AccountModalContent({
                     id="account-modal-title"
                     role="heading"
                     aria-level={2}
-                    className="mb-10 text-center text-2xl font-bold text-black"
+                    className="h-[33px] text-center text-[22px] font-extrabold leading-[33px] text-black"
                 >
                     내 계정
                 </p>
 
-                <section className="mb-8 flex items-center gap-5 rounded-lg bg-[var(--monomat-page-bg)] px-4 py-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#7359D9] text-xl font-bold text-white">
-                        {avatarText}
-                    </div>
+                <div className="flex flex-1 flex-col justify-center">
+                    <section className="mb-[23px] flex h-[77px] items-center rounded-lg bg-[var(--monomat-page-bg)] px-[25px]">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#7359D9] text-xl font-extrabold leading-none text-white">
+                            {avatarText}
+                        </div>
 
-                    <div className="min-w-0 text-left">
-                        <p className="truncate text-lg font-bold text-[var(--monomat-text-strong)]">
-                            {displayNickname}
-                        </p>
-                        <p className="text-sm text-[var(--monomat-text-muted)]">
-                            {ACCOUNT_TYPE_LABEL.guest}
-                        </p>
-                    </div>
-                </section>
+                        <div className="ml-[21px] min-w-0 text-left">
+                            <p className="truncate text-lg font-bold leading-[21px] text-black">
+                                {displayNickname}
+                            </p>
+                            <p className="mt-0.5 text-xs font-medium leading-[17px] text-[var(--monomat-text-muted)]">
+                                {ACCOUNT_TYPE_LABEL.guest}
+                            </p>
+                        </div>
+                    </section>
 
-                <section className="mb-8 text-left">
-                    <label
-                        htmlFor="account-guest-nickname"
-                        className="mb-3 block text-base font-bold text-[var(--monomat-text-strong)]"
+                    <form
+                        className="text-left"
+                        onSubmit={handleGuestNicknameSave}
                     >
-                        닉네임 변경
-                    </label>
+                        <SectionTitle message={nicknameMessage}>
+                            닉네임 변경
+                        </SectionTitle>
 
-                    <div className="flex gap-2">
-                        <MonomatInput
-                            id="account-guest-nickname"
-                            type="text"
-                            value={nicknameInput}
-                            maxLength={GUEST_NICKNAME_POLICY.MAX_LENGTH}
-                            onChange={(event) =>
-                                setNicknameInput(event.target.value)
-                            }
-                            className="h-12 min-w-0 flex-1 rounded-lg border border-[color:var(--monomat-border-input)] px-4 text-base font-semibold text-[var(--monomat-text-strong)] outline-none transition focus:border-[color:var(--monomat-primary)]"
-                        />
+                        <div className="flex gap-2">
+                            <MonomatInput
+                                id="account-guest-nickname"
+                                type="text"
+                                value={nicknameInput}
+                                maxLength={GUEST_NICKNAME_POLICY.MAX_LENGTH}
+                                disabled={isNicknameSubmitting}
+                                preventEnterSubmit={false}
+                                onChange={(event) => {
+                                    setNicknameInput(event.target.value);
+                                    setNicknameMessage(null);
+                                }}
+                                placeholder="변경할 닉네임을 입력하세요"
+                                className="h-[46px] min-w-0 flex-1 rounded-lg border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-5 text-sm font-medium text-[var(--monomat-text-strong)] outline-none transition placeholder:text-[var(--monomat-border-input)] focus:border-[color:var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                            />
 
-                        <button
-                            type="button"
-                            onClick={handleGuestNicknameSave}
-                            className="h-12 rounded-lg bg-[var(--monomat-primary)] px-6 font-bold text-white transition hover:bg-[var(--monomat-primary-hover)]"
-                        >
-                            저장
-                        </button>
-                    </div>
+                            <button
+                                type="submit"
+                                disabled={isNicknameSubmitting}
+                                className="h-11 w-[69px] shrink-0 rounded-lg bg-[var(--monomat-primary)] text-[15px] font-bold leading-none text-white transition hover:bg-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)]"
+                            >
+                                저장
+                            </button>
+                        </div>
+                    </form>
+                </div>
 
-                    <div className="mt-2">
-                        <FeedbackBadge message={nicknameMessage} />
-                    </div>
-                </section>
+                <div className="flex h-4 items-center justify-between gap-4 text-xs leading-4">
+                    <span className="min-w-0 truncate font-medium text-[var(--monomat-text-muted)]">
+                        맵을 만들려면?
+                    </span>
 
-                <button
-                    type="button"
-                    onClick={handleRegisterClick}
-                    className="mx-auto block font-bold text-[var(--monomat-primary)] underline underline-offset-2 transition hover:text-[var(--monomat-primary-hover)]"
-                >
-                    회원가입
-                </button>
+                    <button
+                        type="button"
+                        onClick={handleRegisterClick}
+                        disabled={isSubmitting}
+                        className="shrink-0 font-semibold text-[var(--monomat-primary)] underline underline-offset-2 transition hover:text-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        회원가입
+                    </button>
+                </div>
             </div>
         );
     }
