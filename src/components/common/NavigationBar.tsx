@@ -9,6 +9,7 @@ import {
     LOBBY_ROUTES,
 } from '../../constants/lobby';
 import { useAuthStore } from '../../store/useAuthStore';
+import { getAvatarColor } from '../../utils/avatarColor';
 import { AccountModal } from './AccountModal';
 import { MonomatLogo } from './MonomatLogo';
 import type { CreateLobbyResponse } from '../../types/lobby';
@@ -17,6 +18,8 @@ export function NavigationBar() {
     const navigate = useNavigate();
 
     const nickname = useAuthStore((state) => state.nickname);
+    const userId = useAuthStore((state) => state.userId);
+    const userIdentifier = useAuthStore((state) => state.userIdentifier);
     const userType = useAuthStore((state) => state.userType);
 
     const [isInviteCodeModalOpen, setIsInviteCodeModalOpen] = useState(false);
@@ -25,9 +28,9 @@ export function NavigationBar() {
 
     const displayNickname = nickname ?? 'Guest';
     const avatarText = displayNickname.charAt(0).toUpperCase();
-    const avatarClassName = userType === 'GUEST'
-        ? 'bg-[#7359D9]'
-        : 'bg-[var(--monomat-primary)]';
+    const avatarColorSeed =
+        userIdentifier ?? userId?.toString() ?? nickname ?? 'monomat-user';
+    const avatarColor = getAvatarColor(avatarColorSeed);
 
     const accountType = userType === 'REGISTERED' ? 'member' : 'guest';
     const canCreateMap = userType === 'REGISTERED';
@@ -115,7 +118,8 @@ export function NavigationBar() {
                         <button
                             type="button"
                             onClick={() => setIsAccountModalOpen(true)}
-                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl font-extrabold leading-none text-white ${avatarClassName}`}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl font-extrabold leading-none text-white"
+                            style={{ backgroundColor: avatarColor }}
                             aria-label={LOBBY_NAVIGATION_LABELS.ACCOUNT_ARIA_LABEL}
                         >
                             {avatarText}

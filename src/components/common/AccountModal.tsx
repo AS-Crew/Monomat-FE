@@ -15,6 +15,7 @@ import {
 } from '../../api/userApi';
 import { GUEST_NICKNAME_POLICY } from '../../constants/auth';
 import { useAuthStore } from '../../store/useAuthStore';
+import { getAvatarColor } from '../../utils/avatarColor';
 import { validateGuestNickname } from '../../utils/validateNickname';
 import { MonomatInput } from './MonomatInput';
 
@@ -108,11 +109,16 @@ function AccountModalContent({
     const navigate = useNavigate();
 
     const nickname = useAuthStore((state) => state.nickname);
+    const userId = useAuthStore((state) => state.userId);
+    const userIdentifier = useAuthStore((state) => state.userIdentifier);
     const updateNickname = useAuthStore((state) => state.updateNickname);
     const clearSession = useAuthStore((state) => state.clearSession);
 
     const displayNickname = nickname?.trim() || 'Guest';
     const avatarText = displayNickname.charAt(0).toUpperCase() || 'G';
+    const avatarColorSeed =
+        userIdentifier ?? userId?.toString() ?? nickname ?? 'monomat-user';
+    const avatarColor = getAvatarColor(avatarColorSeed);
 
     const [nicknameInput, setNicknameInput] = useState(displayNickname);
     const [currentPassword, setCurrentPassword] = useState('');
@@ -321,7 +327,10 @@ function AccountModalContent({
 
                 <div className="flex flex-1 flex-col justify-center">
                     <section className="mb-[23px] flex h-[77px] items-center rounded-lg bg-[var(--monomat-page-bg)] px-[25px]">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#7359D9] text-xl font-extrabold leading-none text-white">
+                        <div
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl font-extrabold leading-none text-white"
+                            style={{ backgroundColor: avatarColor }}
+                        >
                             {avatarText}
                         </div>
 
@@ -414,7 +423,10 @@ function AccountModalContent({
 
             <div className="flex flex-1 flex-col justify-center pb-[4px] pt-[24px]">
                 <section className="mb-[18px] flex h-[77px] items-center rounded-lg bg-[var(--monomat-page-bg)] px-[25px]">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--monomat-primary)] text-xl font-extrabold leading-none text-white">
+                    <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl font-extrabold leading-none text-white"
+                        style={{ backgroundColor: avatarColor }}
+                    >
                         {avatarText}
                     </div>
 
