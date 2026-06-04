@@ -7,6 +7,7 @@ import { http, HttpResponse } from 'msw';
 import { API_ENDPOINTS } from '../../constants/endpoints';
 import { CREATE_LOBBY_POLICY } from '../../constants/lobby';
 import { mockLobbyItems, mockLobbyPageResponse } from '../data/lobbies';
+import { mockMapItems } from '../data/maps';
 
 import type {
     CreateLobbyRequest,
@@ -142,6 +143,9 @@ export const lobbyHandlers = [
         const timeLimitSeconds = typeof payload.timeLimitSeconds === 'number'
             ? payload.timeLimitSeconds
             : CREATE_LOBBY_POLICY.DEFAULT_TIME_LIMIT_SECONDS;
+        const selectedMap = typeof payload.mapId === 'number'
+            ? mockMapItems.find((map) => map.mapId === payload.mapId) ?? null
+            : null;
         const inviteCode = 'NEW123';
 
         latestCreatedLobby = {
@@ -151,9 +155,9 @@ export const lobbyHandlers = [
             maxPlayers,
             currentPlayers: 1,
             status: 'WAITING',
-            mapId: null,
-            mapTitle: null,
-            mapCategory: null,
+            mapId: selectedMap?.mapId ?? null,
+            mapTitle: selectedMap?.title ?? null,
+            mapCategory: selectedMap?.category ?? null,
             questionCount,
             timeLimitSeconds,
             players: [
@@ -174,9 +178,9 @@ export const lobbyHandlers = [
                 maxPlayers,
                 isPrivate,
                 status: 'WAITING',
-                mapId: null,
-                mapTitle: null,
-                mapCategory: null,
+                mapId: selectedMap?.mapId ?? null,
+                mapTitle: selectedMap?.title ?? null,
+                mapCategory: selectedMap?.category ?? null,
             },
             { status: 201 },
         );

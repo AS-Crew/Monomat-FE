@@ -2,9 +2,10 @@ import {
     type ChangeEvent,
     type FormEvent,
     type ReactNode,
+    type MouseEvent,
     useState,
 } from 'react';
-import { Gamepad2, LockKeyhole } from 'lucide-react';
+import { Gamepad2, LockKeyhole, Music, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { createLobby } from '../api/lobbyApi';
@@ -12,10 +13,15 @@ import { AccountModal } from '../components/common/AccountModal';
 import { MonomatInput } from '../components/common/MonomatInput';
 import { MonomatLogo } from '../components/common/MonomatLogo';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
+import { MapSelectModal } from '../components/lobby/MapSelectModal';
 import { CREATE_LOBBY_POLICY, LOBBY_ROUTES } from '../constants/lobby';
 import { useAuthStore } from '../store/useAuthStore';
 import type { CreateLobbyRequest } from '../types/lobby';
+import type { MapSummary } from '../types/map';
 import { getAvatarColor } from '../utils/avatarColor';
+import {
+    formatMapDescription,
+} from '../utils/mapFormat';
 
 interface LobbyCreateFormState {
     title: string;
@@ -69,6 +75,7 @@ function getRangeBackground(value: number, min: number, max: number) {
 
 function createRequestFromFormState(
     formState: LobbyCreateFormState,
+    selectedMap: MapSummary | null,
 ): CreateLobbyRequest | string {
     const title = formState.title.trim();
 
@@ -84,7 +91,7 @@ function createRequestFromFormState(
         title,
         maxPlayers: formState.maxPlayers,
         isPrivate: formState.isPrivate,
-        mapId: null,
+        mapId: selectedMap?.mapId ?? null,
         questionCount: formState.questionCount,
         timeLimitSeconds: formState.timeLimitSeconds,
     };
@@ -220,6 +227,8 @@ export function LobbyCreate() {
     const navigate = useNavigate();
     const [formState, setFormState] =
         useState<LobbyCreateFormState>(DEFAULT_FORM_STATE);
+    const [selectedMap, setSelectedMap] = useState<MapSummary | null>(null);
+    const [isMapSelectModalOpen, setIsMapSelectModalOpen] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -243,7 +252,21 @@ export function LobbyCreate() {
     };
 
     const handleMapSelectClick = () => {
-        setErrorMessage('맵 선택 기능은 추후 제공 예정입니다.');
+        setErrorMessage(null);
+        setIsMapSelectModalOpen(true);
+    };
+
+    const handleMapConfirm = (map: MapSummary) => {
+        setSelectedMap(map);
+        setErrorMessage(null);
+    };
+
+    const handleSelectedMapClear = (
+        event: MouseEvent<HTMLButtonElement>,
+    ) => {
+        event.stopPropagation();
+        setSelectedMap(null);
+        setErrorMessage(null);
     };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -253,7 +276,7 @@ export function LobbyCreate() {
             return;
         }
 
-        const request = createRequestFromFormState(formState);
+        const request = createRequestFromFormState(formState, selectedMap);
 
         if (typeof request === 'string') {
             setErrorMessage(request);
@@ -321,13 +344,46 @@ export function LobbyCreate() {
                                 disabled={isSubmitting}
                                 className="h-10 w-20 shrink-0 rounded-lg border border-[var(--monomat-border-input)] bg-white text-[15px] font-bold text-black transition hover:bg-[var(--monomat-page-bg)] disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                맵 선택
+                                {selectedMap ? '맵 변경' : '맵 선택'}
                             </button>
                         </div>
 
-                        <div className="mt-[18px] flex h-[120px] items-center justify-center rounded-lg border-[1.5px] border-dashed border-[var(--monomat-border-input)] bg-white text-center text-base font-medium leading-[120px] text-[var(--monomat-text-muted)]">
-                            선택된 맵이 없습니다.
-                        </div>
+                        {selectedMap ? (
+                            <div className="mt-[18px] flex h-[120px] items-center rounded-lg border border-[var(--monomat-border-default)] bg-[var(--monomat-page-bg)] px-[25px]">
+                                <span className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-lg bg-[var(--monomat-primary-light)] text-[#2B3F6C]">
+                                    <Music size={24} strokeWidth={1.7} />
+                                </span>
+
+                                <div className="ml-[17px] min-w-0 flex-1">
+                                    <h3 className="!m-0 overflow-hidden break-keep [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] !text-xl !font-bold !leading-[23px] !text-black [overflow-wrap:anywhere]">
+                                        {selectedMap.title}
+                                    </h3>
+                                    <p className="mt-1 truncate text-sm font-medium leading-[18px] text-[var(--monomat-text-muted)]">
+                                        {selectedMap.category} | 곡{' '}
+                                        {selectedMap.numOfSong}개
+                                    </p>
+                                    <p className="mt-1 overflow-hidden whitespace-pre-line break-keep [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] text-xs font-medium leading-4 text-[var(--monomat-text-muted)] [overflow-wrap:anywhere]">
+                                        {formatMapDescription(
+                                            selectedMap.description,
+                                        )}
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleSelectedMapClear}
+                                    disabled={isSubmitting}
+                                    className="ml-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--monomat-text-muted)] transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
+                                    aria-label="선택된 맵 해제"
+                                >
+                                    <X size={20} strokeWidth={1.8} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="mt-[18px] flex h-[120px] items-center justify-center rounded-lg border-[1.5px] border-dashed border-[var(--monomat-border-input)] bg-white text-center text-base font-medium leading-[120px] text-[var(--monomat-text-muted)]">
+                                선택된 맵이 없습니다.
+                            </div>
+                        )}
                     </section>
 
                     <section className="mt-[27px] h-auto overflow-visible rounded-[16px] bg-white px-[25px] pb-6 pt-6 shadow-[0px_4px_16px_rgba(0,0,0,0.25)] md:h-[371px] md:overflow-hidden md:pb-0">
@@ -473,6 +529,13 @@ export function LobbyCreate() {
             </main>
 
             <LobbyFooter />
+
+            <MapSelectModal
+                isOpen={isMapSelectModalOpen}
+                selectedMap={selectedMap}
+                onConfirm={handleMapConfirm}
+                onClose={() => setIsMapSelectModalOpen(false)}
+            />
         </div>
     );
 }
