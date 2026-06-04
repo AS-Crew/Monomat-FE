@@ -46,6 +46,8 @@ export const lobbyListItemSchema = z.object({
     currentPlayers: z.number().int().min(0),
     isPrivate: z.boolean(),
     status: lobbyStatusSchema,
+    questionCount: z.number().int().positive().nullable().optional(),
+    timeLimitSeconds: z.number().int().positive().nullable().optional(),
     createdAtEpochMillis: z.number().int().nonnegative().nullable(),
 });
 
@@ -65,7 +67,7 @@ export const lobbyDetailResponseSchema = z.object({
     mapId: z.number().int().positive().nullable(),
     mapTitle: z.string().min(1).nullable(),
     mapCategory: lobbyCategorySchema.nullable(),
-    roundCount: z.number().int().positive(),
+    questionCount: z.number().int().positive(),
     timeLimitSeconds: z.number().int().positive(),
     players: z.array(lobbyPlayerResponseSchema),
     canStart: z.boolean(),

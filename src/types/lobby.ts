@@ -36,6 +36,8 @@ export interface LobbyListItem {
     currentPlayers: number;
     isPrivate: boolean;
     status: LobbyStatus;
+    questionCount?: number | null;
+    timeLimitSeconds?: number | null;
     createdAtEpochMillis: number | null;
 }
 
@@ -81,7 +83,7 @@ export interface LobbyDetailResponse {
     mapId: number | null;
     mapTitle: string | null;
     mapCategory: LobbyCategory | null;
-    roundCount: number;
+    questionCount: number;
     timeLimitSeconds: number;
     players: LobbyPlayerResponse[];
     canStart: boolean;
@@ -96,7 +98,7 @@ export interface CreateLobbyRequest {
     maxPlayers: number;
     isPrivate: boolean;
     mapId: number | null;
-    roundCount?: number | null;
+    questionCount?: number | null;
     timeLimitSeconds?: number | null;
 }
 

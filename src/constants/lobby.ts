@@ -15,10 +15,12 @@ export const CREATE_LOBBY_POLICY = {
     MIN_PLAYERS: 2,
     MAX_PLAYERS: 8,
     DEFAULT_MAX_PLAYERS: 4,
-    MIN_ROUND_COUNT: 1,
-    MAX_ROUND_COUNT: 20,
+    MIN_QUESTION_COUNT: 1,
+    MAX_QUESTION_COUNT: 50,
+    DEFAULT_QUESTION_COUNT: 10,
     MIN_TIME_LIMIT_SECONDS: 10,
     MAX_TIME_LIMIT_SECONDS: 120,
+    DEFAULT_TIME_LIMIT_SECONDS: 30,
 } as const;
 
 export const LOBBY_CATEGORY_FILTERS = [
@@ -53,6 +55,7 @@ export const LOBBY_NAVIGATION_LABELS = {
 
 export const LOBBY_ROUTES = {
     LIST: '/lobbies',
+    CREATE_LOBBY: '/lobbies/new',
     ROOM: (inviteCode: string) => `/lobby/${inviteCode}`,
     CREATE_MAP: null as string | null,
 } as const;

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Copy, Map, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { CreateLobbyModal } from '../lobby/CreateLobbyModal';
 import { InviteCodeJoinModal } from '../lobby/InviteCodeJoinModal';
 import {
     LOBBY_NAVIGATION_LABELS,
@@ -12,7 +11,6 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { getAvatarColor } from '../../utils/avatarColor';
 import { AccountModal } from './AccountModal';
 import { MonomatLogo } from './MonomatLogo';
-import type { CreateLobbyResponse } from '../../types/lobby';
 
 export function NavigationBar() {
     const navigate = useNavigate();
@@ -23,7 +21,6 @@ export function NavigationBar() {
     const userType = useAuthStore((state) => state.userType);
 
     const [isInviteCodeModalOpen, setIsInviteCodeModalOpen] = useState(false);
-    const [isCreateLobbyModalOpen, setIsCreateLobbyModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const displayNickname = nickname ?? 'Guest';
@@ -48,11 +45,7 @@ export function NavigationBar() {
     };
 
     const handleCreateLobbyClick = () => {
-        setIsCreateLobbyModalOpen(true);
-    };
-
-    const handleLobbyCreated = (response: CreateLobbyResponse) => {
-        navigate(LOBBY_ROUTES.ROOM(response.inviteCode));
+        navigate(LOBBY_ROUTES.CREATE_LOBBY);
     };
 
     return (
@@ -131,12 +124,6 @@ export function NavigationBar() {
             <InviteCodeJoinModal
                 isOpen={isInviteCodeModalOpen}
                 onClose={() => setIsInviteCodeModalOpen(false)}
-            />
-
-            <CreateLobbyModal
-                isOpen={isCreateLobbyModalOpen}
-                onClose={() => setIsCreateLobbyModalOpen(false)}
-                onCreated={handleLobbyCreated}
             />
 
             <AccountModal

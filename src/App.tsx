@@ -9,10 +9,12 @@ import { useSocket } from './hooks/useSocket';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AppLayout } from './components/common/AppLayout';
 import { ViewportGuard } from './components/common/ViewportGuard';
+import { LOBBY_ROUTES } from './constants/lobby';
 
 // 페이지 컴포넌트
 import { Home } from './pages/Home';
 import { Lobbies } from './pages/Lobbies';
+import { LobbyCreate } from './pages/LobbyCreate';
 import { LobbyRoom } from './pages/LobbyRoom';
 
 /**
@@ -55,11 +57,22 @@ function AppRoutes() {
                 <Route path="/" element={<Home />} />
 
                 <Route
-                    path="/lobbies"
+                    path={LOBBY_ROUTES.LIST}
                     element={
                         <AppLayout>
                             <ProtectedRoute>
                                 <Lobbies />
+                            </ProtectedRoute>
+                        </AppLayout>
+                    }
+                />
+
+                <Route
+                    path={LOBBY_ROUTES.CREATE_LOBBY}
+                    element={
+                        <AppLayout>
+                            <ProtectedRoute>
+                                <LobbyCreate />
                             </ProtectedRoute>
                         </AppLayout>
                     }
