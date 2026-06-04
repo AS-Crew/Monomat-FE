@@ -434,7 +434,7 @@ export function LobbyRoom() {
                                         라운드 수
                                     </dt>
                                     <dd className="font-bold text-gray-900">
-                                        {lobbyDetail.roundCount}라운드
+                                        {lobbyDetail.questionCount}라운드
                                     </dd>
                                 </div>
 
