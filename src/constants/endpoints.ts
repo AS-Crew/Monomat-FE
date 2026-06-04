@@ -48,6 +48,11 @@ export const API_ENDPOINTS = {
         START: (code: string) => createApiEndpoint(`/api/lobbies/${code}/start`),
     },
 
+    MAP: {
+        LIST: createApiEndpoint('/api/maps'),
+        MY_LIST: createApiEndpoint('/api/maps/me'),
+    },
+
     USER: {
         ME: createApiEndpoint('/api/users/me'),
         NICKNAME: createApiEndpoint('/api/users/me/nickname'),
