@@ -19,3 +19,11 @@ export function formatMapDescription(description: string | null) {
 
     return trimmedDescription || '맵 설명이 없습니다.';
 }
+
+export function formatMapOwnerNickname(
+    ownerNickname: string | null | undefined,
+) {
+    const trimmedNickname = ownerNickname?.trim();
+
+    return trimmedNickname || '알 수 없는 제작자';
+}

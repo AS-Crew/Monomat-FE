@@ -11,6 +11,7 @@ export const mockPublicMapItems: MapSummary[] = [
         isPublic: true,
         pendingPublic: false,
         ownerId: 101,
+        ownerNickname: '하이퍼비트',
     },
     {
         mapId: 2,
@@ -22,6 +23,7 @@ export const mockPublicMapItems: MapSummary[] = [
         isPublic: true,
         pendingPublic: false,
         ownerId: 102,
+        ownerNickname: '시부야DJ',
     },
     {
         mapId: 3,
@@ -33,6 +35,7 @@ export const mockPublicMapItems: MapSummary[] = [
         isPublic: true,
         pendingPublic: false,
         ownerId: 103,
+        ownerNickname: null,
     },
     {
         mapId: 4,
@@ -44,6 +47,7 @@ export const mockPublicMapItems: MapSummary[] = [
         isPublic: true,
         pendingPublic: false,
         ownerId: 104,
+        ownerNickname: '애니믹스',
     },
     {
         mapId: 5,
@@ -55,6 +59,7 @@ export const mockPublicMapItems: MapSummary[] = [
         isPublic: true,
         pendingPublic: false,
         ownerId: 105,
+        ownerNickname: 'PopArchive',
     },
     {
         mapId: 6,
@@ -66,6 +71,7 @@ export const mockPublicMapItems: MapSummary[] = [
         isPublic: true,
         pendingPublic: false,
         ownerId: 106,
+        ownerNickname: 'OST콜렉터',
     },
 ];
 
@@ -80,6 +86,7 @@ export const mockMyMapItems: MapSummary[] = [
         isPublic: false,
         pendingPublic: false,
         ownerId: 999,
+        ownerNickname: '내계정',
     },
     {
         mapId: 102,
@@ -91,6 +98,7 @@ export const mockMyMapItems: MapSummary[] = [
         isPublic: true,
         pendingPublic: false,
         ownerId: 999,
+        ownerNickname: '내계정',
     },
     {
         mapId: 103,
@@ -102,6 +110,7 @@ export const mockMyMapItems: MapSummary[] = [
         isPublic: false,
         pendingPublic: true,
         ownerId: 999,
+        ownerNickname: '   ',
     },
 ];
 
