@@ -21,6 +21,7 @@ export const mapSummaryResponseSchema = z.object({
     isPublic: z.boolean(),
     pendingPublic: z.boolean(),
     ownerId: z.number().int().positive(),
+    ownerNickname: z.string().nullable(),
 });
 
 export const mapPageResponseSchema = z.object({

@@ -21,6 +21,7 @@ import type { MapSummary } from '../types/map';
 import { getAvatarColor } from '../utils/avatarColor';
 import {
     formatMapDescription,
+    formatMapOwnerNickname,
 } from '../utils/mapFormat';
 
 interface LobbyCreateFormState {
@@ -360,7 +361,10 @@ export function LobbyCreate() {
                                     </h3>
                                     <p className="mt-1 truncate text-sm font-medium leading-[18px] text-[var(--monomat-text-muted)]">
                                         {selectedMap.category} | 곡{' '}
-                                        {selectedMap.numOfSong}개
+                                        {selectedMap.numOfSong}개 |{' '}
+                                        {formatMapOwnerNickname(
+                                            selectedMap.ownerNickname,
+                                        )}
                                     </p>
                                     <p className="mt-1 overflow-hidden whitespace-pre-line break-keep [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] text-xs font-medium leading-4 text-[var(--monomat-text-muted)] [overflow-wrap:anywhere]">
                                         {formatMapDescription(

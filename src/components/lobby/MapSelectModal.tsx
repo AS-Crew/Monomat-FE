@@ -24,7 +24,10 @@ import {
     MAP_SELECT_MODAL_PAGE_SIZE,
 } from '../../constants/map';
 import { useAuthStore } from '../../store/useAuthStore';
-import { formatMapDescription } from '../../utils/mapFormat';
+import {
+    formatMapDescription,
+    formatMapOwnerNickname,
+} from '../../utils/mapFormat';
 
 import type { MapSummary } from '../../types/map';
 
@@ -441,7 +444,10 @@ export function MapSelectModal({
                                                 </span>
                                                 <span className="mt-1 block truncate text-[11px] font-medium leading-[11px] text-[var(--monomat-text-muted)]">
                                                     {map.category} | 곡{' '}
-                                                    {map.numOfSong}개
+                                                    {map.numOfSong}개 |{' '}
+                                                    {formatMapOwnerNickname(
+                                                        map.ownerNickname,
+                                                    )}
                                                 </span>
                                             </span>
 

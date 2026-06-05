@@ -18,6 +18,7 @@ export interface MapSummary {
     isPublic: boolean;
     pendingPublic: boolean;
     ownerId: number;
+    ownerNickname: string | null;
 }
 
 export interface MapPageResponse {
