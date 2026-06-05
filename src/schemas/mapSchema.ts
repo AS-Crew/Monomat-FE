@@ -18,6 +18,7 @@ export const mapSummaryResponseSchema = z.object({
     category: mapCategorySchema,
     numOfSong: z.number().int().min(0),
     totalPlayTime: z.number().int().min(0),
+    playCount: z.number().int().min(0).optional(),
     isPublic: z.boolean(),
     pendingPublic: z.boolean(),
     ownerId: z.number().int().positive(),

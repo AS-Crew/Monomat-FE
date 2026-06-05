@@ -7,6 +7,7 @@ import {
     LOBBY_NAVIGATION_LABELS,
     LOBBY_ROUTES,
 } from '../../constants/lobby';
+import { MAP_ROUTES } from '../../constants/map';
 import { useAuthStore } from '../../store/useAuthStore';
 import { getAvatarColor } from '../../utils/avatarColor';
 import { AccountModal } from './AccountModal';
@@ -31,17 +32,13 @@ export function NavigationBar() {
 
     const accountType = userType === 'REGISTERED' ? 'member' : 'guest';
     const canCreateMap = userType === 'REGISTERED';
-    const createMapRoute = LOBBY_ROUTES.CREATE_MAP;
-    const canNavigateToCreateMap = createMapRoute != null;
 
     const handleLogoClick = () => {
         navigate(LOBBY_ROUTES.LIST);
     };
 
     const handleCreateMapClick = () => {
-        if (createMapRoute) {
-            navigate(createMapRoute);
-        }
+        navigate(MAP_ROUTES.MY_MAPS);
     };
 
     const handleCreateLobbyClick = () => {
@@ -50,7 +47,7 @@ export function NavigationBar() {
 
     return (
         <>
-            <header className="sticky top-0 z-30 min-h-[75px] shrink-0 border border-[color:var(--monomat-border-default)] bg-white">
+            <header className="sticky top-0 z-50 min-h-[75px] w-full shrink-0 border border-[color:var(--monomat-border-default)] bg-white">
                 <div className="mx-auto flex min-h-[75px] w-full max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
                     <button
                         type="button"
@@ -66,12 +63,6 @@ export function NavigationBar() {
                             <button
                                 type="button"
                                 onClick={handleCreateMapClick}
-                                aria-disabled={!canNavigateToCreateMap}
-                                title={
-                                    canNavigateToCreateMap
-                                        ? undefined
-                                        : LOBBY_NAVIGATION_LABELS.CREATE_MAP_PENDING_TITLE
-                                }
                                 className="flex h-10 w-[130px] shrink-0 items-center justify-center gap-2 rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-base font-bold leading-none text-black transition hover:bg-[var(--monomat-page-bg)]"
                             >
                                 <Map size={17} strokeWidth={2.4} />

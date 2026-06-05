@@ -10,12 +10,14 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AppLayout } from './components/common/AppLayout';
 import { ViewportGuard } from './components/common/ViewportGuard';
 import { LOBBY_ROUTES } from './constants/lobby';
+import { MAP_ROUTES } from './constants/map';
 
 // 페이지 컴포넌트
 import { Home } from './pages/Home';
 import { Lobbies } from './pages/Lobbies';
 import { LobbyCreate } from './pages/LobbyCreate';
 import { LobbyRoom } from './pages/LobbyRoom';
+import { MyMaps } from './pages/MyMaps';
 
 /**
  * [애플리케이션 루트 컴포넌트]
@@ -73,6 +75,17 @@ function AppRoutes() {
                         <AppLayout>
                             <ProtectedRoute>
                                 <LobbyCreate />
+                            </ProtectedRoute>
+                        </AppLayout>
+                    }
+                />
+
+                <Route
+                    path={MAP_ROUTES.MY_MAPS}
+                    element={
+                        <AppLayout>
+                            <ProtectedRoute>
+                                <MyMaps />
                             </ProtectedRoute>
                         </AppLayout>
                     }
