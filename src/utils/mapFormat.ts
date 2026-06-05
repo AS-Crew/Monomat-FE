@@ -14,6 +14,16 @@ export function formatMapPlayTime(totalPlayTime: number) {
     return `${minutes}분 ${seconds}초`;
 }
 
+export function formatMapPlayCount(playCount: number | null | undefined) {
+    if (typeof playCount !== 'number') {
+        return '-';
+    }
+
+    const safePlayCount = Math.max(0, Math.floor(playCount));
+
+    return `${safePlayCount.toLocaleString('ko-KR')}회`;
+}
+
 export function formatMapDescription(description: string | null) {
     const trimmedDescription = description?.trim();
 

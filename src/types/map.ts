@@ -15,6 +15,7 @@ export interface MapSummary {
     category: MapCategory;
     numOfSong: number;
     totalPlayTime: number;
+    playCount?: number;
     isPublic: boolean;
     pendingPublic: boolean;
     ownerId: number;
