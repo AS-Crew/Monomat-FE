@@ -3,21 +3,29 @@ import {
     type FormEvent,
     type ReactNode,
     type MouseEvent,
+    useEffect,
     useState,
 } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Gamepad2, LockKeyhole, Music, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { createLobby } from '../api/lobbyApi';
+import { getMyMapDetail } from '../api/mapApi';
 import { AccountModal } from '../components/common/AccountModal';
 import { MonomatInput } from '../components/common/MonomatInput';
 import { MonomatLogo } from '../components/common/MonomatLogo';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { MapSelectModal } from '../components/lobby/MapSelectModal';
-import { CREATE_LOBBY_POLICY, LOBBY_ROUTES } from '../constants/lobby';
+import {
+    CREATE_LOBBY_POLICY,
+    LOBBY_CREATE_MAP_PRESELECT_COPY,
+    LOBBY_QUERY_PARAMS,
+    LOBBY_ROUTES,
+} from '../constants/lobby';
 import { useAuthStore } from '../store/useAuthStore';
 import type { CreateLobbyRequest } from '../types/lobby';
-import type { MapSummary } from '../types/map';
+import type { MapDetailResponse, MapSummary } from '../types/map';
 import { getAvatarColor } from '../utils/avatarColor';
 import {
     formatMapDescription,
@@ -95,6 +103,22 @@ function createRequestFromFormState(
         mapId: selectedMap?.mapId ?? null,
         questionCount: formState.questionCount,
         timeLimitSeconds: formState.timeLimitSeconds,
+    };
+}
+
+function mapDetailToSummary(map: MapDetailResponse): MapSummary {
+    return {
+        mapId: map.id,
+        title: map.title,
+        description: map.description,
+        category: map.category,
+        numOfSong: map.numOfSong,
+        totalPlayTime: map.totalPlayTime,
+        playCount: map.playCount,
+        isPublic: map.isPublic,
+        pendingPublic: map.pendingPublic,
+        ownerId: map.ownerId,
+        ownerNickname: map.ownerNickname,
     };
 }
 
@@ -226,12 +250,44 @@ function VisibilityOption({
 
 export function LobbyCreate() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [formState, setFormState] =
         useState<LobbyCreateFormState>(DEFAULT_FORM_STATE);
     const [selectedMap, setSelectedMap] = useState<MapSummary | null>(null);
     const [isMapSelectModalOpen, setIsMapSelectModalOpen] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const mapIdParam = searchParams.get(LOBBY_QUERY_PARAMS.MAP_ID);
+    const parsedMapId = Number(mapIdParam);
+    const hasPreselectedMapId = mapIdParam !== null;
+    const isValidPreselectedMapId =
+        hasPreselectedMapId &&
+        Number.isInteger(parsedMapId) &&
+        parsedMapId > 0;
+    const preselectedMapId = isValidPreselectedMapId ? parsedMapId : 0;
+
+    const preselectedMapQuery = useQuery<MapDetailResponse>({
+        queryKey: ['myMapDetail', preselectedMapId],
+        queryFn: () => getMyMapDetail(preselectedMapId),
+        enabled: isValidPreselectedMapId,
+    });
+
+    useEffect(() => {
+        if (preselectedMapQuery.data) {
+            setSelectedMap(mapDetailToSummary(preselectedMapQuery.data));
+        }
+    }, [preselectedMapQuery.data]);
+
+    const preselectedMapErrorMessage = !hasPreselectedMapId
+        ? null
+        : !isValidPreselectedMapId
+            ? LOBBY_CREATE_MAP_PRESELECT_COPY.INVALID_MAP_ID
+            : preselectedMapQuery.isError
+                ? getErrorMessage(
+                    preselectedMapQuery.error,
+                    LOBBY_CREATE_MAP_PRESELECT_COPY.FETCH_ERROR,
+                )
+                : null;
 
     const updateFormState = <TKey extends keyof LobbyCreateFormState>(
         key: TKey,
@@ -342,14 +398,21 @@ export function LobbyCreate() {
                             <button
                                 type="button"
                                 onClick={handleMapSelectClick}
-                                disabled={isSubmitting}
+                                disabled={
+                                    isSubmitting ||
+                                    preselectedMapQuery.isLoading
+                                }
                                 className="h-10 w-20 shrink-0 rounded-lg border border-[var(--monomat-border-input)] bg-white text-[15px] font-bold text-black transition hover:bg-[var(--monomat-page-bg)] disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {selectedMap ? '맵 변경' : '맵 선택'}
                             </button>
                         </div>
 
-                        {selectedMap ? (
+                        {preselectedMapQuery.isLoading ? (
+                            <div className="mt-[18px] flex h-[120px] items-center justify-center rounded-lg border border-[var(--monomat-border-default)] bg-[var(--monomat-page-bg)] text-sm font-medium text-[var(--monomat-text-muted)]">
+                                {LOBBY_CREATE_MAP_PRESELECT_COPY.LOADING}
+                            </div>
+                        ) : selectedMap ? (
                             <div className="mt-[18px] flex h-[120px] items-center rounded-lg border border-[var(--monomat-border-default)] bg-[var(--monomat-page-bg)] px-[25px]">
                                 <span className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-lg bg-[var(--monomat-primary-light)] text-[#2B3F6C]">
                                     <Music size={24} strokeWidth={1.7} />
@@ -508,6 +571,15 @@ export function LobbyCreate() {
                             className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 ring-1 ring-red-100"
                         >
                             {errorMessage}
+                        </div>
+                    )}
+
+                    {preselectedMapErrorMessage && (
+                        <div
+                            role="alert"
+                            className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 ring-1 ring-amber-100"
+                        >
+                            {preselectedMapErrorMessage}
                         </div>
                     )}
 

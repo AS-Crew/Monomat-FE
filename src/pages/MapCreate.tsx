@@ -18,15 +18,13 @@ import {
     MAP_ROUTES,
 } from '../constants/map';
 import { generateUUID } from '../utils/uuid';
-import { normalizeAnswerList } from '../utils/answerNormalizer';
 import {
-    getMapCreateTiming,
-    getMapCreateTimingError,
-} from '../utils/mapCreateTiming';
+    createMapItemRequestFromSong,
+    isValidMapSongForm,
+} from '../utils/mapSongForm';
 
 import type {
     CreateMapFormState,
-    CreateMapItemRequest,
     CreateMapSongFormState,
 } from '../types/map';
 
@@ -51,53 +49,6 @@ function createInitialFormState(): CreateMapFormState {
         category: MAP_CREATE_POLICY.DEFAULT_CATEGORY,
         isPublic: MAP_CREATE_POLICY.DEFAULT_IS_PUBLIC,
         songs: [createEmptySong()],
-    };
-}
-
-function isValidSong(song: CreateMapSongFormState) {
-    const startTime = Number(song.startTime);
-    const normalizedAnswers = normalizeAnswerList(song.answers);
-    const timingError = getMapCreateTimingError(
-        song.startTime,
-        song.videoDurationSeconds,
-    );
-
-    return (
-        song.youtubeUrl.trim().length > 0 &&
-        song.youtubeUrl.trim().length <=
-            MAP_CREATE_POLICY.YOUTUBE_URL_MAX_LENGTH &&
-        song.hint.trim().length > 0 &&
-        song.hint.trim().length <= MAP_CREATE_POLICY.HINT_MAX_LENGTH &&
-        song.startTime.trim().length > 0 &&
-        Number.isInteger(startTime) &&
-        startTime >= MAP_CREATE_POLICY.MIN_START_TIME_SECONDS &&
-        timingError == null &&
-        normalizedAnswers.length >= MAP_CREATE_POLICY.MIN_ANSWER_COUNT &&
-        normalizedAnswers.length <= MAP_CREATE_POLICY.MAX_ANSWER_COUNT &&
-        normalizedAnswers.every(
-            (answer) =>
-                answer.length <= MAP_CREATE_POLICY.ANSWER_MAX_LENGTH,
-        )
-    );
-}
-
-function createMapItemRequest(
-    song: CreateMapSongFormState,
-    index: number,
-): CreateMapItemRequest {
-    const timing = getMapCreateTiming(Number(song.startTime));
-
-    return {
-        orderNum: index + 1,
-        youtubeUrl: song.youtubeUrl.trim(),
-        startTime: timing.startTime,
-        // 현재 BE 계약상 endTime은 필수다. 로비 전역 재생 시간 계약이
-        // 도입되기 전까지 고정 길이를 더해 호환 가능한 값으로 전송한다.
-        endTime: timing.endTime,
-        answers: song.answers
-            .map((answer) => answer.trim())
-            .filter(Boolean),
-        hint: song.hint.trim(),
     };
 }
 
@@ -147,7 +98,8 @@ export function MapCreate() {
         formState.title.trim().length > 0 &&
         formState.title.trim().length <=
             MAP_CREATE_POLICY.TITLE_MAX_LENGTH;
-    const registeredSongCount = formState.songs.filter(isValidSong).length;
+    const registeredSongCount =
+        formState.songs.filter(isValidMapSongForm).length;
     const hasValidSongs =
         formState.songs.length >= MAP_CREATE_POLICY.MIN_SONG_COUNT &&
         registeredSongCount === formState.songs.length;
@@ -175,10 +127,7 @@ export function MapCreate() {
 
     const updateSong = (
         songId: string,
-        field: Exclude<
-            keyof CreateMapSongFormState,
-            'id' | 'answers' | 'videoDurationSeconds'
-        >,
+        field: 'youtubeUrl' | 'hint' | 'startTime',
         value: string,
     ) => {
         setFormState((current) => ({
@@ -365,7 +314,7 @@ export function MapCreate() {
                 for (const [index, song] of formState.songs.entries()) {
                     await createMapItem(
                         createdMap.id,
-                        createMapItemRequest(song, index),
+                        createMapItemRequestFromSong(song, index + 1),
                     );
                 }
             } catch (itemError) {

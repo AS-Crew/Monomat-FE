@@ -19,6 +19,7 @@ import { LobbyCreate } from './pages/LobbyCreate';
 import { LobbyRoom } from './pages/LobbyRoom';
 import { MyMaps } from './pages/MyMaps';
 import { MapCreate } from './pages/MapCreate';
+import { MapManage } from './pages/MapManage';
 
 /**
  * [애플리케이션 루트 컴포넌트]
@@ -98,6 +99,17 @@ function AppRoutes() {
                         <AppLayout>
                             <ProtectedRoute>
                                 <MapCreate />
+                            </ProtectedRoute>
+                        </AppLayout>
+                    }
+                />
+
+                <Route
+                    path={MAP_ROUTES.MANAGE_MAP_PATTERN}
+                    element={
+                        <AppLayout>
+                            <ProtectedRoute>
+                                <MapManage />
                             </ProtectedRoute>
                         </AppLayout>
                     }

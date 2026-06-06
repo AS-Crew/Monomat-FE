@@ -52,8 +52,15 @@ export const API_ENDPOINTS = {
         LIST: createApiEndpoint('/api/maps'),
         CREATE: createApiEndpoint('/api/maps'),
         MY_LIST: createApiEndpoint('/api/maps/me'),
+        MY_DETAIL: (mapId: number) =>
+            createApiEndpoint(`/api/maps/me/${mapId}`),
         ITEMS: (mapId: number) =>
             createApiEndpoint(`/api/maps/${mapId}/items`),
+        ITEM: (mapId: number, itemId: number) =>
+            createApiEndpoint(`/api/maps/${mapId}/items/${itemId}`),
+        ITEM_ORDER: (mapId: number) =>
+            createApiEndpoint(`/api/maps/${mapId}/items/order`),
+        UPDATE: (mapId: number) => createApiEndpoint(`/api/maps/${mapId}`),
         DELETE: (mapId: number) => createApiEndpoint(`/api/maps/${mapId}`),
     },
 

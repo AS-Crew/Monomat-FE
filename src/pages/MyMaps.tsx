@@ -139,9 +139,11 @@ function MyMapIcon() {
 
 function MyMapRow({
     map,
+    onEditClick,
     onDeleteClick,
 }: {
     map: MapSummary;
+    onEditClick: (map: MapSummary) => void;
     onDeleteClick: (map: MapSummary) => void;
 }) {
     const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
@@ -211,6 +213,7 @@ function MyMapRow({
                 <div className="flex items-center gap-[10px]">
                     <button
                         type="button"
+                        onClick={() => onEditClick(map)}
                         className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-[#2B3F6C] transition hover:bg-[var(--monomat-page-bg)]"
                         aria-label={MY_MAPS_PAGE_COPY.EDIT_ARIA_LABEL}
                         title={MY_MAPS_PAGE_COPY.EDIT_ARIA_LABEL}
@@ -463,6 +466,10 @@ export function MyMaps() {
         setDeleteErrorMessage(null);
     };
 
+    const handleEditClick = (map: MapSummary) => {
+        navigate(MAP_ROUTES.MANAGE_MAP(map.mapId));
+    };
+
     const handleCloseDeleteModal = () => {
         if (deleteMapMutation.isPending) {
             return;
@@ -565,6 +572,7 @@ export function MyMaps() {
                                     <MyMapRow
                                         key={map.mapId}
                                         map={map}
+                                        onEditClick={handleEditClick}
                                         onDeleteClick={handleDeleteClick}
                                     />
                                 ))}

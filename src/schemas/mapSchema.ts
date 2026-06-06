@@ -55,7 +55,7 @@ export const mapItemResponseSchema = z.object({
     mapId: z.number().int().positive(),
     orderNum: z.number().int().positive(),
     youtubeUrl: z.string().min(1),
-    videoId: z.string().min(1),
+    videoId: z.string().min(1).nullable(),
     startTime: z.number().int().min(0),
     endTime: z.number().int().positive(),
     title: z.string().nullable(),
@@ -67,3 +67,5 @@ export const mapItemResponseSchema = z.object({
     createdAt: z.string().min(1),
     updatedAt: z.string().min(1),
 });
+
+export const mapItemListResponseSchema = z.array(mapItemResponseSchema);

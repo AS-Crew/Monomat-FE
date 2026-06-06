@@ -46,6 +46,13 @@ export interface CreateMapRequest {
     isPublic: boolean;
 }
 
+export interface UpdateMapRequest {
+    title: string;
+    description: string | null;
+    category: MapCategory;
+    isPublic: boolean;
+}
+
 export interface CreateMapItemRequest {
     orderNum: number;
     youtubeUrl: string;
@@ -54,6 +61,12 @@ export interface CreateMapItemRequest {
     answers: string[];
     hint: string;
     hintTime?: number | null;
+}
+
+export type UpdateMapItemRequest = CreateMapItemRequest;
+
+export interface ReorderMapItemsRequest {
+    itemIds: number[];
 }
 
 export interface MapDetailResponse {
@@ -77,7 +90,7 @@ export interface MapItemResponse {
     mapId: number;
     orderNum: number;
     youtubeUrl: string;
-    videoId: string;
+    videoId: string | null;
     startTime: number;
     endTime: number;
     title: string | null;
@@ -97,6 +110,12 @@ export interface CreateMapSongFormState {
     startTime: string;
     videoDurationSeconds: number | null;
     answers: string[];
+    hintTime?: number | null;
+    playDurationSeconds?: number | null;
+}
+
+export interface ManageMapSongFormState extends CreateMapSongFormState {
+    itemId: number | null;
 }
 
 export interface CreateMapFormState {

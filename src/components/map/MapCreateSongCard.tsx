@@ -36,10 +36,7 @@ interface MapCreateSongCardProps {
     disabled: boolean;
     onChange: (
         songId: string,
-        field: Exclude<
-            keyof CreateMapSongFormState,
-            'id' | 'answers' | 'videoDurationSeconds'
-        >,
+        field: 'youtubeUrl' | 'hint' | 'startTime',
         value: string,
     ) => void;
     onAnswerChange: (
@@ -120,6 +117,8 @@ export function MapCreateSongCard({
     const timingError = getMapCreateTimingError(
         song.startTime,
         song.videoDurationSeconds,
+        song.playDurationSeconds ??
+            MAP_CREATE_POLICY.API_FALLBACK_PLAY_DURATION_SECONDS,
     );
     const playerElementId = `youtube-preview-${song.id}`;
 
