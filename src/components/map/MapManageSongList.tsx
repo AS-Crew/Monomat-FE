@@ -4,6 +4,7 @@ import { MAP_MANAGE_PAGE_COPY } from '../../constants/map';
 import {
     formatMapAnswerCount,
     formatMapStartTime,
+    getMapItemDisplayTitle,
 } from '../../utils/mapFormat';
 
 import type { MapItemResponse } from '../../types/map';
@@ -11,12 +12,6 @@ import type { MapItemResponse } from '../../types/map';
 interface MapManageSongListProps {
     items: MapItemResponse[];
     onItemClick: (item: MapItemResponse) => void;
-}
-
-function getItemTitle(item: MapItemResponse) {
-    return (
-        item.answers[0]?.trim() || MAP_MANAGE_PAGE_COPY.SONG_TITLE_FALLBACK
-    );
 }
 
 function getItemDescription(item: MapItemResponse) {
@@ -46,7 +41,10 @@ export function MapManageSongList({
     return (
         <div className="overflow-hidden rounded-2xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
             {sortedItems.map((item, index) => {
-                const title = getItemTitle(item);
+                const title = getMapItemDisplayTitle(
+                    item.answers,
+                    MAP_MANAGE_PAGE_COPY.SONG_TITLE_FALLBACK,
+                );
 
                 return (
                     <button
