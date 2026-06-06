@@ -51,6 +51,7 @@ export const API_ENDPOINTS = {
     MAP: {
         LIST: createApiEndpoint('/api/maps'),
         MY_LIST: createApiEndpoint('/api/maps/me'),
+        DELETE: (mapId: number) => createApiEndpoint(`/api/maps/${mapId}`),
     },
 
     USER: {

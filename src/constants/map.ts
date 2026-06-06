@@ -36,8 +36,20 @@ export const MY_MAPS_PAGE_COPY = {
     ACTION: '동작',
     EDIT_ARIA_LABEL: '맵 수정',
     DELETE_ARIA_LABEL: '맵 삭제',
+    DELETE_BUTTON_ARIA_LABEL: (title: string) => `${title} 삭제`,
     DESCRIPTION_TOGGLE_ARIA_LABEL: (title: string) => `${title} 설명 보기`,
     SONG_UNIT: '곡',
+} as const;
+
+export const MAP_DELETE_CONFIRM_MODAL_COPY = {
+    TITLE: '이 맵을 삭제할까요?',
+    DESCRIPTION: '삭제하면 포함된 모든 곡이 함께 삭제되며 복구하기 어렵습니다.',
+    TARGET_LABEL: '삭제 대상',
+    CANCEL: '취소',
+    CONFIRM: '삭제',
+    DELETING: '삭제 중...',
+    CLOSE_ARIA_LABEL: '삭제 확인 모달 닫기',
+    ERROR_FALLBACK: '맵 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.',
 } as const;
 
 export const MY_MAPS_ERROR_COPY = {

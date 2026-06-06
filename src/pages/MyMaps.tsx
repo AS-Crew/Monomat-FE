@@ -3,6 +3,10 @@ import {
     useState,
 } from 'react';
 import {
+    useMutation,
+    useQueryClient,
+} from '@tanstack/react-query';
+import {
     ChevronDown,
     ChevronLeft,
     ChevronRight,
@@ -18,10 +22,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 import { ApiError } from '../api/apiError';
+import { deleteMap } from '../api/mapApi';
 import { NavigationBar } from '../components/common/NavigationBar';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
+import { MapDeleteConfirmModal } from '../components/map/MapDeleteConfirmModal';
 import {
     DEFAULT_MAP_LIST_PAGE,
+    MAP_DELETE_CONFIRM_MODAL_COPY,
     MAP_PUBLIC_STATUS_META,
     MAP_ROUTES,
     MY_MAP_LIST_PAGE_SIZE,
@@ -74,6 +81,14 @@ function getErrorDescription(error: unknown) {
     return MY_MAPS_ERROR_COPY.DESCRIPTION;
 }
 
+function getDeleteErrorMessage(error: unknown) {
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+
+    return MAP_DELETE_CONFIRM_MODAL_COPY.ERROR_FALLBACK;
+}
+
 function matchesMyMapSearch(map: MapSummary, keyword: string) {
     const normalizedKeyword = keyword.trim().toLowerCase();
 
@@ -122,7 +137,13 @@ function MyMapIcon() {
     );
 }
 
-function MyMapRow({ map }: { map: MapSummary }) {
+function MyMapRow({
+    map,
+    onDeleteClick,
+}: {
+    map: MapSummary;
+    onDeleteClick: (map: MapSummary) => void;
+}) {
     const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
     const description = formatMapDescription(map.description);
     const songCount = numberFormatter.format(map.numOfSong);
@@ -198,8 +219,11 @@ function MyMapRow({ map }: { map: MapSummary }) {
                     </button>
                     <button
                         type="button"
+                        onClick={() => onDeleteClick(map)}
                         className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-[color:var(--monomat-border-input)] bg-white text-[#2B3F6C] transition hover:bg-[var(--monomat-page-bg)]"
-                        aria-label={MY_MAPS_PAGE_COPY.DELETE_ARIA_LABEL}
+                        aria-label={MY_MAPS_PAGE_COPY.DELETE_BUTTON_ARIA_LABEL(
+                            map.title,
+                        )}
                         title={MY_MAPS_PAGE_COPY.DELETE_ARIA_LABEL}
                     >
                         <Trash2 size={17} strokeWidth={2} aria-hidden="true" />
@@ -375,8 +399,13 @@ function MyMapsPagination({
 
 export function MyMaps() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [currentPage, setCurrentPage] = useState(DEFAULT_MAP_LIST_PAGE);
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [deleteTargetMap, setDeleteTargetMap] =
+        useState<MapSummary | null>(null);
+    const [deleteErrorMessage, setDeleteErrorMessage] =
+        useState<string | null>(null);
     const trimmedSearchKeyword = searchKeyword.trim();
     const isSearching = trimmedSearchKeyword.length > 0;
 
@@ -400,6 +429,22 @@ export function MyMaps() {
     const totalPages = activeQuery.data?.totalPages ?? 0;
     const hasNext = activeQuery.data?.hasNext ?? false;
 
+    const deleteMapMutation = useMutation({
+        mutationFn: (mapId: number) => deleteMap(mapId),
+        onMutate: () => {
+            setDeleteErrorMessage(null);
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
+                queryKey: ['myMaps'],
+            });
+            setDeleteTargetMap(null);
+        },
+        onError: (mutationError) => {
+            setDeleteErrorMessage(getDeleteErrorMessage(mutationError));
+        },
+    });
+
     const handleSearchKeywordChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchKeyword(event.target.value);
         setCurrentPage(DEFAULT_MAP_LIST_PAGE);
@@ -407,6 +452,32 @@ export function MyMaps() {
 
     const handleCreateMapClick = () => {
         window.alert(MY_MAPS_PAGE_COPY.CREATE_MAP_PENDING);
+    };
+
+    const handleDeleteClick = (map: MapSummary) => {
+        if (deleteMapMutation.isPending) {
+            return;
+        }
+
+        setDeleteTargetMap(map);
+        setDeleteErrorMessage(null);
+    };
+
+    const handleCloseDeleteModal = () => {
+        if (deleteMapMutation.isPending) {
+            return;
+        }
+
+        setDeleteTargetMap(null);
+        setDeleteErrorMessage(null);
+    };
+
+    const handleConfirmDelete = () => {
+        if (!deleteTargetMap || deleteMapMutation.isPending) {
+            return;
+        }
+
+        deleteMapMutation.mutate(deleteTargetMap.mapId);
     };
 
     return (
@@ -491,7 +562,11 @@ export function MyMaps() {
                             maps.length > 0 && (
                             <>
                                 {maps.map((map) => (
-                                    <MyMapRow key={map.mapId} map={map} />
+                                    <MyMapRow
+                                        key={map.mapId}
+                                        map={map}
+                                        onDeleteClick={handleDeleteClick}
+                                    />
                                 ))}
                             </>
                         )}
@@ -512,6 +587,16 @@ export function MyMaps() {
             </main>
 
             <LobbyFooter />
+
+            {deleteTargetMap && (
+                <MapDeleteConfirmModal
+                    mapTitle={deleteTargetMap.title}
+                    isDeleting={deleteMapMutation.isPending}
+                    errorMessage={deleteErrorMessage}
+                    onCancel={handleCloseDeleteModal}
+                    onConfirm={handleConfirmDelete}
+                />
+            )}
         </div>
     );
 }
