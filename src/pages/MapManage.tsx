@@ -7,14 +7,10 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 
 import {
-    createMapItem,
-    deleteMapItem,
     deleteMap,
     getMapItems,
     getMyMapDetail,
-    reorderMapItems,
-    updateMap,
-    updateMapItem,
+    updateManagedMap,
 } from '../api/mapApi';
 import { NavigationBar } from '../components/common/NavigationBar';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
@@ -35,7 +31,7 @@ import {
 } from '../constants/lobby';
 
 import type {
-    CreateMapItemRequest,
+    ManageMapRequest,
     MapDetailResponse,
     MapItemResponse,
     ManageMapSongFormState,
@@ -91,101 +87,33 @@ function createEmptyManageSong(): ManageMapSongFormState {
     };
 }
 
-function hasMapItemChanges(
-    item: MapItemResponse,
-    request: CreateMapItemRequest,
-) {
-    return (
-        item.youtubeUrl !== request.youtubeUrl ||
-        item.startTime !== request.startTime ||
-        item.endTime !== request.endTime ||
-        item.hint !== request.hint ||
-        item.hintTime !== (request.hintTime ?? item.hintTime) ||
-        item.answers.length !== request.answers.length ||
-        item.answers.some(
-            (answer, index) => answer !== request.answers[index],
-        )
-    );
-}
-
-async function synchronizeMapItems(
-    mapId: number,
+function createManageMapRequest(
+    mapRequest: UpdateMapRequest,
     originalItems: MapItemResponse[],
     songs: ManageMapSongFormState[],
-    onApplied: () => void,
-) {
+): ManageMapRequest {
     const retainedItemIds = new Set(
         songs.flatMap((song) => song.itemId == null ? [] : [song.itemId]),
     );
-    const deletedItems = originalItems.filter(
-        (item) => !retainedItemIds.has(item.id),
-    );
 
-    for (const item of deletedItems) {
-        await deleteMapItem(mapId, item.id);
-        onApplied();
-    }
-
-    const existingSongs = songs.filter(
-        (song): song is ManageMapSongFormState & { itemId: number } =>
-            song.itemId != null,
-    );
-    const existingItemIds = existingSongs.map((song) => song.itemId);
-    const originalItemsById = new Map(
-        originalItems.map((item) => [item.id, item]),
-    );
-
-    if (existingItemIds.length > 0) {
-        await reorderMapItems(mapId, { itemIds: existingItemIds });
-        onApplied();
-    }
-
-    for (const [index, song] of existingSongs.entries()) {
-        const originalItem = originalItemsById.get(song.itemId);
-        const request = createMapItemRequestFromSong(song, index + 1);
-
-        if (
-            originalItem &&
-            !hasMapItemChanges(originalItem, request)
-        ) {
-            continue;
-        }
-
-        await updateMapItem(
-            mapId,
-            song.itemId,
-            request,
-        );
-        onApplied();
-    }
-
-    const createdItemIds = new Map<string, number>();
-    const newSongs = songs.filter((song) => song.itemId == null);
-
-    for (const [index, song] of newSongs.entries()) {
-        const createdItem = await createMapItem(
-            mapId,
-            createMapItemRequestFromSong(
+    return {
+        ...mapRequest,
+        items: songs.map((song, index) => {
+            const itemRequest = createMapItemRequestFromSong(
                 song,
-                existingSongs.length + index + 1,
-            ),
-        );
-        createdItemIds.set(song.id, createdItem.id);
-        onApplied();
-    }
+                index + 1,
+            );
 
-    const finalItemIds = songs.map((song) => {
-        const itemId = song.itemId ?? createdItemIds.get(song.id);
-
-        if (itemId == null) {
-            throw new Error('저장된 곡 ID를 확인할 수 없습니다.');
-        }
-
-        return itemId;
-    });
-
-    await reorderMapItems(mapId, { itemIds: finalItemIds });
-    onApplied();
+            return {
+                ...itemRequest,
+                id: song.itemId,
+                hintTime: itemRequest.hintTime ?? null,
+            };
+        }),
+        deletedItemIds: originalItems
+            .filter((item) => !retainedItemIds.has(item.id))
+            .map((item) => item.id),
+    };
 }
 
 function MapManageLoadingCard({ message }: { message: string }) {
@@ -256,69 +184,30 @@ export function MapManage() {
     });
 
     const updateMapMutation = useMutation({
-        mutationFn: async ({
+        mutationFn: ({
             mapRequest,
             songs,
         }: SaveMapManageChanges) => {
-            let hasAppliedChange = false;
+            const request = createManageMapRequest(
+                mapRequest,
+                mapItemsQuery.data ?? [],
+                songs,
+            );
 
-            try {
-                await synchronizeMapItems(
-                    mapId,
-                    mapItemsQuery.data ?? [],
-                    songs,
-                    () => {
-                        hasAppliedChange = true;
-                    },
-                );
-                const updatedMap = await updateMap(mapId, mapRequest);
-                hasAppliedChange = true;
-
-                return updatedMap;
-            } catch (error) {
-                const message = getErrorMessage(
-                    error,
-                    MAP_MANAGE_PAGE_COPY.UPDATE_ERROR,
-                );
-
-                if (hasAppliedChange) {
-                    throw new Error(
-                        `${MAP_MANAGE_PAGE_COPY.UPDATE_PARTIAL_ERROR} ${message}`,
-                    );
-                }
-
-                throw error;
-            }
+            return updateManagedMap(mapId, request);
         },
-        onSuccess: async (updatedMap) => {
+        onSuccess: async (response) => {
             queryClient.setQueryData(
                 ['myMapDetail', mapId],
-                updatedMap,
+                response.map,
             );
-            await Promise.all([
-                queryClient.invalidateQueries({
-                    queryKey: ['myMapDetail', mapId],
-                }),
-                queryClient.invalidateQueries({
-                    queryKey: ['myMaps'],
-                }),
-                queryClient.invalidateQueries({
-                    queryKey: ['mapItems', mapId],
-                }),
-            ]);
-        },
-        onError: async () => {
-            await Promise.all([
-                queryClient.invalidateQueries({
-                    queryKey: ['myMapDetail', mapId],
-                }),
-                queryClient.invalidateQueries({
-                    queryKey: ['myMaps'],
-                }),
-                queryClient.invalidateQueries({
-                    queryKey: ['mapItems', mapId],
-                }),
-            ]);
+            queryClient.setQueryData(
+                ['mapItems', mapId],
+                response.items,
+            );
+            await queryClient.invalidateQueries({
+                queryKey: ['myMaps'],
+            });
         },
     });
 
