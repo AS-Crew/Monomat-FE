@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from '../constants/endpoints';
 import {
     mapDetailResponseSchema,
+    mapItemListResponseSchema,
     mapItemResponseSchema,
     mapPageResponseSchema,
 } from '../schemas/mapSchema';
@@ -14,6 +15,9 @@ import type {
     MapItemResponse,
     MapListQueryParams,
     MapPageResponse,
+    ReorderMapItemsRequest,
+    UpdateMapRequest,
+    UpdateMapItemRequest,
 } from '../types/map';
 
 const JSON_CONTENT_TYPE = 'application/json';
@@ -21,8 +25,17 @@ const DEFAULT_FETCH_PUBLIC_MAP_LIST_ERROR_MESSAGE =
     '맵 목록을 불러오는 데 실패했습니다.';
 const DEFAULT_FETCH_MY_MAP_LIST_ERROR_MESSAGE =
     '내 맵 목록을 불러오는 데 실패했습니다.';
+const DEFAULT_FETCH_MY_MAP_DETAIL_ERROR_MESSAGE =
+    '맵 정보를 불러오는 데 실패했습니다.';
+const DEFAULT_FETCH_MAP_ITEMS_ERROR_MESSAGE =
+    '곡 목록을 불러오는 데 실패했습니다.';
 const DEFAULT_CREATE_MAP_ERROR_MESSAGE = '맵 생성에 실패했습니다.';
 const DEFAULT_CREATE_MAP_ITEM_ERROR_MESSAGE = '곡 등록에 실패했습니다.';
+const DEFAULT_UPDATE_MAP_ERROR_MESSAGE = '맵 수정에 실패했습니다.';
+const DEFAULT_UPDATE_MAP_ITEM_ERROR_MESSAGE = '곡 수정에 실패했습니다.';
+const DEFAULT_DELETE_MAP_ITEM_ERROR_MESSAGE = '곡 삭제에 실패했습니다.';
+const DEFAULT_REORDER_MAP_ITEMS_ERROR_MESSAGE =
+    '곡 순서 변경에 실패했습니다.';
 const DEFAULT_DELETE_MAP_ERROR_MESSAGE =
     '맵 삭제에 실패했습니다.';
 
@@ -105,6 +118,56 @@ export async function getMyMaps(
     );
 }
 
+export async function getMyMapDetail(
+    mapId: number,
+): Promise<MapDetailResponse> {
+    const response = await fetchWithAuth(
+        API_ENDPOINTS.MAP.MY_DETAIL(mapId),
+    );
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            DEFAULT_FETCH_MY_MAP_DETAIL_ERROR_MESSAGE,
+        );
+    }
+
+    const payload = await response.json() as unknown;
+    const parsed = mapDetailResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error('[mapApi] 내 맵 상세 응답 검증 실패:', parsed.error);
+
+        throw new Error('맵 상세 응답 형식이 올바르지 않습니다.');
+    }
+
+    return parsed.data;
+}
+
+export async function getMapItems(
+    mapId: number,
+): Promise<MapItemResponse[]> {
+    const response = await fetchWithAuth(API_ENDPOINTS.MAP.ITEMS(mapId));
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            DEFAULT_FETCH_MAP_ITEMS_ERROR_MESSAGE,
+        );
+    }
+
+    const payload = await response.json() as unknown;
+    const parsed = mapItemListResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error('[mapApi] 곡 목록 응답 검증 실패:', parsed.error);
+
+        throw new Error('곡 목록 응답 형식이 올바르지 않습니다.');
+    }
+
+    return parsed.data;
+}
+
 export async function createMap(
     request: CreateMapRequest,
 ): Promise<MapDetailResponse> {
@@ -127,6 +190,34 @@ export async function createMap(
         console.error('[mapApi] 맵 생성 응답 검증 실패:', parsed.error);
 
         throw new Error('맵 생성 응답 형식이 올바르지 않습니다.');
+    }
+
+    return parsed.data;
+}
+
+export async function updateMap(
+    mapId: number,
+    request: UpdateMapRequest,
+): Promise<MapDetailResponse> {
+    const response = await fetchWithAuth(API_ENDPOINTS.MAP.UPDATE(mapId), {
+        method: 'PUT',
+        headers: {
+            'Content-Type': JSON_CONTENT_TYPE,
+        },
+        body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+        throw await createApiError(response, DEFAULT_UPDATE_MAP_ERROR_MESSAGE);
+    }
+
+    const payload = await response.json() as unknown;
+    const parsed = mapDetailResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error('[mapApi] 맵 수정 응답 검증 실패:', parsed.error);
+
+        throw new Error('맵 수정 응답 형식이 올바르지 않습니다.');
     }
 
     return parsed.data;
@@ -161,6 +252,83 @@ export async function createMapItem(
     }
 
     return parsed.data;
+}
+
+export async function updateMapItem(
+    mapId: number,
+    itemId: number,
+    request: UpdateMapItemRequest,
+): Promise<MapItemResponse> {
+    const response = await fetchWithAuth(
+        API_ENDPOINTS.MAP.ITEM(mapId, itemId),
+        {
+            method: 'PUT',
+            headers: {
+                'Content-Type': JSON_CONTENT_TYPE,
+            },
+            body: JSON.stringify(request),
+        },
+    );
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            DEFAULT_UPDATE_MAP_ITEM_ERROR_MESSAGE,
+        );
+    }
+
+    const payload = await response.json() as unknown;
+    const parsed = mapItemResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error('[mapApi] 곡 수정 응답 검증 실패:', parsed.error);
+
+        throw new Error('곡 수정 응답 형식이 올바르지 않습니다.');
+    }
+
+    return parsed.data;
+}
+
+export async function deleteMapItem(
+    mapId: number,
+    itemId: number,
+): Promise<void> {
+    const response = await fetchWithAuth(
+        API_ENDPOINTS.MAP.ITEM(mapId, itemId),
+        {
+            method: 'DELETE',
+        },
+    );
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            DEFAULT_DELETE_MAP_ITEM_ERROR_MESSAGE,
+        );
+    }
+}
+
+export async function reorderMapItems(
+    mapId: number,
+    request: ReorderMapItemsRequest,
+): Promise<void> {
+    const response = await fetchWithAuth(
+        API_ENDPOINTS.MAP.ITEM_ORDER(mapId),
+        {
+            method: 'PUT',
+            headers: {
+                'Content-Type': JSON_CONTENT_TYPE,
+            },
+            body: JSON.stringify(request),
+        },
+    );
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            DEFAULT_REORDER_MAP_ITEMS_ERROR_MESSAGE,
+        );
+    }
 }
 
 export async function deleteMap(mapId: number): Promise<void> {

@@ -60,6 +60,16 @@ export const LOBBY_ROUTES = {
     CREATE_MAP: null as string | null,
 } as const;
 
+export const LOBBY_QUERY_PARAMS = {
+    MAP_ID: 'mapId',
+} as const;
+
+export const LOBBY_CREATE_MAP_PRESELECT_COPY = {
+    LOADING: '선택한 맵 정보를 불러오는 중입니다.',
+    INVALID_MAP_ID: '전달된 맵 번호가 올바르지 않습니다.',
+    FETCH_ERROR: '선택한 내 맵을 불러오지 못했습니다.',
+} as const;
+
 export const LOBBY_STATUS_META = {
     WAITING: {
         label: '대기중',

@@ -22,6 +22,8 @@ export const MY_MAP_SEARCH_PAGE_SIZE = 100;
 export const MAP_ROUTES = {
     MY_MAPS: '/maps/me',
     CREATE_MAP: '/maps/new',
+    MANAGE_MAP_PATTERN: '/maps/:mapId/manage',
+    MANAGE_MAP: (mapId: number) => `/maps/${mapId}/manage`,
 } as const;
 
 export const MAP_CREATE_POLICY = {
@@ -38,6 +40,11 @@ export const MAP_CREATE_POLICY = {
     API_FALLBACK_PLAY_DURATION_SECONDS: 30,
     DEFAULT_CATEGORY: 'J-POP',
     DEFAULT_IS_PUBLIC: true,
+} as const;
+
+export const MAP_UPDATE_POLICY = {
+    TITLE_MAX_LENGTH: 50,
+    DESCRIPTION_MAX_LENGTH: 255,
 } as const;
 
 export const MAP_CREATE_PAGE_COPY = {
@@ -183,4 +190,58 @@ export const MAP_PUBLIC_STATUS_META = {
         label: '비공개',
         badgeClassName: 'border-[var(--monomat-border-input)] bg-white text-[var(--monomat-text-muted)]',
     },
+} as const;
+
+export const MAP_MANAGE_PAGE_COPY = {
+    BACK_TO_MAPS: '← 맵 목록으로',
+    SUMMARY_LOADING: '맵 정보를 불러오는 중입니다.',
+    SUMMARY_ERROR_TITLE: '맵 정보를 불러오지 못했습니다.',
+    ITEMS_LOADING: '곡 목록을 불러오는 중입니다.',
+    ITEMS_ERROR_TITLE: '곡 목록을 불러오지 못했습니다.',
+    INVALID_MAP_ID_TITLE: '올바르지 않은 맵 주소입니다.',
+    INVALID_MAP_ID_DESCRIPTION:
+        '맵 번호를 확인하거나 내 맵 목록으로 돌아가주세요.',
+    RETRY: '다시 불러오기',
+    SONG_LIST_TITLE: '곡 목록',
+    EMPTY_SONG_LIST: '등록된 곡이 없습니다.',
+    CREATE_LOBBY: '이 맵으로 로비 만들기',
+    EDIT: '수정',
+    DELETE: '삭제',
+    SAVE: '저장',
+    SAVING: '저장 중...',
+    CANCEL: '취소',
+    TITLE_LABEL: '맵 제목',
+    DESCRIPTION_LABEL: '맵 설명',
+    CATEGORY_LABEL: '카테고리',
+    VISIBILITY_LABEL: '공개 설정',
+    PUBLIC: '공개',
+    PRIVATE: '비공개',
+    UPDATE_ERROR: '맵 정보를 수정하지 못했습니다.',
+    UPDATE_PARTIAL_ERROR:
+        '일부 변경만 저장되었습니다. 최신 정보를 다시 불러온 뒤 확인해주세요.',
+    DESCRIPTION_FALLBACK: '맵 설명이 없습니다.',
+    UPDATED_PREFIX: '업데이트',
+    PLAY_SUFFIX: '플레이',
+    SONG_UNIT: '곡',
+    SONG_TITLE_FALLBACK: '곡 제목 정보 없음',
+    SONG_DESCRIPTION_FALLBACK: '곡 설명이 없습니다.',
+    THUMBNAIL_FALLBACK: '미리보기 없음',
+    SONG_ROW_ARIA_LABEL: (title: string) => `${title} 상세 정보 보기`,
+    DELETE_ARIA_LABEL: (title: string) => `${title} 삭제`,
+    EDIT_SONG_LIST_DESCRIPTION:
+        '곡을 추가하거나 내용을 수정하고, 화살표로 재생 순서를 변경하세요.',
+    EDIT_ADD_SONG: '+ 곡 추가',
+    EDIT_EMPTY_SONG_ERROR: '곡을 1개 이상 등록해주세요.',
+    EDIT_INVALID_SONG_ERROR:
+        '모든 곡의 YouTube URL, 힌트, 시작 시간, 정답 후보를 확인해주세요.',
+} as const;
+
+export const MAP_ITEM_DETAIL_MODAL_COPY = {
+    CLOSE: '닫기',
+    CLOSE_ARIA_LABEL: '곡 상세 모달 닫기',
+    PLAY_FROM: (startTime: string) => `${startTime}부터 재생`,
+    ANSWERS_LABEL: '정답 후보',
+    EMPTY_ANSWERS: '등록된 정답 후보가 없습니다.',
+    PREVIEW_FALLBACK: 'YouTube 미리보기를 표시할 수 없습니다.',
+    IFRAME_TITLE: (title: string) => `${title} YouTube 미리보기`,
 } as const;
