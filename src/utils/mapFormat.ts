@@ -58,6 +58,15 @@ export function formatMapAnswerCount(answerCount: number) {
     return `+${safeAnswerCount} 정답`;
 }
 
+export function getMapItemDisplayTitle(
+    answers: string[] | null | undefined,
+    fallback: string,
+) {
+    const primaryAnswer = answers?.[0]?.trim();
+
+    return primaryAnswer || fallback;
+}
+
 export function formatMapUpdatedAt(updatedAt: string) {
     const timestamp = new Date(updatedAt).getTime();
 

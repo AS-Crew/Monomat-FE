@@ -8,7 +8,10 @@ import {
     MAP_ITEM_DETAIL_MODAL_COPY,
     MAP_MANAGE_PAGE_COPY,
 } from '../../constants/map';
-import { formatMapStartTime } from '../../utils/mapFormat';
+import {
+    formatMapStartTime,
+    getMapItemDisplayTitle,
+} from '../../utils/mapFormat';
 import {
     createYouTubeEmbedUrl,
     extractYouTubeVideoId,
@@ -42,8 +45,10 @@ export function MapItemDetailModal({
         };
     }, [onClose]);
 
-    const title =
-        item.title?.trim() || MAP_MANAGE_PAGE_COPY.SONG_TITLE_FALLBACK;
+    const title = getMapItemDisplayTitle(
+        item.answers,
+        MAP_MANAGE_PAGE_COPY.SONG_TITLE_FALLBACK,
+    );
     const videoId =
         item.videoId?.trim() || extractYouTubeVideoId(item.youtubeUrl);
     const embedUrl = videoId

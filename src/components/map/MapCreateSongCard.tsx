@@ -23,6 +23,7 @@ import {
     normalizeAnswerList,
 } from '../../utils/answerNormalizer';
 import { getMapCreateTimingError } from '../../utils/mapCreateTiming';
+import { getMapItemDisplayTitle } from '../../utils/mapFormat';
 
 import type { CreateMapSongFormState } from '../../types/map';
 import type { YouTubeIframePlayer } from '../../utils/youtube';
@@ -85,8 +86,10 @@ export function MapCreateSongCard({
     const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
     const onDurationChangeRef = useRef(onDurationChange);
     const songNumber = String(index + 1).padStart(2, '0');
-    const songTitle =
-        song.answers[0]?.trim() || MAP_CREATE_SONG_COPY.TITLE;
+    const songTitle = getMapItemDisplayTitle(
+        song.answers,
+        MAP_CREATE_SONG_COPY.TITLE,
+    );
     const canAddAnswer =
         song.answers.length < MAP_CREATE_POLICY.MAX_ANSWER_COUNT;
     const normalizedAnswers = normalizeAnswerList(song.answers);
