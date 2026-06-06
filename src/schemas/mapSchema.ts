@@ -69,3 +69,8 @@ export const mapItemResponseSchema = z.object({
 });
 
 export const mapItemListResponseSchema = z.array(mapItemResponseSchema);
+
+export const manageMapResponseSchema = z.object({
+    map: mapDetailResponseSchema,
+    items: mapItemListResponseSchema,
+});

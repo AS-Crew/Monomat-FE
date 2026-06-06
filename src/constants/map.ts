@@ -217,8 +217,6 @@ export const MAP_MANAGE_PAGE_COPY = {
     PUBLIC: '공개',
     PRIVATE: '비공개',
     UPDATE_ERROR: '맵 정보를 수정하지 못했습니다.',
-    UPDATE_PARTIAL_ERROR:
-        '일부 변경만 저장되었습니다. 최신 정보를 다시 불러온 뒤 확인해주세요.',
     DESCRIPTION_FALLBACK: '맵 설명이 없습니다.',
     UPDATED_PREFIX: '업데이트',
     PLAY_SUFFIX: '플레이',

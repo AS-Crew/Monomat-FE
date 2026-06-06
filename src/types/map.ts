@@ -53,6 +53,22 @@ export interface UpdateMapRequest {
     isPublic: boolean;
 }
 
+export interface ManageMapItemRequest {
+    id: number | null;
+    orderNum: number;
+    youtubeUrl: string;
+    startTime: number;
+    endTime: number;
+    answers: string[];
+    hint: string;
+    hintTime: number | null;
+}
+
+export interface ManageMapRequest extends UpdateMapRequest {
+    items: ManageMapItemRequest[];
+    deletedItemIds: number[];
+}
+
 export interface CreateMapItemRequest {
     orderNum: number;
     youtubeUrl: string;
@@ -101,6 +117,11 @@ export interface MapItemResponse {
     hintTime: number;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface ManageMapResponse {
+    map: MapDetailResponse;
+    items: MapItemResponse[];
 }
 
 export interface CreateMapSongFormState {

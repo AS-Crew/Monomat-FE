@@ -60,6 +60,8 @@ export const API_ENDPOINTS = {
             createApiEndpoint(`/api/maps/${mapId}/items/${itemId}`),
         ITEM_ORDER: (mapId: number) =>
             createApiEndpoint(`/api/maps/${mapId}/items/order`),
+        MANAGE: (mapId: number) =>
+            createApiEndpoint(`/api/maps/${mapId}/manage`),
         UPDATE: (mapId: number) => createApiEndpoint(`/api/maps/${mapId}`),
         DELETE: (mapId: number) => createApiEndpoint(`/api/maps/${mapId}`),
     },
