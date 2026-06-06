@@ -1,14 +1,28 @@
 import { API_ENDPOINTS } from '../constants/endpoints';
-import { mapPageResponseSchema } from '../schemas/mapSchema';
+import {
+    mapDetailResponseSchema,
+    mapItemResponseSchema,
+    mapPageResponseSchema,
+} from '../schemas/mapSchema';
 import { createApiError } from './apiError';
 import { fetchWithAuth } from './apiClient';
 
-import type { MapListQueryParams, MapPageResponse } from '../types/map';
+import type {
+    CreateMapItemRequest,
+    CreateMapRequest,
+    MapDetailResponse,
+    MapItemResponse,
+    MapListQueryParams,
+    MapPageResponse,
+} from '../types/map';
 
+const JSON_CONTENT_TYPE = 'application/json';
 const DEFAULT_FETCH_PUBLIC_MAP_LIST_ERROR_MESSAGE =
     '맵 목록을 불러오는 데 실패했습니다.';
 const DEFAULT_FETCH_MY_MAP_LIST_ERROR_MESSAGE =
     '내 맵 목록을 불러오는 데 실패했습니다.';
+const DEFAULT_CREATE_MAP_ERROR_MESSAGE = '맵 생성에 실패했습니다.';
+const DEFAULT_CREATE_MAP_ITEM_ERROR_MESSAGE = '곡 등록에 실패했습니다.';
 const DEFAULT_DELETE_MAP_ERROR_MESSAGE =
     '맵 삭제에 실패했습니다.';
 
@@ -89,6 +103,64 @@ export async function getMyMaps(
         createMapListUrl(API_ENDPOINTS.MAP.MY_LIST, params),
         DEFAULT_FETCH_MY_MAP_LIST_ERROR_MESSAGE,
     );
+}
+
+export async function createMap(
+    request: CreateMapRequest,
+): Promise<MapDetailResponse> {
+    const response = await fetchWithAuth(API_ENDPOINTS.MAP.CREATE, {
+        method: 'POST',
+        headers: {
+            'Content-Type': JSON_CONTENT_TYPE,
+        },
+        body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+        throw await createApiError(response, DEFAULT_CREATE_MAP_ERROR_MESSAGE);
+    }
+
+    const payload = await response.json() as unknown;
+    const parsed = mapDetailResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error('[mapApi] 맵 생성 응답 검증 실패:', parsed.error);
+
+        throw new Error('맵 생성 응답 형식이 올바르지 않습니다.');
+    }
+
+    return parsed.data;
+}
+
+export async function createMapItem(
+    mapId: number,
+    request: CreateMapItemRequest,
+): Promise<MapItemResponse> {
+    const response = await fetchWithAuth(API_ENDPOINTS.MAP.ITEMS(mapId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': JSON_CONTENT_TYPE,
+        },
+        body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            DEFAULT_CREATE_MAP_ITEM_ERROR_MESSAGE,
+        );
+    }
+
+    const payload = await response.json() as unknown;
+    const parsed = mapItemResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error('[mapApi] 곡 생성 응답 검증 실패:', parsed.error);
+
+        throw new Error('곡 생성 응답 형식이 올바르지 않습니다.');
+    }
+
+    return parsed.data;
 }
 
 export async function deleteMap(mapId: number): Promise<void> {

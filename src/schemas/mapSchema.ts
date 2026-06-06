@@ -33,3 +33,37 @@ export const mapPageResponseSchema = z.object({
     totalPages: z.number().int().min(0),
     hasNext: z.boolean(),
 });
+
+export const mapDetailResponseSchema = z.object({
+    id: z.number().int().positive(),
+    ownerId: z.number().int().positive(),
+    ownerNickname: z.string().nullable(),
+    title: z.string().min(1),
+    description: z.string().nullable(),
+    category: mapCategorySchema,
+    numOfSong: z.number().int().min(0),
+    totalPlayTime: z.number().int().min(0),
+    isPublic: z.boolean(),
+    pendingPublic: z.boolean(),
+    playCount: z.number().int().min(0),
+    createdAt: z.string().min(1),
+    updatedAt: z.string().min(1),
+});
+
+export const mapItemResponseSchema = z.object({
+    id: z.number().int().positive(),
+    mapId: z.number().int().positive(),
+    orderNum: z.number().int().positive(),
+    youtubeUrl: z.string().min(1),
+    videoId: z.string().min(1),
+    startTime: z.number().int().min(0),
+    endTime: z.number().int().positive(),
+    title: z.string().nullable(),
+    artist: z.string().nullable(),
+    thumbnailUrl: z.string().nullable(),
+    answers: z.array(z.string().min(1)).min(1).max(5),
+    hint: z.string().min(1),
+    hintTime: z.number().int().min(1).max(100),
+    createdAt: z.string().min(1),
+    updatedAt: z.string().min(1),
+});

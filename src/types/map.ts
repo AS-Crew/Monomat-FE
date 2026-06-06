@@ -38,3 +38,71 @@ export interface MapListQueryParams {
     category?: MapCategory;
     sort?: MapSortOption;
 }
+
+export interface CreateMapRequest {
+    title: string;
+    description: string | null;
+    category: MapCategory;
+    isPublic: boolean;
+}
+
+export interface CreateMapItemRequest {
+    orderNum: number;
+    youtubeUrl: string;
+    startTime: number;
+    endTime: number;
+    answers: string[];
+    hint: string;
+    hintTime?: number | null;
+}
+
+export interface MapDetailResponse {
+    id: number;
+    ownerId: number;
+    ownerNickname: string | null;
+    title: string;
+    description: string | null;
+    category: MapCategory;
+    numOfSong: number;
+    totalPlayTime: number;
+    isPublic: boolean;
+    pendingPublic: boolean;
+    playCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface MapItemResponse {
+    id: number;
+    mapId: number;
+    orderNum: number;
+    youtubeUrl: string;
+    videoId: string;
+    startTime: number;
+    endTime: number;
+    title: string | null;
+    artist: string | null;
+    thumbnailUrl: string | null;
+    answers: string[];
+    hint: string;
+    hintTime: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateMapSongFormState {
+    id: string;
+    youtubeUrl: string;
+    hint: string;
+    startTime: string;
+    videoDurationSeconds: number | null;
+    answers: string[];
+}
+
+export interface CreateMapFormState {
+    title: string;
+    description: string;
+    category: MapCategory;
+    isPublic: boolean;
+    songs: CreateMapSongFormState[];
+}

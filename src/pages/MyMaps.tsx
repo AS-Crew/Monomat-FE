@@ -451,7 +451,7 @@ export function MyMaps() {
     };
 
     const handleCreateMapClick = () => {
-        window.alert(MY_MAPS_PAGE_COPY.CREATE_MAP_PENDING);
+        navigate(MAP_ROUTES.CREATE_MAP);
     };
 
     const handleDeleteClick = (map: MapSummary) => {
