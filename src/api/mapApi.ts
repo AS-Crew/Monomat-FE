@@ -9,6 +9,8 @@ const DEFAULT_FETCH_PUBLIC_MAP_LIST_ERROR_MESSAGE =
     '맵 목록을 불러오는 데 실패했습니다.';
 const DEFAULT_FETCH_MY_MAP_LIST_ERROR_MESSAGE =
     '내 맵 목록을 불러오는 데 실패했습니다.';
+const DEFAULT_DELETE_MAP_ERROR_MESSAGE =
+    '맵 삭제에 실패했습니다.';
 
 function appendNonEmptyParam(
     searchParams: URLSearchParams,
@@ -87,4 +89,14 @@ export async function getMyMaps(
         createMapListUrl(API_ENDPOINTS.MAP.MY_LIST, params),
         DEFAULT_FETCH_MY_MAP_LIST_ERROR_MESSAGE,
     );
+}
+
+export async function deleteMap(mapId: number): Promise<void> {
+    const response = await fetchWithAuth(API_ENDPOINTS.MAP.DELETE(mapId), {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw await createApiError(response, DEFAULT_DELETE_MAP_ERROR_MESSAGE);
+    }
 }
