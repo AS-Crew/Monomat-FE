@@ -5,6 +5,8 @@ import {
     DEFAULT_MAP_LIST_PAGE,
     DEFAULT_MAP_LIST_SIZE,
     DEFAULT_MAP_SORT_OPTION,
+    MAP_CATEGORY_OPTIONS,
+    MAP_CATEGORY_QUERY_VALUE,
     MY_MAP_LIST_PAGE_SIZE,
 } from '../../constants/map';
 import {
@@ -14,12 +16,12 @@ import {
 
 import type {
     MapCategory,
+    MapCategoryQueryValue,
     MapListQueryParams,
     MapSortOption,
     MapSummary,
 } from '../../types/map';
 
-const MAP_CATEGORIES = ['K-POP', 'J-POP', 'POP', 'OST', '애니'] as const;
 const MAP_SORT_OPTIONS = [
     'NEWEST',
     'OLDEST',
@@ -28,7 +30,29 @@ const MAP_SORT_OPTIONS = [
 ] as const;
 
 function isMapCategory(value: string | null): value is MapCategory {
-    return MAP_CATEGORIES.some((category) => category === value);
+    return MAP_CATEGORY_OPTIONS.some((category) => category === value);
+}
+
+function isMapCategoryQueryValue(
+    value: string | null,
+): value is MapCategoryQueryValue {
+    return Object.values(MAP_CATEGORY_QUERY_VALUE).some(
+        (category) => category === value,
+    );
+}
+
+function parseMapCategory(value: string | null): MapCategory | undefined {
+    if (isMapCategory(value)) {
+        return value;
+    }
+
+    if (!isMapCategoryQueryValue(value)) {
+        return undefined;
+    }
+
+    return MAP_CATEGORY_OPTIONS.find(
+        (category) => MAP_CATEGORY_QUERY_VALUE[category] === value,
+    );
 }
 
 function isMapSortOption(value: string | null): value is MapSortOption {
@@ -57,16 +81,18 @@ function filterMapItems(
     allowedPrivateMaps: boolean,
 ) {
     const keyword = requestUrl.searchParams.get('keyword')?.trim().toLowerCase();
-    const category = requestUrl.searchParams.get('category');
+    const category = parseMapCategory(
+        requestUrl.searchParams.get('category'),
+    );
 
     return maps.filter((map) => {
         const matchesVisibility = allowedPrivateMaps || map.isPublic;
         const matchesKeyword =
             !keyword ||
             map.title.toLowerCase().includes(keyword) ||
-            map.category.toLowerCase().includes(keyword);
-        const matchesCategory =
-            !isMapCategory(category) || map.category === category;
+            (allowedPrivateMaps &&
+                map.category.toLowerCase().includes(keyword));
+        const matchesCategory = !category || map.category === category;
 
         return matchesVisibility && matchesKeyword && matchesCategory;
     });

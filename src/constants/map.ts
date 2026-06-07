@@ -1,10 +1,22 @@
 import { LOBBY_CATEGORY_FILTERS } from './lobby';
 
+import type {
+    MapCategory,
+    MapCategoryQueryValue,
+} from '../types/map';
+
 export const MAP_CATEGORY_FILTERS = LOBBY_CATEGORY_FILTERS;
 export const MAP_ALL_CATEGORY_FILTER = MAP_CATEGORY_FILTERS[0];
 export const MAP_CATEGORY_OPTIONS = MAP_CATEGORY_FILTERS.filter(
     (category) => category !== MAP_ALL_CATEGORY_FILTER,
 );
+export const MAP_CATEGORY_QUERY_VALUE = {
+    'K-POP': 'KPOP',
+    'J-POP': 'JPOP',
+    POP: 'POP',
+    OST: 'OST',
+    애니: 'ANIME',
+} as const satisfies Record<MapCategory, MapCategoryQueryValue>;
 
 export const MAP_SORT_LABELS = {
     NEWEST: '최신순',
