@@ -115,7 +115,7 @@ export async function getPublicMaps(
 }
 
 export async function getMyMaps(
-    params?: Pick<MapListQueryParams, 'page' | 'size'>,
+    params?: MapListQueryParams,
 ): Promise<MapPageResponse> {
     return fetchMapPage(
         createMapListUrl(API_ENDPOINTS.MAP.MY_LIST, params),

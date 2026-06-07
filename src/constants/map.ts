@@ -15,9 +15,9 @@ export const MAP_SORT_LABELS = {
 
 export const DEFAULT_MAP_LIST_PAGE = 0;
 export const DEFAULT_MAP_LIST_SIZE = 20;
+export const DEFAULT_MAP_SORT_OPTION = 'NEWEST' as const;
 export const MAP_SELECT_MODAL_PAGE_SIZE = 5;
 export const MY_MAP_LIST_PAGE_SIZE = 10;
-export const MY_MAP_SEARCH_PAGE_SIZE = 100;
 
 export const MAP_ROUTES = {
     MY_MAPS: '/maps/me',
@@ -138,7 +138,8 @@ export const MY_MAPS_PAGE_COPY = {
     TITLE: '맵 관리',
     DESCRIPTION: '직접 만든 맵을 관리하고, 새 맵을 생성하세요',
     CREATE_MAP: '+ 새 맵 만들기',
-    SEARCH_PLACEHOLDER: '맵 제목이나 카테고리로 검색하세요',
+    SEARCH_PLACEHOLDER: '맵 제목으로 검색하세요',
+    SORT_ARIA_LABEL: '내 맵 정렬',
     MAP_TITLE: '맵 제목',
     CATEGORY: '카테고리',
     SONG_COUNT: '곡 수',
