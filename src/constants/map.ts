@@ -49,6 +49,8 @@ export const MAP_CREATE_POLICY = {
     MIN_SONG_COUNT: 1,
     MAX_SONG_COUNT: 200,
     MIN_START_TIME_SECONDS: 0,
+    MIN_HINT_TIME_SECONDS: 1,
+    MAX_HINT_TIME_SECONDS: 100,
     API_FALLBACK_PLAY_DURATION_SECONDS: 30,
     DEFAULT_CATEGORY: 'J-POP',
     DEFAULT_IS_PUBLIC: true,
@@ -88,8 +90,6 @@ export const MAP_CREATE_PAGE_COPY = {
     SUBMIT: '맵 만들기',
     SUBMITTING: '맵 만드는 중...',
     CREATE_ERROR: '맵 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
-    PARTIAL_CREATE_ERROR:
-        '맵은 생성되었지만 일부 곡 등록에 실패했습니다. 내 맵 관리에서 생성된 맵을 확인해주세요.',
 } as const;
 
 export const MAP_CREATE_SONG_COPY = {

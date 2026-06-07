@@ -15,6 +15,7 @@ import {
 } from '../data/maps';
 
 import type {
+    CreateMapWithItemsRequest,
     MapCategory,
     MapCategoryQueryValue,
     MapListQueryParams,
@@ -169,6 +170,85 @@ function createMapListResponse(
 }
 
 export const mapHandlers = [
+    http.post(
+        API_ENDPOINTS.MAP.CREATE_WITH_ITEMS,
+        async ({ request }) => {
+            const payload =
+                await request.json() as CreateMapWithItemsRequest;
+            const nextMapId =
+                Math.max(
+                    0,
+                    ...mockPublicMapItems.map((map) => map.mapId),
+                    ...mockMyMapItems.map((map) => map.mapId),
+                ) + 1;
+            const createdAt = new Date().toISOString();
+            const totalPlayTime = payload.items.reduce(
+                (total, item) =>
+                    total + (item.endTime - item.startTime),
+                0,
+            );
+            const createdMap = {
+                id: nextMapId,
+                ownerId: 999,
+                ownerNickname: '내계정',
+                title: payload.title,
+                description: payload.description,
+                category: payload.category,
+                numOfSong: payload.items.length,
+                totalPlayTime,
+                isPublic: payload.isPublic,
+                pendingPublic: false,
+                playCount: 0,
+                createdAt,
+                updatedAt: createdAt,
+            };
+            const createdItems = payload.items.map((item, index) => ({
+                id: nextMapId * 1_000 + index + 1,
+                mapId: nextMapId,
+                orderNum: item.orderNum,
+                youtubeUrl: item.youtubeUrl,
+                videoId: null,
+                startTime: item.startTime,
+                endTime: item.endTime,
+                title: null,
+                artist: null,
+                thumbnailUrl: null,
+                answers: item.answers,
+                hint: item.hint,
+                hintTime: item.hintTime ?? 15,
+                createdAt,
+                updatedAt: createdAt,
+            }));
+            const mapSummary: MapSummary = {
+                mapId: createdMap.id,
+                title: createdMap.title,
+                description: createdMap.description,
+                category: createdMap.category,
+                numOfSong: createdMap.numOfSong,
+                totalPlayTime: createdMap.totalPlayTime,
+                playCount: createdMap.playCount,
+                isPublic: createdMap.isPublic,
+                pendingPublic: createdMap.pendingPublic,
+                ownerId: createdMap.ownerId,
+                ownerNickname: createdMap.ownerNickname,
+            };
+
+            mockMyMapItems.unshift(mapSummary);
+
+            if (mapSummary.isPublic) {
+                mockPublicMapItems.unshift(mapSummary);
+            }
+
+            return HttpResponse.json(
+                {
+                    map: createdMap,
+                    items: createdItems,
+                },
+                { status: 201 },
+            );
+        },
+    ),
+
     http.get(API_ENDPOINTS.MAP.LIST, ({ request }) => {
         return createMapListResponse(
             mockPublicMapItems,

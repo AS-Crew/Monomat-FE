@@ -5,7 +5,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
-import { createMap, createMapItem } from '../api/mapApi';
+import { createMapWithItems } from '../api/mapApi';
 import { MonomatInput } from '../components/common/MonomatInput';
 import { NavigationBar } from '../components/common/NavigationBar';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
@@ -91,7 +91,6 @@ export function MapCreate() {
     const queryClient = useQueryClient();
     const [formState, setFormState] = useState(createInitialFormState);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [hasPartialFailure, setHasPartialFailure] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const hasValidTitle =
@@ -109,7 +108,7 @@ export function MapCreate() {
             MAP_CREATE_POLICY.DESCRIPTION_MAX_LENGTH &&
         MAP_CATEGORY_OPTIONS.includes(formState.category) &&
         hasValidSongs;
-    const isFormLocked = isSubmitting || hasPartialFailure;
+    const isFormLocked = isSubmitting;
 
     const updateFormState = <TKey extends keyof Omit<
         CreateMapFormState,
@@ -303,29 +302,15 @@ export function MapCreate() {
         setErrorMessage(null);
 
         try {
-            const createdMap = await createMap({
+            await createMapWithItems({
                 title: formState.title.trim(),
                 description: formState.description.trim() || null,
                 category: formState.category,
                 isPublic: formState.isPublic,
+                items: formState.songs.map((song, index) =>
+                    createMapItemRequestFromSong(song, index + 1),
+                ),
             });
-
-            try {
-                for (const [index, song] of formState.songs.entries()) {
-                    await createMapItem(
-                        createdMap.id,
-                        createMapItemRequestFromSong(song, index + 1),
-                    );
-                }
-            } catch (itemError) {
-                console.error('[MapCreate] 일부 곡 생성 실패:', itemError);
-                setHasPartialFailure(true);
-                setErrorMessage(MAP_CREATE_PAGE_COPY.PARTIAL_CREATE_ERROR);
-                await queryClient.invalidateQueries({
-                    queryKey: ['myMaps'],
-                });
-                return;
-            }
 
             await queryClient.invalidateQueries({
                 queryKey: ['myMaps'],
@@ -585,17 +570,6 @@ export function MapCreate() {
                             className="mt-5 rounded-lg border border-[var(--monomat-danger)] bg-[var(--monomat-danger-light)] px-4 py-3 text-sm font-medium leading-5 text-[var(--monomat-danger)]"
                         >
                             <p>{errorMessage}</p>
-                            {hasPartialFailure && (
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        navigate(MAP_ROUTES.MY_MAPS)
-                                    }
-                                    className="mt-2 font-bold underline underline-offset-2"
-                                >
-                                    내 맵 관리로 이동
-                                </button>
-                            )}
                         </div>
                     )}
 
@@ -610,11 +584,7 @@ export function MapCreate() {
                         </button>
                         <button
                             type="submit"
-                            disabled={
-                                !isFormValid ||
-                                isSubmitting ||
-                                hasPartialFailure
-                            }
+                            disabled={!isFormValid || isSubmitting}
                             className="h-[45px] min-w-[110px] rounded-lg bg-[var(--monomat-primary)] px-5 text-[15px] font-bold text-white transition hover:bg-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)]"
                         >
                             {isSubmitting
