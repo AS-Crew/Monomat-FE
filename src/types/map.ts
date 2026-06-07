@@ -2,6 +2,13 @@ import type { LobbyCategory } from './lobby';
 
 export type MapCategory = LobbyCategory;
 
+export type MapCategoryQueryValue =
+    | 'KPOP'
+    | 'JPOP'
+    | 'POP'
+    | 'OST'
+    | 'ANIME';
+
 export type MapSortOption =
     | 'NEWEST'
     | 'OLDEST'
@@ -35,7 +42,7 @@ export interface MapListQueryParams {
     page?: number;
     size?: number;
     keyword?: string;
-    category?: MapCategory;
+    category?: MapCategory | MapCategoryQueryValue;
     sort?: MapSortOption;
 }
 

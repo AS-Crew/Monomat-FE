@@ -21,6 +21,9 @@ import {
 import { ApiError } from '../../api/apiError';
 import {
     DEFAULT_MAP_LIST_PAGE,
+    MAP_ALL_CATEGORY_FILTER,
+    MAP_CATEGORY_FILTERS,
+    MAP_CATEGORY_QUERY_VALUE,
     MAP_SELECT_MODAL_PAGE_SIZE,
 } from '../../constants/map';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -28,8 +31,12 @@ import {
     formatMapDescription,
     formatMapOwnerNickname,
 } from '../../utils/mapFormat';
+import { LobbyCategoryFilter } from './LobbyCategoryFilter';
 
-import type { MapSummary } from '../../types/map';
+import type {
+    MapCategoryQueryValue,
+    MapSummary,
+} from '../../types/map';
 
 interface MapSelectModalProps {
     isOpen: boolean;
@@ -44,6 +51,15 @@ const PUBLIC_MAP_TAB = 'public';
 const MY_MAP_TAB = 'my';
 
 type MapSelectTab = typeof PUBLIC_MAP_TAB | typeof MY_MAP_TAB;
+type MapCategoryFilter = (typeof MAP_CATEGORY_FILTERS)[number];
+
+function toMapCategoryQueryValue(
+    category: MapCategoryFilter,
+): MapCategoryQueryValue | undefined {
+    return category === MAP_ALL_CATEGORY_FILTER
+        ? undefined
+        : MAP_CATEGORY_QUERY_VALUE[category];
+}
 
 function getErrorMessage(error: unknown, fallbackMessage: string) {
     if (error instanceof Error && error.message) {
@@ -95,6 +111,8 @@ export function MapSelectModal({
     const [debouncedKeyword, setDebouncedKeyword] = useState('');
     const [activeTab, setActiveTab] =
         useState<MapSelectTab>(PUBLIC_MAP_TAB);
+    const [selectedCategory, setSelectedCategory] =
+        useState<MapCategoryFilter>(MAP_ALL_CATEGORY_FILTER);
     const [maps, setMaps] = useState<MapSummary[]>([]);
     const [page, setPage] = useState(DEFAULT_MAP_LIST_PAGE);
     const [hasNext, setHasNext] = useState(false);
@@ -105,12 +123,14 @@ export function MapSelectModal({
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const canUseMyMapTab = userType === 'REGISTERED';
     const isPublicMapTab = activeTab === PUBLIC_MAP_TAB;
+    const category = toMapCategoryQueryValue(selectedCategory);
     const emptyMessage = isPublicMapTab
         ? '조건에 맞는 공개 맵이 없습니다.'
         : '아직 만든 맵이 없습니다.';
 
     useEffect(() => {
         if (!isOpen) {
+            setSelectedCategory(MAP_ALL_CATEGORY_FILTER);
             return;
         }
 
@@ -154,6 +174,7 @@ export function MapSelectModal({
                         page: DEFAULT_MAP_LIST_PAGE,
                         size: MAP_SELECT_MODAL_PAGE_SIZE,
                         keyword: debouncedKeyword,
+                        category,
                         sort: MAP_LIST_SORT,
                     })
                     : await getMyMaps({
@@ -188,7 +209,7 @@ export function MapSelectModal({
         return () => {
             isCurrent = false;
         };
-    }, [isOpen, isPublicMapTab, debouncedKeyword]);
+    }, [isOpen, isPublicMapTab, debouncedKeyword, category]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -220,6 +241,20 @@ export function MapSelectModal({
 
     const handleKeywordChange = (event: ChangeEvent<HTMLInputElement>) => {
         setKeyword(event.target.value);
+        setPage(DEFAULT_MAP_LIST_PAGE);
+        setHasNext(false);
+    };
+
+    const handleCategoryChange = (nextCategory: MapCategoryFilter) => {
+        if (selectedCategory === nextCategory) {
+            return;
+        }
+
+        setSelectedCategory(nextCategory);
+        setPage(DEFAULT_MAP_LIST_PAGE);
+        setHasNext(false);
+        setMaps([]);
+        setErrorMessage(null);
     };
 
     const handleTabChange = (nextTab: MapSelectTab) => {
@@ -255,6 +290,7 @@ export function MapSelectModal({
                     page: nextPage,
                     size: MAP_SELECT_MODAL_PAGE_SIZE,
                     keyword: debouncedKeyword,
+                    category,
                     sort: MAP_LIST_SORT,
                 })
                 : await getMyMaps({
@@ -356,6 +392,15 @@ export function MapSelectModal({
                         </button>
                     </div>
 
+                    {isPublicMapTab && (
+                        <LobbyCategoryFilter
+                            categories={MAP_CATEGORY_FILTERS}
+                            selectedCategory={selectedCategory}
+                            onChange={handleCategoryChange}
+                            className="mt-3"
+                        />
+                    )}
+
                     <label
                         className={`mt-[9px] flex h-11 items-center rounded-lg border border-[var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-[11px] focus-within:border-[var(--monomat-primary)] ${
                             isPublicMapTab ? '' : 'opacity-70'
@@ -374,7 +419,7 @@ export function MapSelectModal({
                             disabled={!isPublicMapTab}
                             placeholder={
                                 isPublicMapTab
-                                    ? '맵 제목이나 카테고리를 검색하세요'
+                                    ? '맵 제목으로 검색하세요'
                                     : '내 맵 검색은 추후 제공 예정입니다.'
                             }
                             className="ml-3 h-full min-w-0 flex-1 bg-transparent text-sm font-medium text-[var(--monomat-text-strong)] outline-none placeholder:text-[var(--monomat-border-input)] disabled:cursor-not-allowed"
