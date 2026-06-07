@@ -28,11 +28,14 @@ import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { MapDeleteConfirmModal } from '../components/map/MapDeleteConfirmModal';
 import {
     DEFAULT_MAP_LIST_PAGE,
+    DEFAULT_MAP_SORT_OPTION,
+    MAP_ALL_CATEGORY_FILTER,
+    MAP_CATEGORY_FILTERS,
     MAP_DELETE_CONFIRM_MODAL_COPY,
     MAP_PUBLIC_STATUS_META,
     MAP_ROUTES,
+    MAP_SORT_LABELS,
     MY_MAP_LIST_PAGE_SIZE,
-    MY_MAP_SEARCH_PAGE_SIZE,
     MY_MAPS_EMPTY_STATE_COPY,
     MY_MAPS_ERROR_COPY,
     MY_MAPS_PAGE_COPY,
@@ -44,9 +47,21 @@ import {
     formatMapPlayCount,
 } from '../utils/mapFormat';
 
-import type { MapSummary } from '../types/map';
+import type {
+    MapCategory,
+    MapSortOption,
+    MapSummary,
+} from '../types/map';
 
 const numberFormatter = new Intl.NumberFormat('ko-KR');
+
+type MyMapCategoryFilter = (typeof MAP_CATEGORY_FILTERS)[number];
+
+function toMapCategory(
+    category: MyMapCategoryFilter,
+): MapCategory | undefined {
+    return category === MAP_ALL_CATEGORY_FILTER ? undefined : category;
+}
 
 function getMapPublicStatusMeta(map: MapSummary) {
     if (map.isPublic) {
@@ -87,27 +102,6 @@ function getDeleteErrorMessage(error: unknown) {
     }
 
     return MAP_DELETE_CONFIRM_MODAL_COPY.ERROR_FALLBACK;
-}
-
-function matchesMyMapSearch(map: MapSummary, keyword: string) {
-    const normalizedKeyword = keyword.trim().toLowerCase();
-
-    if (!normalizedKeyword) {
-        return true;
-    }
-
-    const statusLabel = getMapPublicStatusMeta(map).label;
-    const searchableText = [
-        map.title,
-        map.category,
-        formatMapDescription(map.description),
-        statusLabel,
-        `${map.numOfSong}${MY_MAPS_PAGE_COPY.SONG_UNIT}`,
-    ]
-        .join(' ')
-        .toLowerCase();
-
-    return searchableText.includes(normalizedKeyword);
 }
 
 function MyMapStatusBadge({ map }: { map: MapSummary }) {
@@ -308,11 +302,11 @@ function MyMapsErrorState({
     );
 }
 
-function MyMapsEmptyState({ isSearching }: { isSearching: boolean }) {
-    const title = isSearching
+function MyMapsEmptyState({ hasActiveFilter }: { hasActiveFilter: boolean }) {
+    const title = hasActiveFilter
         ? MY_MAPS_EMPTY_STATE_COPY.SEARCH_TITLE
         : MY_MAPS_EMPTY_STATE_COPY.TITLE;
-    const description = isSearching
+    const description = hasActiveFilter
         ? MY_MAPS_EMPTY_STATE_COPY.SEARCH_DESCRIPTION
         : MY_MAPS_EMPTY_STATE_COPY.DESCRIPTION;
 
@@ -405,32 +399,31 @@ export function MyMaps() {
     const queryClient = useQueryClient();
     const [currentPage, setCurrentPage] = useState(DEFAULT_MAP_LIST_PAGE);
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [selectedCategory, setSelectedCategory] =
+        useState<MyMapCategoryFilter>(MAP_ALL_CATEGORY_FILTER);
+    const [sortOption, setSortOption] =
+        useState<MapSortOption>(DEFAULT_MAP_SORT_OPTION);
     const [deleteTargetMap, setDeleteTargetMap] =
         useState<MapSummary | null>(null);
     const [deleteErrorMessage, setDeleteErrorMessage] =
         useState<string | null>(null);
     const trimmedSearchKeyword = searchKeyword.trim();
-    const isSearching = trimmedSearchKeyword.length > 0;
+    const category = toMapCategory(selectedCategory);
+    const hasActiveFilter =
+        trimmedSearchKeyword.length > 0 ||
+        selectedCategory !== MAP_ALL_CATEGORY_FILTER;
 
-    const pagedMyMapsQuery = useMyMaps({
+    const myMapsQuery = useMyMaps({
+        keyword: trimmedSearchKeyword,
+        category,
+        sort: sortOption,
         page: currentPage,
         size: MY_MAP_LIST_PAGE_SIZE,
-        enabled: !isSearching,
     });
-    const searchedMyMapsQuery = useMyMaps({
-        page: DEFAULT_MAP_LIST_PAGE,
-        size: MY_MAP_SEARCH_PAGE_SIZE,
-        enabled: isSearching,
-    });
-
-    const activeQuery = isSearching ? searchedMyMapsQuery : pagedMyMapsQuery;
-    const rawMaps = activeQuery.data?.content ?? [];
-    const maps = isSearching
-        ? rawMaps.filter((map) => matchesMyMapSearch(map, trimmedSearchKeyword))
-        : rawMaps;
-    const page = activeQuery.data?.page ?? currentPage;
-    const totalPages = activeQuery.data?.totalPages ?? 0;
-    const hasNext = activeQuery.data?.hasNext ?? false;
+    const maps = myMapsQuery.data?.content ?? [];
+    const page = myMapsQuery.data?.page ?? currentPage;
+    const totalPages = myMapsQuery.data?.totalPages ?? 0;
+    const hasNext = myMapsQuery.data?.hasNext ?? false;
 
     const deleteMapMutation = useMutation({
         mutationFn: (mapId: number) => deleteMap(mapId),
@@ -450,6 +443,16 @@ export function MyMaps() {
 
     const handleSearchKeywordChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchKeyword(event.target.value);
+        setCurrentPage(DEFAULT_MAP_LIST_PAGE);
+    };
+
+    const handleCategoryChange = (categoryFilter: MyMapCategoryFilter) => {
+        setSelectedCategory(categoryFilter);
+        setCurrentPage(DEFAULT_MAP_LIST_PAGE);
+    };
+
+    const handleSortChange = (event: ChangeEvent<HTMLSelectElement>) => {
+        setSortOption(event.target.value as MapSortOption);
         setCurrentPage(DEFAULT_MAP_LIST_PAGE);
     };
 
@@ -530,6 +533,20 @@ export function MyMaps() {
                                 className="min-w-0 flex-1 bg-transparent text-sm text-[var(--monomat-text-strong)] outline-none placeholder:text-[var(--monomat-border-input)]"
                             />
                         </label>
+                        <select
+                            value={sortOption}
+                            onChange={handleSortChange}
+                            aria-label={MY_MAPS_PAGE_COPY.SORT_ARIA_LABEL}
+                            className="h-11 w-full shrink-0 rounded-lg border border-[color:var(--monomat-border-input)] bg-white px-4 text-sm font-medium text-[var(--monomat-text-muted)] outline-none transition focus:border-[var(--monomat-primary)] sm:w-[150px]"
+                        >
+                            {(Object.keys(MAP_SORT_LABELS) as MapSortOption[]).map(
+                                (option) => (
+                                    <option key={option} value={option}>
+                                        {MAP_SORT_LABELS[option]}
+                                    </option>
+                                ),
+                            )}
+                        </select>
                         <button
                             type="button"
                             onClick={handleCreateMapClick}
@@ -540,10 +557,32 @@ export function MyMaps() {
                         </button>
                     </div>
 
+                    <div className="mt-3 flex min-w-0 flex-wrap items-center gap-[9px]">
+                        {MAP_CATEGORY_FILTERS.map((categoryFilter) => (
+                            <button
+                                key={categoryFilter}
+                                type="button"
+                                onClick={() =>
+                                    handleCategoryChange(categoryFilter)
+                                }
+                                aria-pressed={
+                                    selectedCategory === categoryFilter
+                                }
+                                className={`h-8 shrink-0 rounded-full px-[15px] text-[13px] leading-none transition ${
+                                    selectedCategory === categoryFilter
+                                        ? 'bg-[var(--monomat-primary)] font-semibold text-white'
+                                        : 'border border-[color:var(--monomat-border-input)] bg-white font-normal text-[var(--monomat-text-muted)] hover:bg-[var(--monomat-page-bg)]'
+                                }`}
+                            >
+                                {categoryFilter}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="mt-[22px] overflow-hidden rounded-lg border border-[color:var(--monomat-border-input)] bg-white">
                         <MyMapsTableHeader />
 
-                        {activeQuery.isLoading && (
+                        {myMapsQuery.isLoading && (
                             <>
                                 {Array.from({ length: 4 }).map((_, index) => (
                                     <MyMapRowSkeleton key={index} />
@@ -551,21 +590,23 @@ export function MyMaps() {
                             </>
                         )}
 
-                        {!activeQuery.isLoading && activeQuery.isError && (
+                        {!myMapsQuery.isLoading && myMapsQuery.isError && (
                             <MyMapsErrorState
-                                error={activeQuery.error}
-                                onRetry={() => void activeQuery.refetch()}
+                                error={myMapsQuery.error}
+                                onRetry={() => void myMapsQuery.refetch()}
                             />
                         )}
 
-                        {!activeQuery.isLoading &&
-                            !activeQuery.isError &&
+                        {!myMapsQuery.isLoading &&
+                            !myMapsQuery.isError &&
                             maps.length === 0 && (
-                            <MyMapsEmptyState isSearching={isSearching} />
+                            <MyMapsEmptyState
+                                hasActiveFilter={hasActiveFilter}
+                            />
                         )}
 
-                        {!activeQuery.isLoading &&
-                            !activeQuery.isError &&
+                        {!myMapsQuery.isLoading &&
+                            !myMapsQuery.isError &&
                             maps.length > 0 && (
                             <>
                                 {maps.map((map) => (
@@ -580,9 +621,8 @@ export function MyMaps() {
                         )}
                     </div>
 
-                    {!isSearching &&
-                        !activeQuery.isLoading &&
-                        !activeQuery.isError &&
+                    {!myMapsQuery.isLoading &&
+                        !myMapsQuery.isError &&
                         maps.length > 0 && (
                         <MyMapsPagination
                             page={page}

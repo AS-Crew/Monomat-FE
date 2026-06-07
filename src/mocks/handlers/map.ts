@@ -4,6 +4,8 @@ import { API_ENDPOINTS } from '../../constants/endpoints';
 import {
     DEFAULT_MAP_LIST_PAGE,
     DEFAULT_MAP_LIST_SIZE,
+    DEFAULT_MAP_SORT_OPTION,
+    MY_MAP_LIST_PAGE_SIZE,
 } from '../../constants/map';
 import {
     mockMyMapItems,
@@ -70,7 +72,7 @@ function filterMapItems(
     });
 }
 
-function sortMapItems(maps: MapSummary[], sortOption: MapSortOption | null) {
+function sortMapItems(maps: MapSummary[], sortOption: MapSortOption) {
     const copiedMaps = [...maps];
 
     switch (sortOption) {
@@ -88,7 +90,6 @@ function sortMapItems(maps: MapSummary[], sortOption: MapSortOption | null) {
             );
 
         case 'NEWEST':
-        default:
             return copiedMaps.sort((left, right) => right.mapId - left.mapId);
     }
 }
@@ -120,7 +121,9 @@ function createMapListResponse(
     defaultParams: Pick<MapListQueryParams, 'page' | 'size'>,
 ) {
     const sortParam = requestUrl.searchParams.get('sort');
-    const sortOption = isMapSortOption(sortParam) ? sortParam : null;
+    const sortOption = isMapSortOption(sortParam)
+        ? sortParam
+        : DEFAULT_MAP_SORT_OPTION;
     const page = parsePageParam(
         requestUrl.searchParams.get('page'),
         defaultParams.page ?? DEFAULT_MAP_LIST_PAGE,
@@ -153,18 +156,14 @@ export const mapHandlers = [
     }),
 
     http.get(API_ENDPOINTS.MAP.MY_LIST, ({ request }) => {
-        const requestUrl = new URL(request.url);
-        const page = parsePageParam(
-            requestUrl.searchParams.get('page'),
-            DEFAULT_MAP_LIST_PAGE,
-        );
-        const size = parseSizeParam(
-            requestUrl.searchParams.get('size'),
-            DEFAULT_MAP_LIST_SIZE,
-        );
-
-        return HttpResponse.json(
-            createMapPageResponse(mockMyMapItems, page, size),
+        return createMapListResponse(
+            mockMyMapItems,
+            new URL(request.url),
+            true,
+            {
+                page: DEFAULT_MAP_LIST_PAGE,
+                size: MY_MAP_LIST_PAGE_SIZE,
+            },
         );
     }),
 ];
