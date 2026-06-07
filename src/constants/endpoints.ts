@@ -51,6 +51,7 @@ export const API_ENDPOINTS = {
     MAP: {
         LIST: createApiEndpoint('/api/maps'),
         CREATE: createApiEndpoint('/api/maps'),
+        CREATE_WITH_ITEMS: createApiEndpoint('/api/maps/with-items'),
         MY_LIST: createApiEndpoint('/api/maps/me'),
         MY_DETAIL: (mapId: number) =>
             createApiEndpoint(`/api/maps/me/${mapId}`),

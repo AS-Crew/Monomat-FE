@@ -86,6 +86,12 @@ export interface CreateMapItemRequest {
     hintTime?: number | null;
 }
 
+export type CreateMapWithItemsItemRequest = CreateMapItemRequest;
+
+export interface CreateMapWithItemsRequest extends CreateMapRequest {
+    items: CreateMapWithItemsItemRequest[];
+}
+
 export type UpdateMapItemRequest = CreateMapItemRequest;
 
 export interface ReorderMapItemsRequest {
@@ -127,6 +133,11 @@ export interface MapItemResponse {
 }
 
 export interface ManageMapResponse {
+    map: MapDetailResponse;
+    items: MapItemResponse[];
+}
+
+export interface CreateMapWithItemsResponse {
     map: MapDetailResponse;
     items: MapItemResponse[];
 }

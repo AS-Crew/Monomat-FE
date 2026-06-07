@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from '../constants/endpoints';
 import {
+    createMapWithItemsResponseSchema,
     manageMapResponseSchema,
     mapDetailResponseSchema,
     mapItemListResponseSchema,
@@ -12,6 +13,8 @@ import { fetchWithAuth } from './apiClient';
 import type {
     CreateMapItemRequest,
     CreateMapRequest,
+    CreateMapWithItemsRequest,
+    CreateMapWithItemsResponse,
     ManageMapRequest,
     ManageMapResponse,
     MapDetailResponse,
@@ -33,6 +36,8 @@ const DEFAULT_FETCH_MY_MAP_DETAIL_ERROR_MESSAGE =
 const DEFAULT_FETCH_MAP_ITEMS_ERROR_MESSAGE =
     '곡 목록을 불러오는 데 실패했습니다.';
 const DEFAULT_CREATE_MAP_ERROR_MESSAGE = '맵 생성에 실패했습니다.';
+const DEFAULT_CREATE_MAP_WITH_ITEMS_ERROR_MESSAGE =
+    '맵 생성에 실패했습니다.';
 const DEFAULT_CREATE_MAP_ITEM_ERROR_MESSAGE = '곡 등록에 실패했습니다.';
 const DEFAULT_UPDATE_MAP_ERROR_MESSAGE = '맵 수정에 실패했습니다.';
 const DEFAULT_UPDATE_MANAGED_MAP_ERROR_MESSAGE =
@@ -193,6 +198,42 @@ export async function createMap(
 
     if (!parsed.success) {
         console.error('[mapApi] 맵 생성 응답 검증 실패:', parsed.error);
+
+        throw new Error('맵 생성 응답 형식이 올바르지 않습니다.');
+    }
+
+    return parsed.data;
+}
+
+export async function createMapWithItems(
+    request: CreateMapWithItemsRequest,
+): Promise<CreateMapWithItemsResponse> {
+    const response = await fetchWithAuth(
+        API_ENDPOINTS.MAP.CREATE_WITH_ITEMS,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': JSON_CONTENT_TYPE,
+            },
+            body: JSON.stringify(request),
+        },
+    );
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            DEFAULT_CREATE_MAP_WITH_ITEMS_ERROR_MESSAGE,
+        );
+    }
+
+    const payload = await response.json() as unknown;
+    const parsed = createMapWithItemsResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        console.error(
+            '[mapApi] 맵 일괄 생성 응답 검증 실패:',
+            parsed.error,
+        );
 
         throw new Error('맵 생성 응답 형식이 올바르지 않습니다.');
     }

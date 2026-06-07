@@ -6,7 +6,7 @@ import {
 } from './mapCreateTiming';
 
 import type {
-    CreateMapItemRequest,
+    CreateMapWithItemsItemRequest,
     CreateMapSongFormState,
 } from '../types/map';
 
@@ -42,12 +42,18 @@ export function isValidMapSongForm(song: CreateMapSongFormState) {
 export function createMapItemRequestFromSong(
     song: CreateMapSongFormState,
     orderNum: number,
-): CreateMapItemRequest {
+): CreateMapWithItemsItemRequest {
     const timing = getMapCreateTiming(
         Number(song.startTime),
         song.playDurationSeconds ??
             MAP_CREATE_POLICY.API_FALLBACK_PLAY_DURATION_SECONDS,
     );
+    const hintTime = song.hintTime;
+    const hasValidHintTime =
+        typeof hintTime === 'number' &&
+        Number.isInteger(hintTime) &&
+        hintTime >= MAP_CREATE_POLICY.MIN_HINT_TIME_SECONDS &&
+        hintTime <= MAP_CREATE_POLICY.MAX_HINT_TIME_SECONDS;
 
     return {
         orderNum,
@@ -58,6 +64,6 @@ export function createMapItemRequestFromSong(
             .map((answer) => answer.trim())
             .filter(Boolean),
         hint: song.hint.trim(),
-        hintTime: song.hintTime ?? undefined,
+        ...(hasValidHintTime ? { hintTime } : {}),
     };
 }
