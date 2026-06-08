@@ -17,6 +17,7 @@ import type {
     LobbyListItem,
     LobbyListQueryParams,
     LobbyPageResponse,
+    UpdateLobbyMapRequest,
     UpdateLobbyReadyRequest,
 } from '../types/lobby';
 
@@ -26,6 +27,7 @@ const DEFAULT_CREATE_LOBBY_ERROR_MESSAGE = '로비 생성에 실패했습니다.
 const DEFAULT_JOIN_LOBBY_ERROR_MESSAGE = '로비 입장에 실패했습니다.';
 const DEFAULT_FETCH_LOBBY_LIST_ERROR_MESSAGE = '로비 목록을 불러오는 데 실패했습니다.';
 const DEFAULT_FETCH_LOBBY_DETAIL_ERROR_MESSAGE = '로비 정보를 불러오는 데 실패했습니다.';
+const DEFAULT_UPDATE_LOBBY_MAP_ERROR_MESSAGE = '로비 맵 변경에 실패했습니다.';
 const DEFAULT_UPDATE_LOBBY_READY_ERROR_MESSAGE = '준비 상태 변경에 실패했습니다.';
 const DEFAULT_START_LOBBY_GAME_ERROR_MESSAGE = '게임 시작에 실패했습니다.';
 
@@ -203,6 +205,26 @@ export async function updateLobbyReady(
         throw await createApiError(
             response,
             DEFAULT_UPDATE_LOBBY_READY_ERROR_MESSAGE,
+        );
+    }
+}
+
+export async function updateLobbyMap(
+    code: string,
+    request: UpdateLobbyMapRequest,
+): Promise<void> {
+    const response = await fetchWithAuth(API_ENDPOINTS.LOBBY.MAP(code), {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': JSON_CONTENT_TYPE,
+        },
+        body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+        throw await createApiError(
+            response,
+            DEFAULT_UPDATE_LOBBY_MAP_ERROR_MESSAGE,
         );
     }
 }

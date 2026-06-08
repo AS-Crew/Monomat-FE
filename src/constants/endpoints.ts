@@ -44,6 +44,7 @@ export const API_ENDPOINTS = {
         JOIN: createApiEndpoint('/api/lobbies/join'),
         LIST: createApiEndpoint('/api/lobbies'),
         DETAIL: (code: string) => createApiEndpoint(`/api/lobbies/${code}`),
+        MAP: (code: string) => createApiEndpoint(`/api/lobbies/${code}/map`),
         READY: (code: string) => createApiEndpoint(`/api/lobbies/${code}/ready`),
         START: (code: string) => createApiEndpoint(`/api/lobbies/${code}/start`),
     },

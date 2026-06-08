@@ -41,6 +41,7 @@ import type {
 interface MapSelectModalProps {
     isOpen: boolean;
     selectedMap: MapSummary | null;
+    selectedMapId?: number | null;
     onConfirm: (map: MapSummary) => void;
     onClose: () => void;
 }
@@ -103,6 +104,7 @@ function MapSelectModalSkeleton() {
 export function MapSelectModal({
     isOpen,
     selectedMap,
+    selectedMapId,
     onConfirm,
     onClose,
 }: MapSelectModalProps) {
@@ -330,11 +332,11 @@ export function MapSelectModal({
                 aria-modal="true"
                 aria-labelledby="map-select-modal-title"
                 onMouseDown={handleContentMouseDown}
-                className="flex max-h-[calc(100vh-64px)] w-full max-w-[500px] flex-col overflow-hidden rounded-[14px] bg-white shadow-[0_18px_48px_rgba(15,23,42,0.22)]"
+                className="flex max-h-[calc(100vh-64px)] w-full max-w-[500px] flex-col overflow-hidden rounded-[14px] bg-white text-left shadow-[0_18px_48px_rgba(15,23,42,0.22)]"
             >
                 <header className="px-[25px] pb-0 pt-9">
                     <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
+                        <div className="min-w-0 text-left">
                             <h2
                                 id="map-select-modal-title"
                                 className="!m-0 !text-[24px] !font-extrabold !leading-[33px] !text-black"
@@ -446,8 +448,10 @@ export function MapSelectModal({
                     ) : (
                         <div className="space-y-0">
                             {maps.map((map) => {
+                                const selectedMapIdForCompare =
+                                    tempSelectedMap?.mapId ?? selectedMapId;
                                 const isSelected =
-                                    tempSelectedMap?.mapId === map.mapId;
+                                    selectedMapIdForCompare === map.mapId;
 
                                 return (
                                     <div
@@ -514,7 +518,7 @@ export function MapSelectModal({
                                         </button>
 
                                         {isSelected && (
-                                            <div className="mb-4 ml-[5px] mr-[5px] whitespace-pre-line break-keep border-t border-[color:var(--monomat-border-default)] px-[50px] pb-2 pt-[10px] text-xs font-medium leading-5 text-[var(--monomat-text-muted)] [overflow-wrap:anywhere]">
+                                            <div className="mb-4 ml-[5px] mr-[5px] whitespace-pre-line break-keep border-t border-[color:var(--monomat-border-default)] px-[50px] pb-2 pt-[10px] text-left text-xs font-medium leading-5 text-[var(--monomat-text-muted)] [overflow-wrap:anywhere]">
                                                 {formatMapDescription(
                                                     map.description,
                                                 )}

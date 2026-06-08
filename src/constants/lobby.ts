@@ -162,11 +162,14 @@ export const LOBBY_ROOM_COPY = {
         '현재 서버 기준으로 아직 시작할 수 없습니다.',
     START_GUIDE_AVAILABLE:
         '모든 조건이 충족되었습니다. 게임을 시작할 수 있습니다.',
+    MAP_CHANGE_PENDING_GUIDE:
+        '맵 변경 사항을 반영하는 중입니다. 잠시 후 시작할 수 있습니다.',
     READY_SYNCED: '준비 상태는 서버 이벤트로 다시 동기화됩니다.',
     READY_WAIT_PLAYER: '참여자 정보 동기화 후 준비할 수 있습니다.',
     START_REQUESTED: '게임 시작 요청을 보냈습니다.',
     GAME_STARTED_PENDING_ROUTE:
         '게임이 시작되었습니다. 게임 화면 전환은 추후 연결됩니다.',
+    MAP_CHANGE_FAILED: '로비 맵 변경에 실패했습니다.',
     READY_CHANGE_FAILED: '준비 상태 변경에 실패했습니다.',
     START_FAILED: '게임 시작에 실패했습니다.',
     INVALID_INVITE_CODE: '초대 코드가 올바르지 않습니다.',
