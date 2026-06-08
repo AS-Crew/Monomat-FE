@@ -14,6 +14,7 @@ import type {
     LobbyCategory,
     LobbyDetailResponse,
     LobbyListItem,
+    LobbyPlayerResponse,
     LobbySortQuery,
 } from '../../types/lobby';
 
@@ -25,6 +26,44 @@ const LOBBY_SORT_QUERIES = [
 ] as const;
 
 let latestCreatedLobby: LobbyDetailResponse | null = null;
+
+const MOCK_PLAYER_POOL = [
+    {
+        userIdentifier: 'mock-player-yuki',
+        nickname: '유키',
+        ready: false,
+    },
+    {
+        userIdentifier: 'mock-player-bell',
+        nickname: '벨',
+        ready: true,
+    },
+    {
+        userIdentifier: 'mock-player-nut',
+        nickname: 'Nut',
+        ready: false,
+    },
+    {
+        userIdentifier: 'mock-player-minji',
+        nickname: '민지',
+        ready: true,
+    },
+    {
+        userIdentifier: 'mock-player-songking',
+        nickname: '노래왕',
+        ready: true,
+    },
+    {
+        userIdentifier: 'mock-player-night',
+        nickname: '심야괴담회',
+        ready: false,
+    },
+    {
+        userIdentifier: 'mock-player-pop',
+        nickname: 'PopCat',
+        ready: true,
+    },
+] as const;
 
 function isLobbyCategory(value: string | null): value is LobbyCategory {
     return LOBBY_CATEGORIES.some((category) => category === value);
@@ -100,6 +139,24 @@ function sortLobbyItems(
 function createLobbyDetailFromItem(
     lobby: LobbyListItem,
 ): LobbyDetailResponse {
+    const hostPlayer: LobbyPlayerResponse = {
+        userIdentifier: lobby.hostId ?? 'mock-host',
+        nickname: lobby.hostNickname ?? 'Mock Host',
+        host: true,
+        ready: true,
+    };
+    const players: LobbyPlayerResponse[] = [
+        hostPlayer,
+        ...MOCK_PLAYER_POOL.slice(0, Math.max(lobby.currentPlayers - 1, 0)).map(
+            (player): LobbyPlayerResponse => ({
+                userIdentifier: player.userIdentifier,
+                nickname: player.nickname,
+                host: false,
+                ready: player.ready,
+            }),
+        ),
+    ];
+
     return {
         inviteCode: lobby.code,
         title: lobby.title,
@@ -116,15 +173,11 @@ function createLobbyDetailFromItem(
         timeLimitSeconds:
             lobby.timeLimitSeconds ??
             CREATE_LOBBY_POLICY.DEFAULT_TIME_LIMIT_SECONDS,
-        players: [
-            {
-                userIdentifier: lobby.hostId ?? 'mock-host',
-                nickname: lobby.hostNickname ?? 'Mock Host',
-                host: true,
-                ready: true,
-            },
-        ],
-        canStart: false,
+        players,
+        canStart:
+            lobby.status === 'WAITING' &&
+            players.length > 1 &&
+            players.every((player) => player.host || player.ready),
     };
 }
 
