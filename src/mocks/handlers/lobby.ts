@@ -26,6 +26,13 @@ const LOBBY_SORT_QUERIES = [
 ] as const;
 
 let latestCreatedLobby: LobbyDetailResponse | null = null;
+const mockLobbyDetailOverrides = new Map<
+    string,
+    Partial<Pick<
+        LobbyDetailResponse,
+        'mapId' | 'mapTitle' | 'mapCategory' | 'questionCount'
+    >>
+>();
 
 const MOCK_PLAYER_POOL = [
     {
@@ -165,6 +172,7 @@ function canStartMockLobby(lobby: {
 function createLobbyDetailFromItem(
     lobby: LobbyListItem,
 ): LobbyDetailResponse {
+    const override = mockLobbyDetailOverrides.get(lobby.code);
     const hostPlayer: LobbyPlayerResponse = {
         userIdentifier: lobby.hostId ?? 'mock-host',
         nickname: lobby.hostNickname ?? 'Mock Host',
@@ -191,10 +199,11 @@ function createLobbyDetailFromItem(
         maxPlayers: lobby.maxPlayers,
         currentPlayers: lobby.currentPlayers,
         status: lobby.status,
-        mapId: lobby.mapId,
-        mapTitle: lobby.mapTitle,
-        mapCategory: lobby.mapCategory,
+        mapId: override?.mapId ?? lobby.mapId,
+        mapTitle: override?.mapTitle ?? lobby.mapTitle,
+        mapCategory: override?.mapCategory ?? lobby.mapCategory,
         questionCount:
+            override?.questionCount ??
             lobby.questionCount ?? CREATE_LOBBY_POLICY.DEFAULT_QUESTION_COUNT,
         timeLimitSeconds:
             lobby.timeLimitSeconds ??
@@ -202,8 +211,8 @@ function createLobbyDetailFromItem(
         players,
         canStart: canStartMockLobby({
             status: lobby.status,
-            mapId: lobby.mapId,
-            mapTitle: lobby.mapTitle,
+            mapId: override?.mapId ?? lobby.mapId,
+            mapTitle: override?.mapTitle ?? lobby.mapTitle,
             players,
         }),
     };
@@ -302,6 +311,69 @@ export const lobbyHandlers = [
         }
 
         return HttpResponse.json(createLobbyDetailFromItem(lobby));
+    }),
+
+    http.patch(API_ENDPOINTS.LOBBY.MAP(':code'), async ({ params, request }) => {
+        const code = typeof params.code === 'string' ? params.code : '';
+        const payload = (await request.json()) as { mapId?: unknown };
+        const mapId = typeof payload.mapId === 'number' ? payload.mapId : null;
+        const selectedMap = mapId == null
+            ? null
+            : mockMapItems.find((map) => map.mapId === mapId) ?? null;
+
+        if (!selectedMap) {
+            return HttpResponse.json(
+                { message: '맵을 찾을 수 없습니다.' },
+                { status: 404 },
+            );
+        }
+
+        if (latestCreatedLobby?.inviteCode === code) {
+            const nextLobby: LobbyDetailResponse = {
+                ...latestCreatedLobby,
+                mapId: selectedMap.mapId,
+                mapTitle: selectedMap.title,
+                mapCategory: selectedMap.category,
+                questionCount: selectedMap.numOfSong,
+            };
+
+            latestCreatedLobby = {
+                ...nextLobby,
+                canStart: canStartMockLobby({
+                    status: nextLobby.status,
+                    mapId: nextLobby.mapId,
+                    mapTitle: nextLobby.mapTitle,
+                    players: nextLobby.players,
+                }),
+            };
+
+            return new HttpResponse(null, { status: 204 });
+        }
+
+        const lobby = mockLobbyItems.find((item) => item.code === code);
+
+        if (!lobby) {
+            return HttpResponse.json(
+                { message: '로비를 찾을 수 없습니다.' },
+                { status: 404 },
+            );
+        }
+
+        if (lobby.status !== 'WAITING') {
+            return HttpResponse.json(
+                { message: '대기 중인 로비에서만 맵을 변경할 수 있습니다.' },
+                { status: 409 },
+            );
+        }
+
+        mockLobbyDetailOverrides.set(code, {
+            mapId: selectedMap.mapId,
+            mapTitle: selectedMap.title,
+            mapCategory: selectedMap.category,
+            questionCount: selectedMap.numOfSong,
+        });
+
+        return new HttpResponse(null, { status: 204 });
     }),
 
     // 클라이언트가 GET 메서드로 로비 목록 엔드포인트에 요청을 보낼 때 이를 가로챈다.

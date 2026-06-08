@@ -97,6 +97,10 @@ export interface UpdateLobbyReadyRequest {
     ready: boolean;
 }
 
+export interface UpdateLobbyMapRequest {
+    mapId: number;
+}
+
 export interface CreateLobbyRequest {
     title: string;
     maxPlayers: number;

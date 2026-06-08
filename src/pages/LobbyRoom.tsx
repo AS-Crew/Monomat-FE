@@ -3,7 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Gamepad2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { startLobbyGame, updateLobbyReady } from '../api/lobbyApi';
+import {
+    startLobbyGame,
+    updateLobbyMap,
+    updateLobbyReady,
+} from '../api/lobbyApi';
 import { NavigationBar } from '../components/common/NavigationBar';
 import { HostLobbyActionCard } from '../components/lobby/HostLobbyActionCard';
 import { LobbyChatPlaceholder } from '../components/lobby/LobbyChatPlaceholder';
@@ -13,6 +17,7 @@ import { LobbyMapInfoCard } from '../components/lobby/LobbyMapInfoCard';
 import { LobbyPlayersCard } from '../components/lobby/LobbyPlayersCard';
 import { LobbyRoomLayout } from '../components/lobby/LobbyRoomLayout';
 import { LobbyRoomTopControls } from '../components/lobby/LobbyRoomTopControls';
+import { MapSelectModal } from '../components/lobby/MapSelectModal';
 import { LOBBY_ROOM_COPY, LOBBY_ROUTES } from '../constants/lobby';
 import {
     lobbyDetailQueryKey,
@@ -20,6 +25,7 @@ import {
 } from '../hooks/useLobbyDetail';
 import { useLobbySocket } from '../hooks/useLobbySocket';
 import { useAuthStore } from '../store/useAuthStore';
+import type { MapSummary } from '../types/map';
 
 interface LobbyActionMessage {
     inviteCode: string;
@@ -149,6 +155,7 @@ export function LobbyRoom() {
         useState<LobbyActionMessage | null>(null);
     const [actionErrorMessage, setActionErrorMessage] =
         useState<LobbyActionMessage | null>(null);
+    const [isMapSelectModalOpen, setIsMapSelectModalOpen] = useState(false);
 
     const currentPlayer = useMemo(() => {
         if (!lobbyDetail || !userIdentifier) {
@@ -224,6 +231,36 @@ export function LobbyRoom() {
         },
     });
 
+    const mapMutation = useMutation({
+        mutationFn: (map: MapSummary) => {
+            if (!inviteCode) {
+                throw new Error(LOBBY_ROOM_COPY.INVALID_INVITE_CODE);
+            }
+
+            return updateLobbyMap(inviteCode, { mapId: map.mapId });
+        },
+        onMutate: () => {
+            setActionMessage(null);
+            setActionErrorMessage(null);
+        },
+        onSuccess: async () => {
+            await invalidateLobbyDetail();
+        },
+        onError: (mutationError) => {
+            if (!inviteCode) {
+                return;
+            }
+
+            setActionErrorMessage({
+                inviteCode,
+                message: getErrorMessage(
+                    mutationError,
+                    LOBBY_ROOM_COPY.MAP_CHANGE_FAILED,
+                ),
+            });
+        },
+    });
+
     const startMutation = useMutation({
         mutationFn: () => {
             if (!inviteCode) {
@@ -270,11 +307,43 @@ export function LobbyRoom() {
     };
 
     const handleStartClick = () => {
-        if (!isHost || !lobbyDetail?.canStart || startMutation.isPending) {
+        if (
+            !isHost ||
+            !lobbyDetail?.canStart ||
+            startMutation.isPending ||
+            mapMutation.isPending
+        ) {
             return;
         }
 
         startMutation.mutate();
+    };
+
+    const handleMapChangeClick = () => {
+        if (
+            !isHost ||
+            lobbyDetail?.status !== 'WAITING' ||
+            mapMutation.isPending ||
+            startMutation.isPending
+        ) {
+            return;
+        }
+
+        setActionMessage(null);
+        setActionErrorMessage(null);
+        setIsMapSelectModalOpen(true);
+    };
+
+    const handleMapConfirm = (map: MapSummary) => {
+        if (!isHost || mapMutation.isPending) {
+            return;
+        }
+
+        if (map.mapId === lobbyDetail?.mapId) {
+            return;
+        }
+
+        mapMutation.mutate(map);
     };
 
     if (!inviteCode) {
@@ -315,6 +384,7 @@ export function LobbyRoom() {
 
     const isReadyButtonDisabled =
         readyMutation.isPending || !currentPlayer || isHost;
+    const isWaitingLobby = lobbyDetail.status === 'WAITING';
     const hasSelectedMap =
         lobbyDetail.mapId != null && Boolean(lobbyDetail.mapTitle?.trim());
     const hostStartGuideMessage = getHostStartGuideMessage({
@@ -323,6 +393,9 @@ export function LobbyRoom() {
         readyTargetCount: readySummary.readyTargetCount,
         waitingCount: readySummary.waitingCount,
     });
+    const displayedHostStartGuideMessage = mapMutation.isPending
+        ? LOBBY_ROOM_COPY.MAP_CHANGE_PENDING_GUIDE
+        : hostStartGuideMessage;
     const currentActionMessage =
         actionMessage?.inviteCode === inviteCode ? actionMessage.message : null;
     const currentActionErrorMessage =
@@ -378,6 +451,9 @@ export function LobbyRoom() {
                             mapTitle={lobbyDetail.mapTitle}
                             mapCategory={lobbyDetail.mapCategory}
                             questionCount={lobbyDetail.questionCount}
+                            canChangeMap={isHost && isWaitingLobby}
+                            isMapChangePending={mapMutation.isPending}
+                            onMapChangeClick={handleMapChangeClick}
                         />
                     }
                     playersCard={
@@ -398,9 +474,22 @@ export function LobbyRoom() {
                     actionSlot={
                         isHost ? (
                             <HostLobbyActionCard
-                                canStart={lobbyDetail.canStart}
+                                canStart={
+                                    lobbyDetail.canStart &&
+                                    !mapMutation.isPending
+                                }
                                 isStarting={startMutation.isPending}
-                                startGuideMessage={hostStartGuideMessage}
+                                startGuideMessage={
+                                    displayedHostStartGuideMessage
+                                }
+                                totalPlayerCount={
+                                    readySummary.totalPlayerCount
+                                }
+                                readyTargetCount={
+                                    readySummary.readyTargetCount
+                                }
+                                readyCount={readySummary.readyCount}
+                                waitingCount={readySummary.waitingCount}
                                 onStartClick={handleStartClick}
                             />
                         ) : (
@@ -441,6 +530,14 @@ export function LobbyRoom() {
                     }
                 />
             </main>
+
+            <MapSelectModal
+                isOpen={isMapSelectModalOpen}
+                selectedMap={null}
+                selectedMapId={lobbyDetail.mapId}
+                onConfirm={handleMapConfirm}
+                onClose={() => setIsMapSelectModalOpen(false)}
+            />
         </LobbyRoomShell>
     );
 }
