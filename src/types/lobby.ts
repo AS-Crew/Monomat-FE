@@ -69,6 +69,7 @@ export interface JoinLobbyResponse {
 
 export interface LobbyPlayerResponse {
     userIdentifier: string;
+    nickname?: string | null;
     host: boolean;
     ready: boolean;
 }
@@ -77,6 +78,7 @@ export interface LobbyDetailResponse {
     inviteCode: string;
     title: string;
     hostId: string;
+    hostNickname?: string | null;
     maxPlayers: number;
     currentPlayers: number;
     status: LobbyStatus;

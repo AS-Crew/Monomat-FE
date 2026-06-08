@@ -53,6 +53,7 @@ export const lobbyListItemSchema = z.object({
 
 export const lobbyPlayerResponseSchema = z.object({
     userIdentifier: z.string().min(1),
+    nickname: z.string().nullable().optional(),
     host: z.boolean(),
     ready: z.boolean(),
 });
@@ -61,6 +62,7 @@ export const lobbyDetailResponseSchema = z.object({
     inviteCode: z.string().min(1),
     title: z.string().min(1),
     hostId: z.string().min(1),
+    hostNickname: z.string().nullable().optional(),
     maxPlayers: z.number().int().positive(),
     currentPlayers: z.number().int().min(0),
     status: lobbyStatusSchema,

@@ -47,6 +47,16 @@ function maskUserIdentifier(userIdentifier: string) {
     return `${userIdentifier.slice(0, 4)}...${userIdentifier.slice(-4)}`;
 }
 
+function getPlayerDisplayName(player: LobbyPlayerResponse) {
+    const nickname = player.nickname?.trim();
+
+    if (nickname) {
+        return nickname;
+    }
+
+    return maskUserIdentifier(player.userIdentifier);
+}
+
 function formatMapInfo(
     mapTitle: string | null,
     mapCategory: string | null,
@@ -387,9 +397,7 @@ export function LobbyRoom() {
                                     >
                                         <div className="min-w-0">
                                             <p className="truncate font-mono text-sm font-bold text-gray-900">
-                                                {maskUserIdentifier(
-                                                    player.userIdentifier,
-                                                )}
+                                                {getPlayerDisplayName(player)}
                                             </p>
                                             <p className="mt-1 text-xs font-semibold text-gray-500">
                                                 {player.userIdentifier ===
