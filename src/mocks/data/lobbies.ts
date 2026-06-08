@@ -46,7 +46,8 @@ export const mockLobbyItems: LobbyListItem[] = [
     },
     {
         code: 'OST321',
-        hostId: 'host-4',
+        hostId: '11111111-1111-4111-8111-111111111111',
+        hostNickname: 'Mock Host',
         title: '드라마 OST 이어듣기',
         mapId: 4,
         mapTitle: 'OST 명곡 모음',
@@ -76,5 +77,7 @@ export const mockLobbyPageResponse: LobbyPageResponse<LobbyListItem> = {
     items: mockLobbyItems,
     page: 0,
     size: 20,
+    totalElements: mockLobbyItems.length,
+    totalPages: 1,
     hasNext: false,
 };

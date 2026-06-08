@@ -1,13 +1,18 @@
 import { type ReactNode, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Gamepad2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { startLobbyGame, updateLobbyReady } from '../api/lobbyApi';
 import { NavigationBar } from '../components/common/NavigationBar';
+import { HostLobbyActionCard } from '../components/lobby/HostLobbyActionCard';
+import { LobbyChatPlaceholder } from '../components/lobby/LobbyChatPlaceholder';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { LobbyHeaderCard } from '../components/lobby/LobbyHeaderCard';
 import { LobbyMapInfoCard } from '../components/lobby/LobbyMapInfoCard';
 import { LobbyPlayersCard } from '../components/lobby/LobbyPlayersCard';
+import { LobbyRoomLayout } from '../components/lobby/LobbyRoomLayout';
+import { LobbyRoomTopControls } from '../components/lobby/LobbyRoomTopControls';
 import { LOBBY_ROOM_COPY, LOBBY_ROUTES } from '../constants/lobby';
 import {
     lobbyDetailQueryKey,
@@ -27,6 +32,36 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
     }
 
     return fallbackMessage;
+}
+
+function getHostStartGuideMessage({
+    canStart,
+    hasSelectedMap,
+    readyTargetCount,
+    waitingCount,
+}: {
+    canStart: boolean;
+    hasSelectedMap: boolean;
+    readyTargetCount: number;
+    waitingCount: number;
+}) {
+    if (canStart) {
+        return LOBBY_ROOM_COPY.START_GUIDE_AVAILABLE;
+    }
+
+    if (!hasSelectedMap) {
+        return LOBBY_ROOM_COPY.START_GUIDE_MAP_MISSING;
+    }
+
+    if (readyTargetCount === 0) {
+        return LOBBY_ROOM_COPY.START_GUIDE_PLAYER_REQUIRED;
+    }
+
+    if (waitingCount > 0) {
+        return LOBBY_ROOM_COPY.START_GUIDE_WAITING_PLAYERS;
+    }
+
+    return LOBBY_ROOM_COPY.START_GUIDE_SERVER_UNAVAILABLE;
 }
 
 function LobbyRoomShell({ children }: { children: ReactNode }) {
@@ -131,6 +166,19 @@ export function LobbyRoom() {
         lobbyDetail.hostId === userIdentifier,
     );
     const currentReady = currentPlayer?.ready ?? false;
+    const readySummary = useMemo(() => {
+        const players = lobbyDetail?.players ?? [];
+        const nonHostPlayers = players.filter((player) => !player.host);
+        const readyPlayers = nonHostPlayers.filter((player) => player.ready);
+        const waitingPlayers = nonHostPlayers.filter((player) => !player.ready);
+
+        return {
+            totalPlayerCount: players.length,
+            readyTargetCount: nonHostPlayers.length,
+            readyCount: readyPlayers.length,
+            waitingCount: waitingPlayers.length,
+        };
+    }, [lobbyDetail]);
 
     const handleNavigateLobbyList = () => {
         navigate(LOBBY_ROUTES.LIST);
@@ -267,8 +315,14 @@ export function LobbyRoom() {
 
     const isReadyButtonDisabled =
         readyMutation.isPending || !currentPlayer || isHost;
-    const isStartButtonDisabled =
-        startMutation.isPending || !lobbyDetail.canStart;
+    const hasSelectedMap =
+        lobbyDetail.mapId != null && Boolean(lobbyDetail.mapTitle?.trim());
+    const hostStartGuideMessage = getHostStartGuideMessage({
+        canStart: lobbyDetail.canStart,
+        hasSelectedMap,
+        readyTargetCount: readySummary.readyTargetCount,
+        waitingCount: readySummary.waitingCount,
+    });
     const currentActionMessage =
         actionMessage?.inviteCode === inviteCode ? actionMessage.message : null;
     const currentActionErrorMessage =
@@ -278,114 +332,114 @@ export function LobbyRoom() {
 
     return (
         <LobbyRoomShell>
-            <main className="flex flex-1 flex-col px-4 py-5 text-left sm:px-6 lg:px-8 xl:px-10">
-                <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-5">
-                    <button
-                        type="button"
-                        onClick={handleNavigateLobbyList}
-                        className="h-5 w-fit text-base font-semibold leading-5 text-[var(--monomat-text-muted)] transition hover:text-[var(--monomat-text-strong)]"
-                    >
-                        ← {LOBBY_ROOM_COPY.GO_TO_LOBBY_LIST}
-                    </button>
-
-                    <LobbyHeaderCard
-                        title={lobbyDetail.title}
-                        inviteCode={lobbyDetail.inviteCode}
-                        status={lobbyDetail.status}
-                        connectionStatus={connectionStatus}
-                        hostNickname={lobbyDetail.hostNickname}
-                        currentPlayers={lobbyDetail.currentPlayers}
-                        maxPlayers={lobbyDetail.maxPlayers}
-                        isHost={isHost}
-                    />
-
-                    {(currentActionErrorMessage ||
-                        currentActionMessage ||
-                        gameStatus === 'started') && (
-                        <section
-                            role={currentActionErrorMessage ? 'alert' : 'status'}
-                            className={`rounded-lg px-5 py-4 text-sm font-bold shadow-[0_4px_16px_rgba(0,0,0,0.05)] ring-1 ${
-                                currentActionErrorMessage
-                                    ? 'bg-[var(--monomat-danger-light)] text-[var(--monomat-danger)] ring-red-100'
-                                    : 'bg-[var(--monomat-primary-light)] text-[var(--monomat-primary)] ring-blue-100'
-                            }`}
+            <main className="flex flex-1 flex-col px-4 py-[17px] text-left sm:px-6 lg:px-8 xl:px-10">
+                <LobbyRoomLayout
+                    backNavigation={
+                        <button
+                            type="button"
+                            onClick={handleNavigateLobbyList}
+                            className="h-5 w-fit text-base font-semibold leading-5 text-[var(--monomat-text-muted)] transition hover:text-[var(--monomat-text-strong)]"
                         >
-                            {currentActionErrorMessage ??
-                                (gameStatus === 'started'
-                                    ? LOBBY_ROOM_COPY.GAME_STARTED_PENDING_ROUTE
-                                    : currentActionMessage)}
-                        </section>
-                    )}
-
-                    <section className="grid flex-1 gap-5 xl:grid-cols-[minmax(0,890px)_minmax(320px,1fr)]">
+                            ← {LOBBY_ROOM_COPY.GO_TO_LOBBY_LIST}
+                        </button>
+                    }
+                    topControls={
+                        <LobbyRoomTopControls
+                            inviteCode={lobbyDetail.inviteCode}
+                            status={lobbyDetail.status}
+                        />
+                    }
+                    feedbackSlot={
+                        (currentActionErrorMessage ||
+                            currentActionMessage ||
+                            gameStatus === 'started') && (
+                            <section
+                                role={
+                                    currentActionErrorMessage
+                                        ? 'alert'
+                                        : 'status'
+                                }
+                                className={`rounded-lg px-5 py-4 text-sm font-bold shadow-[0_4px_16px_rgba(0,0,0,0.05)] ring-1 ${
+                                    currentActionErrorMessage
+                                        ? 'bg-[var(--monomat-danger-light)] text-[var(--monomat-danger)] ring-red-100'
+                                        : 'bg-[var(--monomat-primary-light)] text-[var(--monomat-primary)] ring-blue-100'
+                                }`}
+                            >
+                                {currentActionErrorMessage ??
+                                    (gameStatus === 'started'
+                                        ? LOBBY_ROOM_COPY.GAME_STARTED_PENDING_ROUTE
+                                        : currentActionMessage)}
+                            </section>
+                        )
+                    }
+                    titleCard={
+                        <LobbyHeaderCard
+                            title={lobbyDetail.title}
+                            mapTitle={lobbyDetail.mapTitle}
+                            mapCategory={lobbyDetail.mapCategory}
+                            questionCount={lobbyDetail.questionCount}
+                        />
+                    }
+                    playersCard={
                         <LobbyPlayersCard
                             players={lobbyDetail.players}
                             currentPlayers={lobbyDetail.currentPlayers}
                             maxPlayers={lobbyDetail.maxPlayers}
                             currentUserIdentifier={userIdentifier}
                         />
-
-                        <aside className="flex min-w-0 flex-col gap-5">
-                            <LobbyMapInfoCard
-                                mapTitle={lobbyDetail.mapTitle}
-                                mapCategory={lobbyDetail.mapCategory}
-                                questionCount={lobbyDetail.questionCount}
-                                timeLimitSeconds={lobbyDetail.timeLimitSeconds}
-                                maxPlayers={lobbyDetail.maxPlayers}
+                    }
+                    settingsCard={
+                        <LobbyMapInfoCard
+                            questionCount={lobbyDetail.questionCount}
+                            timeLimitSeconds={lobbyDetail.timeLimitSeconds}
+                            maxPlayers={lobbyDetail.maxPlayers}
+                        />
+                    }
+                    actionSlot={
+                        isHost ? (
+                            <HostLobbyActionCard
+                                canStart={lobbyDetail.canStart}
+                                isStarting={startMutation.isPending}
+                                startGuideMessage={hostStartGuideMessage}
+                                onStartClick={handleStartClick}
                             />
-
-                            <section className="rounded-lg bg-white p-5 shadow-[0_4px_16px_rgba(0,0,0,0.08)] ring-1 ring-[color:var(--monomat-border-card)] lg:p-[25px]">
-                                <h2 className="!m-0 !text-xl !font-extrabold !leading-6 !text-[var(--monomat-text-strong)]">
-                                    {LOBBY_ROOM_COPY.ACTION_TITLE}
-                                </h2>
-
-                                {isHost ? (
-                                    <div className="mt-5">
-                                        <button
-                                            type="button"
-                                            onClick={handleStartClick}
-                                            disabled={isStartButtonDisabled}
-                                            className="h-12 w-full rounded-lg bg-[var(--monomat-primary)] text-sm font-bold text-white transition hover:bg-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)]"
-                                        >
-                                            {startMutation.isPending
-                                                ? LOBBY_ROOM_COPY.START_PENDING
-                                                : LOBBY_ROOM_COPY.START_GAME}
-                                        </button>
-                                        <p className="mt-3 break-keep text-xs font-semibold text-[var(--monomat-text-muted)]">
-                                            {lobbyDetail.canStart
-                                                ? LOBBY_ROOM_COPY.START_AVAILABLE
-                                                : LOBBY_ROOM_COPY.START_UNAVAILABLE}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="mt-5">
-                                        <button
-                                            type="button"
-                                            onClick={handleReadyClick}
-                                            disabled={isReadyButtonDisabled}
-                                            className={`h-12 w-full rounded-lg text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)] ${
-                                                currentReady
-                                                    ? 'bg-[var(--monomat-text-strong)] hover:bg-black'
-                                                    : 'bg-[var(--monomat-primary)] hover:bg-[var(--monomat-primary-hover)]'
-                                            }`}
-                                        >
-                                            {readyMutation.isPending
-                                                ? LOBBY_ROOM_COPY.READY_PENDING
-                                                : currentReady
-                                                    ? LOBBY_ROOM_COPY.CANCEL_READY
-                                                    : LOBBY_ROOM_COPY.SUBMIT_READY}
-                                        </button>
-                                        <p className="mt-3 break-keep text-xs font-semibold text-[var(--monomat-text-muted)]">
-                                            {currentPlayer
-                                                ? LOBBY_ROOM_COPY.READY_SYNCED
-                                                : LOBBY_ROOM_COPY.READY_WAIT_PLAYER}
-                                        </p>
-                                    </div>
-                                )}
+                        ) : (
+                            <section aria-label={LOBBY_ROOM_COPY.ACTION_TITLE}>
+                                <p className="sr-only">
+                                    {currentPlayer
+                                        ? LOBBY_ROOM_COPY.READY_SYNCED
+                                        : LOBBY_ROOM_COPY.READY_WAIT_PLAYER}
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={handleReadyClick}
+                                    disabled={isReadyButtonDisabled}
+                                    className={`flex h-[45px] w-full items-center justify-center gap-2 rounded-lg text-base font-bold leading-none text-white transition disabled:cursor-not-allowed disabled:bg-[#D3D3D7] ${
+                                        currentReady
+                                            ? 'bg-[var(--monomat-text-strong)] hover:bg-black'
+                                            : 'bg-[#00B368] hover:bg-[#009b5a]'
+                                    }`}
+                                >
+                                    <Gamepad2
+                                        size={20}
+                                        strokeWidth={2.3}
+                                        aria-hidden="true"
+                                    />
+                                    {readyMutation.isPending
+                                        ? LOBBY_ROOM_COPY.READY_PENDING
+                                        : currentReady
+                                            ? LOBBY_ROOM_COPY.CANCEL_READY
+                                            : LOBBY_ROOM_COPY.SUBMIT_READY}
+                                </button>
                             </section>
-                        </aside>
-                    </section>
-                </div>
+                        )
+                    }
+                    chatSlot={
+                        <LobbyChatPlaceholder
+                            connectionStatus={connectionStatus}
+                        />
+                    }
+                />
             </main>
         </LobbyRoomShell>
     );

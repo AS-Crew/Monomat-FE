@@ -10,6 +10,7 @@ interface LobbyListProps {
     isError?: boolean;
     page: number;
     hasNext: boolean;
+    totalPages?: number;
     onRetry?: () => void;
     onEnter: (code: string) => void;
     onPageChange: (page: number) => void;
@@ -61,6 +62,7 @@ export function LobbyList({
     isError = false,
     page,
     hasNext,
+    totalPages,
     onRetry,
     onEnter,
     onPageChange,
@@ -76,6 +78,7 @@ export function LobbyList({
                 <LobbyPagination
                     page={page}
                     hasNext={false}
+                    totalPages={totalPages}
                     onPageChange={onPageChange}
                 />
             </>
@@ -93,6 +96,7 @@ export function LobbyList({
                 <LobbyPagination
                     page={page}
                     hasNext={hasNext}
+                    totalPages={totalPages}
                     onPageChange={onPageChange}
                 />
             </>
@@ -113,6 +117,7 @@ export function LobbyList({
             <LobbyPagination
                 page={page}
                 hasNext={hasNext}
+                totalPages={totalPages}
                 onPageChange={onPageChange}
             />
         </>
