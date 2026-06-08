@@ -104,6 +104,7 @@ function createLobbyDetailFromItem(
         inviteCode: lobby.code,
         title: lobby.title,
         hostId: lobby.hostId ?? 'mock-host',
+        hostNickname: lobby.hostNickname ?? 'Mock Host',
         maxPlayers: lobby.maxPlayers,
         currentPlayers: lobby.currentPlayers,
         status: lobby.status,
@@ -118,6 +119,7 @@ function createLobbyDetailFromItem(
         players: [
             {
                 userIdentifier: lobby.hostId ?? 'mock-host',
+                nickname: lobby.hostNickname ?? 'Mock Host',
                 host: true,
                 ready: true,
             },
@@ -152,6 +154,7 @@ export const lobbyHandlers = [
             inviteCode,
             title,
             hostId: 'mock-host',
+            hostNickname: 'Mock Host',
             maxPlayers,
             currentPlayers: 1,
             status: 'WAITING',
@@ -163,6 +166,7 @@ export const lobbyHandlers = [
             players: [
                 {
                     userIdentifier: 'mock-host',
+                    nickname: 'Mock Host',
                     host: true,
                     ready: true,
                 },
