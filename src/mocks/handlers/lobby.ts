@@ -136,6 +136,32 @@ function sortLobbyItems(
     }
 }
 
+function selectMockPlayerPool(lobby: LobbyListItem) {
+    if (lobby.code === 'OST321') {
+        return MOCK_PLAYER_POOL.filter((player) => player.ready);
+    }
+
+    return MOCK_PLAYER_POOL;
+}
+
+function canStartMockLobby(lobby: {
+    status: LobbyListItem['status'];
+    mapId: number | null;
+    mapTitle: string | null;
+    players: LobbyPlayerResponse[];
+}) {
+    const nonHostPlayers = lobby.players.filter((player) => !player.host);
+    const hasSelectedMap =
+        lobby.mapId != null && Boolean(lobby.mapTitle?.trim());
+
+    return (
+        lobby.status === 'WAITING' &&
+        hasSelectedMap &&
+        nonHostPlayers.length > 0 &&
+        nonHostPlayers.every((player) => player.ready)
+    );
+}
+
 function createLobbyDetailFromItem(
     lobby: LobbyListItem,
 ): LobbyDetailResponse {
@@ -147,14 +173,14 @@ function createLobbyDetailFromItem(
     };
     const players: LobbyPlayerResponse[] = [
         hostPlayer,
-        ...MOCK_PLAYER_POOL.slice(0, Math.max(lobby.currentPlayers - 1, 0)).map(
-            (player): LobbyPlayerResponse => ({
+        ...selectMockPlayerPool(lobby)
+            .slice(0, Math.max(lobby.currentPlayers - 1, 0))
+            .map((player): LobbyPlayerResponse => ({
                 userIdentifier: player.userIdentifier,
                 nickname: player.nickname,
                 host: false,
                 ready: player.ready,
-            }),
-        ),
+            })),
     ];
 
     return {
@@ -174,10 +200,12 @@ function createLobbyDetailFromItem(
             lobby.timeLimitSeconds ??
             CREATE_LOBBY_POLICY.DEFAULT_TIME_LIMIT_SECONDS,
         players,
-        canStart:
-            lobby.status === 'WAITING' &&
-            players.length > 1 &&
-            players.every((player) => player.host || player.ready),
+        canStart: canStartMockLobby({
+            status: lobby.status,
+            mapId: lobby.mapId,
+            mapTitle: lobby.mapTitle,
+            players,
+        }),
     };
 }
 
@@ -224,7 +252,19 @@ export const lobbyHandlers = [
                     ready: true,
                 },
             ],
-            canStart: false,
+            canStart: canStartMockLobby({
+                status: 'WAITING',
+                mapId: selectedMap?.mapId ?? null,
+                mapTitle: selectedMap?.title ?? null,
+                players: [
+                    {
+                        userIdentifier: 'mock-host',
+                        nickname: 'Mock Host',
+                        host: true,
+                        ready: true,
+                    },
+                ],
+            }),
         };
 
         return HttpResponse.json(
@@ -283,12 +323,16 @@ export const lobbyHandlers = [
             sortQuery,
         );
         const items = sortedLobbies.slice(startIndex, startIndex + size);
+        const totalElements = sortedLobbies.length;
+        const totalPages = Math.ceil(totalElements / size);
 
         return HttpResponse.json({
             items,
             page,
             size,
-            hasNext: startIndex + size < sortedLobbies.length,
+            totalElements,
+            totalPages,
+            hasNext: startIndex + size < totalElements,
         });
     }),
 ];

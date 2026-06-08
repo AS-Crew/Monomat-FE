@@ -13,7 +13,7 @@ import {
     LOBBY_CATEGORY_FILTERS,
     LOBBY_ROUTES,
 } from '../constants/lobby';
-import { useLobbyList } from '../hooks/useLobbyList';
+import { useLobbyList, useLobbyTotalPages } from '../hooks/useLobbyList';
 import {
     SORT_QUERY_MAP,
     type LobbyCategory,
@@ -56,9 +56,12 @@ export function Lobbies() {
         isError,
         refetch,
     } = useLobbyList(lobbyListQueryParams);
+    const lobbyTotalPagesQuery = useLobbyTotalPages(lobbyListQueryParams);
     const lobbies = data?.items ?? [];
     const page = data?.page ?? currentPage;
-    const hasNext = data?.hasNext ?? false;
+    const totalPages = data?.totalPages ?? lobbyTotalPagesQuery.data;
+    const hasNext = totalPages == null ? false : (data?.hasNext ?? false);
+    const paginationTotalPages = totalPages ?? Math.max(page + 1, 1);
 
     const handleSearchKeywordChange = (value: string) => {
         setSearchKeyword(value);
@@ -101,6 +104,7 @@ export function Lobbies() {
                         isError={isError}
                         page={page}
                         hasNext={hasNext}
+                        totalPages={paginationTotalPages}
                         onRetry={() => void refetch()}
                         onEnter={handleEnter}
                         onPageChange={setCurrentPage}

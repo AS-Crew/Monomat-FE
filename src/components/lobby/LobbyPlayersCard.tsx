@@ -35,7 +35,7 @@ function getAvatarLabel(displayName: string) {
 function PlayerReadyBadge({ player }: { player: LobbyPlayerResponse }) {
     if (player.host) {
         return (
-            <span className="inline-flex h-[18px] items-center gap-1 text-[10px] font-semibold leading-none text-[var(--monomat-primary)]">
+            <span className="inline-flex h-3 items-center gap-1 text-[10px] font-semibold leading-none text-[var(--monomat-primary)]">
                 <span className="h-2 w-2 rounded-full bg-[var(--monomat-primary)]" />
                 {LOBBY_ROOM_COPY.HOST_BADGE}
             </span>
@@ -44,7 +44,7 @@ function PlayerReadyBadge({ player }: { player: LobbyPlayerResponse }) {
 
     return (
         <span
-            className={`inline-flex h-[18px] items-center gap-1 text-[10px] font-semibold leading-none ${
+            className={`inline-flex h-3 items-center gap-1 text-[10px] font-semibold leading-none ${
                 player.ready
                     ? 'text-emerald-600'
                     : 'text-[var(--monomat-text-muted)]'
@@ -73,7 +73,7 @@ function PlayerSlot({
     const avatarColor = getAvatarColor(player.userIdentifier);
 
     return (
-        <li className="flex min-h-[110px] min-w-0 flex-col items-center justify-center rounded-lg border border-[color:var(--monomat-border-default)] bg-white px-3 py-4 text-center">
+        <li className="flex h-[110px] min-w-0 flex-col items-center rounded-lg border border-[color:var(--monomat-border-default)] bg-white px-3 py-[15px] text-center">
             <span
                 className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full text-base font-extrabold leading-none text-white"
                 style={{ backgroundColor: avatarColor }}
@@ -81,13 +81,13 @@ function PlayerSlot({
                 {getAvatarLabel(displayName)}
             </span>
 
-            <p className="mt-3 w-full truncate text-sm font-extrabold leading-4 text-[var(--monomat-text-strong)]">
+            <p className="mt-[7px] w-full truncate text-sm font-extrabold leading-4 text-[var(--monomat-text-strong)]">
                 {displayName}
             </p>
 
-            <div className="mt-2 flex h-[18px] items-center justify-center gap-2">
+            <div className="mt-1 flex h-3 max-w-full items-center justify-center gap-2">
                 {player.userIdentifier === currentUserIdentifier && (
-                    <span className="inline-flex h-[18px] items-center rounded-full bg-[var(--monomat-page-bg)] px-2 text-[10px] font-semibold leading-none text-[var(--monomat-text-muted)]">
+                    <span className="inline-flex h-3 items-center rounded-full bg-[var(--monomat-page-bg)] px-2 text-[10px] font-semibold leading-none text-[var(--monomat-text-muted)]">
                         {LOBBY_ROOM_COPY.ME}
                     </span>
                 )}
@@ -99,9 +99,9 @@ function PlayerSlot({
 
 function EmptySlot() {
     return (
-        <li className="flex min-h-[110px] flex-col items-center justify-center rounded-lg border border-dashed border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-3 py-4 text-center">
+        <li className="flex h-[110px] flex-col items-center rounded-lg border border-dashed border-[color:var(--monomat-border-default)] bg-white px-3 py-[15px] text-center">
             <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border border-[color:var(--monomat-border-input)] bg-white" />
-            <p className="mt-3 text-sm font-semibold leading-4 text-[var(--monomat-text-muted)]">
+            <p className="mt-[14px] text-sm font-semibold leading-4 text-[var(--monomat-text-muted)]">
                 {LOBBY_ROOM_COPY.EMPTY_SLOT}
             </p>
         </li>
@@ -117,18 +117,18 @@ export function LobbyPlayersCard({
     const emptySlotCount = Math.max(maxPlayers - players.length, 0);
 
     return (
-        <section className="rounded-lg bg-white p-5 text-left shadow-[0_4px_16px_rgba(0,0,0,0.08)] ring-1 ring-[color:var(--monomat-border-card)] lg:p-[25px]">
+        <section className="min-h-[304px] rounded-2xl bg-white p-5 text-left shadow-[0_4px_16px_rgba(0,0,0,0.16)] lg:p-[25px]">
             <div className="flex items-center justify-between gap-4">
-                <h2 className="!m-0 !text-xl !font-extrabold !leading-6 !text-[var(--monomat-text-strong)]">
+                <h2 className="!m-0 !text-lg !font-bold !leading-6 !text-[var(--monomat-text-strong)]">
                     {LOBBY_ROOM_COPY.PLAYERS_TITLE}
                 </h2>
-                <span className="shrink-0 text-sm font-semibold leading-none text-[var(--monomat-text-muted)]">
+                <span className="shrink-0 text-sm font-semibold leading-none text-[var(--monomat-text-muted)] xl:mt-2">
                     {currentPlayers}/{maxPlayers}
                 </span>
             </div>
 
             {players.length > 0 ? (
-                <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                <ul className="mt-[10px] grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-[repeat(4,160px)] xl:justify-between xl:gap-x-0 xl:gap-y-[10px]">
                     {players.map((player) => (
                         <PlayerSlot
                             key={player.userIdentifier}
@@ -141,7 +141,7 @@ export function LobbyPlayersCard({
                     ))}
                 </ul>
             ) : (
-                <div className="mt-4 flex min-h-[230px] items-center justify-center rounded-lg border border-dashed border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-4 text-center text-sm font-semibold text-[var(--monomat-text-muted)]">
+                <div className="mt-[10px] flex min-h-[230px] items-center justify-center rounded-lg border border-dashed border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-4 text-center text-sm font-semibold text-[var(--monomat-text-muted)]">
                     {LOBBY_ROOM_COPY.PLAYERS_EMPTY}
                 </div>
             )}

@@ -5,10 +5,19 @@ import { LOBBY_PAGINATION_LABELS } from '../../constants/lobby';
 interface LobbyPaginationProps {
     page: number;
     hasNext: boolean;
+    totalPages?: number;
     onPageChange: (page: number) => void;
 }
 
-function createKnownPages(page: number, hasNext: boolean) {
+function createKnownPages(
+    page: number,
+    hasNext: boolean,
+    totalPages?: number,
+) {
+    if (typeof totalPages === 'number' && totalPages > 0) {
+        return Array.from({ length: totalPages }, (_, index) => index);
+    }
+
     const lastKnownPage = hasNext ? page + 1 : page;
 
     return Array.from({ length: lastKnownPage + 1 }, (_, index) => index);
@@ -17,10 +26,15 @@ function createKnownPages(page: number, hasNext: boolean) {
 export function LobbyPagination({
     page,
     hasNext,
+    totalPages,
     onPageChange,
 }: LobbyPaginationProps) {
-    const pages = createKnownPages(page, hasNext);
+    const pages = createKnownPages(page, hasNext, totalPages);
     const canGoPrevious = page > 0;
+    const canGoNext =
+        typeof totalPages === 'number' && totalPages > 0
+            ? page + 1 < totalPages
+            : hasNext;
 
     return (
         <nav
@@ -62,7 +76,7 @@ export function LobbyPagination({
             <button
                 type="button"
                 onClick={() => onPageChange(page + 1)}
-                disabled={!hasNext}
+                disabled={!canGoNext}
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-[color:var(--monomat-border-default)] bg-white text-[13px] text-[var(--monomat-text-muted)] transition hover:bg-[var(--monomat-page-bg)] disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label={LOBBY_PAGINATION_LABELS.NEXT}
             >

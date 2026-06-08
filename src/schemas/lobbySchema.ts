@@ -79,6 +79,8 @@ export const lobbyPageResponseSchema = z.object({
     items: z.array(lobbyListItemSchema),
     page: z.number().int().min(0),
     size: z.number().int().positive(),
+    totalElements: z.number().int().min(0).optional(),
+    totalPages: z.number().int().min(0).optional(),
     hasNext: z.boolean(),
 });
 
