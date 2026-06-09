@@ -1,0 +1,9 @@
+services:
+  monomat-fe:
+    container_name: monomat-fe
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:80"
