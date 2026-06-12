@@ -8,7 +8,7 @@ import { GLOBAL_CHAT_COPY } from '../../constants/lobby';
 import type { ChatMessage } from '../../types/chat';
 import { MonomatInput } from '../common/MonomatInput';
 
-const CHAT_COOLDOWN_MS = 3000;
+const CHAT_COOLDOWN_MS = 1500;
 const MAX_CHAT_LENGTH = 200;
 
 function formatTime(timestamp: string): string {

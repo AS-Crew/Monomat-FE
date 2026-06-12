@@ -1,6 +1,5 @@
 import { type ReactNode, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Gamepad2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import {
@@ -15,6 +14,7 @@ import { LobbyChatPlaceholder } from '../components/lobby/LobbyChatPlaceholder';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { LobbyHeaderCard } from '../components/lobby/LobbyHeaderCard';
 import { LobbyMapInfoCard } from '../components/lobby/LobbyMapInfoCard';
+import { ParticipantLobbyActionCard } from '../components/lobby/ParticipantLobbyActionCard';
 import { LobbyPlayersCard } from '../components/lobby/LobbyPlayersCard';
 import { LobbyRoomLayout } from '../components/lobby/LobbyRoomLayout';
 import { LobbyRoomTopControls } from '../components/lobby/LobbyRoomTopControls';
@@ -175,6 +175,24 @@ export function LobbyRoom() {
         userIdentifier &&
         lobbyDetail.hostId === userIdentifier,
     );
+    const hostNickname = useMemo(() => {
+        if (!lobbyDetail) {
+            return LOBBY_ROOM_COPY.HOST_UNKNOWN;
+        }
+
+        const hostPlayer =
+            lobbyDetail.players.find((player) => player.host) ??
+            lobbyDetail.players.find(
+                (player) =>
+                    player.userIdentifier === lobbyDetail.hostId,
+            );
+
+        return (
+            hostPlayer?.nickname?.trim() ||
+            lobbyDetail.hostNickname?.trim() ||
+            LOBBY_ROOM_COPY.HOST_UNKNOWN
+        );
+    }, [lobbyDetail]);
     const currentReady = currentPlayer?.ready ?? false;
     const readySummary = useMemo(() => {
         const players = lobbyDetail?.players ?? [];
@@ -332,7 +350,12 @@ export function LobbyRoom() {
     });
 
     const handleReadyClick = () => {
-        if (!currentPlayer || isHost || readyMutation.isPending) {
+        if (
+            !currentPlayer ||
+            isHost ||
+            lobbyDetail?.status !== 'WAITING' ||
+            readyMutation.isPending
+        ) {
             return;
         }
 
@@ -431,8 +454,6 @@ export function LobbyRoom() {
         );
     }
 
-    const isReadyButtonDisabled =
-        readyMutation.isPending || !currentPlayer || isHost;
     const isWaitingLobby = lobbyDetail.status === 'WAITING';
     const hasSelectedMap =
         lobbyDetail.mapId != null && Boolean(lobbyDetail.mapTitle?.trim());
@@ -513,6 +534,10 @@ export function LobbyRoom() {
                             currentPlayers={lobbyDetail.currentPlayers}
                             maxPlayers={lobbyDetail.maxPlayers}
                             currentUserIdentifier={userIdentifier}
+                            hostId={lobbyDetail.hostId}
+                            hostNickname={
+                                lobbyDetail.hostNickname ?? null
+                            }
                         />
                     }
                     settingsCard={
@@ -569,34 +594,14 @@ export function LobbyRoom() {
                                 onStartClick={handleStartClick}
                             />
                         ) : (
-                            <section aria-label={LOBBY_ROOM_COPY.ACTION_TITLE}>
-                                <p className="sr-only">
-                                    {currentPlayer
-                                        ? LOBBY_ROOM_COPY.READY_SYNCED
-                                        : LOBBY_ROOM_COPY.READY_WAIT_PLAYER}
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={handleReadyClick}
-                                    disabled={isReadyButtonDisabled}
-                                    className={`flex h-[45px] w-full items-center justify-center gap-2 rounded-lg text-base font-bold leading-none text-white transition disabled:cursor-not-allowed disabled:bg-[#D3D3D7] ${
-                                        currentReady
-                                            ? 'bg-[var(--monomat-text-strong)] hover:bg-black'
-                                            : 'bg-[#00B368] hover:bg-[#009b5a]'
-                                    }`}
-                                >
-                                    <Gamepad2
-                                        size={20}
-                                        strokeWidth={2.3}
-                                        aria-hidden="true"
-                                    />
-                                    {readyMutation.isPending
-                                        ? LOBBY_ROOM_COPY.READY_PENDING
-                                        : currentReady
-                                            ? LOBBY_ROOM_COPY.CANCEL_READY
-                                            : LOBBY_ROOM_COPY.SUBMIT_READY}
-                                </button>
-                            </section>
+                            <ParticipantLobbyActionCard
+                                hostNickname={hostNickname}
+                                isReady={currentReady}
+                                isWaitingLobby={isWaitingLobby}
+                                hasCurrentPlayer={Boolean(currentPlayer)}
+                                isUpdating={readyMutation.isPending}
+                                onReadyClick={handleReadyClick}
+                            />
                         )
                     }
                     chatSlot={

@@ -27,8 +27,6 @@ function SettingRule({
     value: string;
     progress: number;
 }) {
-    const knobPosition = Math.min(Math.max(progress, 2.5), 97.5);
-
     return (
         <div className="min-w-0">
             <p className="text-base font-semibold leading-5 text-[var(--monomat-text-strong)]">
@@ -38,10 +36,6 @@ function SettingRule({
                 <span
                     className="absolute left-0 top-0 h-full rounded-[3px] bg-[var(--monomat-primary)]"
                     style={{ width: `${progress}%` }}
-                />
-                <span
-                    className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-[var(--monomat-primary)]"
-                    style={{ left: `calc(${knobPosition}% - 6px)` }}
                 />
             </div>
         </div>

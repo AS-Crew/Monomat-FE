@@ -152,7 +152,15 @@ export const LOBBY_ROOM_COPY = {
     START_GAME: '게임 시작',
     READY_PENDING: '변경 중...',
     CANCEL_READY: '준비 취소',
-    SUBMIT_READY: '준비 완료',
+    SUBMIT_READY: '준비하기',
+    PARTICIPANT_ACTION_TITLE: '내 준비 상태',
+    PARTICIPANT_WAITING_GUIDE:
+        '준비를 완료하면 방장이 게임을 시작할 수 있습니다.',
+    PARTICIPANT_READY_GUIDE:
+        '방장이 게임을 시작할 때까지 기다려 주세요.',
+    PARTICIPANT_NOT_WAITING:
+        '대기 중인 로비에서만 준비 상태를 변경할 수 있습니다.',
+    PARTICIPANT_HOST_PREFIX: '게임 시작 권한 · 방장',
     START_AVAILABLE: '현재 조회 기준으로 시작할 수 있습니다.',
     START_UNAVAILABLE: '모든 참가자가 준비하면 시작할 수 있습니다.',
     START_GUIDE_MAP_MISSING: '선택된 맵이 없어 아직 시작할 수 없습니다.',
