@@ -19,6 +19,7 @@ import type {
     LobbySortQuery,
     UpdateLobbySettingsRequest,
 } from '../../types/lobby';
+import type { LobbyChatMessage } from '../../types/lobbyChat';
 
 const LOBBY_CATEGORIES = ['K-POP', 'J-POP', 'POP', 'OST', '애니'] as const;
 const LOBBY_SORT_QUERIES = [
@@ -43,6 +44,41 @@ const mockLobbyDetailOverrides = new Map<
     >>
 >();
 const mockLobbyReadyOverrides = new Map<string, Map<string, boolean>>();
+
+function createMockRecentLobbyChats(code: string): LobbyChatMessage[] {
+    return [
+        {
+            messageId: `${code}-chat-1`,
+            type: 'CHAT',
+            roomId: code,
+            sender: 'mock-player-songking',
+            senderId: 5,
+            senderNickname: '노래왕',
+            content: 'K-POP 방 같이 하실 분~',
+            timestamp: '2026-06-12T11:43:00.000Z',
+            sentAt: '2026-06-12T11:43:00.000Z',
+        },
+        {
+            type: 'READY_CHANGED',
+            roomId: code,
+            sender: MOCK_PARTICIPANT_USER_IDENTIFIER,
+            content: `${MOCK_PARTICIPANT_USER_IDENTIFIER}님이 준비 완료 상태로 변경했습니다.`,
+            timestamp: '2026-06-12T11:44:00.000Z',
+        },
+        {
+            messageId: `${code}-chat-2`,
+            type: 'CHAT',
+            roomId: code,
+            sender: 'mock-player-night',
+            senderId: 6,
+            senderNickname: '심야괴담회',
+            content:
+                '시간은 24시간 표기법으로 표시되고, 긴 메시지는 채팅 영역 안에서 자연스럽게 줄바꿈됩니다.',
+            timestamp: '2026-06-12T11:45:00.000Z',
+            sentAt: '2026-06-12T11:45:00.000Z',
+        },
+    ];
+}
 
 const MOCK_PLAYER_POOL = [
     {
@@ -325,6 +361,24 @@ export const lobbyHandlers = [
         }
 
         return HttpResponse.json(createLobbyDetailFromItem(lobby));
+    }),
+
+    http.get(API_ENDPOINTS.LOBBY.RECENT_CHATS(':code'), ({ params }) => {
+        const code = typeof params.code === 'string' ? params.code : '';
+        const lobbyExists =
+            latestCreatedLobby?.inviteCode === code ||
+            mockLobbyItems.some((item) => item.code === code);
+
+        if (!lobbyExists) {
+            return HttpResponse.json(
+                {
+                    message: '로비를 찾을 수 없습니다.',
+                },
+                { status: 404 },
+            );
+        }
+
+        return HttpResponse.json(createMockRecentLobbyChats(code));
     }),
 
     http.patch(
