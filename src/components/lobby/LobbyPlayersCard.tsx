@@ -8,6 +8,8 @@ interface LobbyPlayersCardProps {
     currentPlayers: number;
     maxPlayers: number;
     currentUserIdentifier: string | null;
+    hostId: string;
+    hostNickname: string | null;
 }
 
 function maskUserIdentifier(userIdentifier: string) {
@@ -18,11 +20,18 @@ function maskUserIdentifier(userIdentifier: string) {
     return `${userIdentifier.slice(0, 4)}...${userIdentifier.slice(-4)}`;
 }
 
-function getPlayerDisplayName(player: LobbyPlayerResponse) {
+function getPlayerDisplayName(
+    player: LobbyPlayerResponse,
+    hostNickname: string | null,
+) {
     const nickname = player.nickname?.trim();
 
     if (nickname) {
         return nickname;
+    }
+
+    if (player.host && hostNickname?.trim()) {
+        return hostNickname.trim();
     }
 
     return maskUserIdentifier(player.userIdentifier);
@@ -32,8 +41,14 @@ function getAvatarLabel(displayName: string) {
     return displayName.trim().charAt(0).toUpperCase() || '?';
 }
 
-function PlayerReadyBadge({ player }: { player: LobbyPlayerResponse }) {
-    if (player.host) {
+function PlayerReadyBadge({
+    isHost,
+    isReady,
+}: {
+    isHost: boolean;
+    isReady: boolean;
+}) {
+    if (isHost) {
         return (
             <span className="inline-flex h-3 items-center gap-1 text-[10px] font-semibold leading-none text-[var(--monomat-primary)]">
                 <span className="h-2 w-2 rounded-full bg-[var(--monomat-primary)]" />
@@ -45,19 +60,19 @@ function PlayerReadyBadge({ player }: { player: LobbyPlayerResponse }) {
     return (
         <span
             className={`inline-flex h-3 items-center gap-1 text-[10px] font-semibold leading-none ${
-                player.ready
-                    ? 'text-emerald-600'
+                isReady
+                    ? 'text-[#00A259]'
                     : 'text-[var(--monomat-text-muted)]'
             }`}
         >
             <span
                 className={`h-2 w-2 rounded-full ${
-                    player.ready
-                        ? 'bg-emerald-500'
-                        : 'bg-[var(--monomat-border-input)]'
+                    isReady
+                        ? 'bg-[#00A259]'
+                        : 'border border-[var(--monomat-text-muted)] bg-white'
                 }`}
             />
-            {player.ready ? LOBBY_ROOM_COPY.READY : LOBBY_ROOM_COPY.WAITING}
+            {isReady ? LOBBY_ROOM_COPY.READY : LOBBY_ROOM_COPY.WAITING}
         </span>
     );
 }
@@ -65,15 +80,35 @@ function PlayerReadyBadge({ player }: { player: LobbyPlayerResponse }) {
 function PlayerSlot({
     player,
     currentUserIdentifier,
+    hostId,
+    hostNickname,
 }: {
     player: LobbyPlayerResponse;
     currentUserIdentifier: string | null;
+    hostId: string;
+    hostNickname: string | null;
 }) {
-    const displayName = getPlayerDisplayName(player);
+    const isCurrentUser =
+        player.userIdentifier === currentUserIdentifier;
+    const isHost =
+        player.host || player.userIdentifier === hostId;
+    const displayName = getPlayerDisplayName(
+        {
+            ...player,
+            host: isHost,
+        },
+        hostNickname,
+    );
     const avatarColor = getAvatarColor(player.userIdentifier);
 
     return (
-        <li className="flex h-[110px] min-w-0 flex-col items-center rounded-lg border border-[color:var(--monomat-border-default)] bg-white px-3 py-[15px] text-center">
+        <li
+            className={`flex h-[110px] min-w-0 flex-col items-center rounded-lg border bg-white px-3 py-[15px] text-center ${
+                isCurrentUser
+                    ? 'border-[var(--monomat-primary)] ring-2 ring-[color:var(--monomat-primary-light)]'
+                    : 'border-[color:var(--monomat-border-default)]'
+            }`}
+        >
             <span
                 className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full text-base font-extrabold leading-none text-white"
                 style={{ backgroundColor: avatarColor }}
@@ -86,12 +121,15 @@ function PlayerSlot({
             </p>
 
             <div className="mt-1 flex h-3 max-w-full items-center justify-center gap-2">
-                {player.userIdentifier === currentUserIdentifier && (
-                    <span className="inline-flex h-3 items-center rounded-full bg-[var(--monomat-page-bg)] px-2 text-[10px] font-semibold leading-none text-[var(--monomat-text-muted)]">
+                {isCurrentUser && (
+                    <span className="inline-flex h-3 items-center rounded-full bg-[var(--monomat-primary-light)] px-2 text-[10px] font-bold leading-none text-[var(--monomat-primary)]">
                         {LOBBY_ROOM_COPY.ME}
                     </span>
                 )}
-                <PlayerReadyBadge player={player} />
+                <PlayerReadyBadge
+                    isHost={isHost}
+                    isReady={!isHost && player.ready}
+                />
             </div>
         </li>
     );
@@ -113,6 +151,8 @@ export function LobbyPlayersCard({
     currentPlayers,
     maxPlayers,
     currentUserIdentifier,
+    hostId,
+    hostNickname,
 }: LobbyPlayersCardProps) {
     const emptySlotCount = Math.max(maxPlayers - players.length, 0);
 
@@ -134,6 +174,8 @@ export function LobbyPlayersCard({
                             key={player.userIdentifier}
                             player={player}
                             currentUserIdentifier={currentUserIdentifier}
+                            hostId={hostId}
+                            hostNickname={hostNickname}
                         />
                     ))}
                     {Array.from({ length: emptySlotCount }).map((_, index) => (

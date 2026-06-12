@@ -8,6 +8,7 @@
 // 상수로 정의해두면 오타 시 TypeScript가 즉시 에러를 알려준다.
 export const STORAGE_KEYS = {
     GUEST_SESSION: 'monomat_guest_session', // 게스트 세션 정보 저장 키
+    REGISTER_ENTRY_INTENT: 'monomat_register_entry_intent',
 } as const;
 
 // 세션 만료 기간

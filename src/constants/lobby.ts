@@ -152,7 +152,15 @@ export const LOBBY_ROOM_COPY = {
     START_GAME: '게임 시작',
     READY_PENDING: '변경 중...',
     CANCEL_READY: '준비 취소',
-    SUBMIT_READY: '준비 완료',
+    SUBMIT_READY: '준비하기',
+    PARTICIPANT_ACTION_TITLE: '내 준비 상태',
+    PARTICIPANT_WAITING_GUIDE:
+        '준비를 완료하면 방장이 게임을 시작할 수 있습니다.',
+    PARTICIPANT_READY_GUIDE:
+        '방장이 게임을 시작할 때까지 기다려 주세요.',
+    PARTICIPANT_NOT_WAITING:
+        '대기 중인 로비에서만 준비 상태를 변경할 수 있습니다.',
+    PARTICIPANT_HOST_PREFIX: '게임 시작 권한 · 방장',
     START_AVAILABLE: '현재 조회 기준으로 시작할 수 있습니다.',
     START_UNAVAILABLE: '모든 참가자가 준비하면 시작할 수 있습니다.',
     START_GUIDE_MAP_MISSING: '선택된 맵이 없어 아직 시작할 수 없습니다.',
@@ -164,6 +172,16 @@ export const LOBBY_ROOM_COPY = {
         '모든 조건이 충족되었습니다. 게임을 시작할 수 있습니다.',
     MAP_CHANGE_PENDING_GUIDE:
         '맵 변경 사항을 반영하는 중입니다. 잠시 후 시작할 수 있습니다.',
+    SETTINGS_CHANGE_PENDING_GUIDE:
+        '설정 변경 사항을 반영하는 중입니다. 잠시 후 시작할 수 있습니다.',
+    SETTINGS_SAVE: '설정 저장',
+    SETTINGS_SAVE_PENDING: '저장 중...',
+    SETTINGS_SAVE_FAILED: '로비 설정 변경에 실패했습니다.',
+    SETTINGS_UNCHANGED: '변경된 설정이 없습니다.',
+    SETTINGS_NOT_WAITING:
+        '게임이 시작된 로비에서는 설정을 변경할 수 없습니다.',
+    SETTINGS_MAX_PLAYERS_CONFLICT:
+        '최대 인원은 현재 참가자 수보다 작을 수 없습니다.',
     READY_SYNCED: '준비 상태는 서버 이벤트로 다시 동기화됩니다.',
     READY_WAIT_PLAYER: '참여자 정보 동기화 후 준비할 수 있습니다.',
     START_REQUESTED: '게임 시작 요청을 보냈습니다.',
@@ -173,6 +191,44 @@ export const LOBBY_ROOM_COPY = {
     READY_CHANGE_FAILED: '준비 상태 변경에 실패했습니다.',
     START_FAILED: '게임 시작에 실패했습니다.',
     INVALID_INVITE_CODE: '초대 코드가 올바르지 않습니다.',
+} as const;
+
+export const LOBBY_CHAT_POLICY = {
+    MAX_MESSAGE_LENGTH: 500,
+    MAX_RECENT_MESSAGES: 50,
+    SEND_COOLDOWN_MS: 1000,
+    REPEATED_MESSAGE_COOLDOWN_MS: 5000,
+    AUTO_SCROLL_THRESHOLD_PX: 80,
+} as const;
+
+export const LOBBY_CHAT_COPY = {
+    TITLE: '로비 채팅',
+    CONNECTED: '접속 중',
+    RECONNECTING: '재연결 중',
+    DISCONNECTED: '연결 끊김',
+    EMPTY: '아직 채팅이 없습니다.',
+    EMPTY_DESCRIPTION: '첫 메시지를 보내 대화를 시작해보세요.',
+    PARTICIPANT_FALLBACK: '참가자',
+    ME: '나',
+    INPUT_PLACEHOLDER: '메시지를 입력하세요',
+    INPUT_DISABLED_PLACEHOLDER: '채팅 서버에 연결 중입니다.',
+    SEND_ARIA_LABEL: '로비 채팅 메시지 전송',
+    MESSAGE_REQUIRED: '메시지를 입력해주세요.',
+    MESSAGE_TOO_LONG: '메시지는 500자 이하로 입력해주세요.',
+    SEND_DISCONNECTED: '채팅 서버에 연결된 후 전송할 수 있습니다.',
+    SEND_TOO_FAST: '메시지를 너무 빠르게 전송하고 있습니다.',
+    SEND_REPEATED: '같은 메시지는 5초 후 다시 보낼 수 있습니다.',
+    SEND_FAILED: '메시지 전송에 실패했습니다.',
+    RECENT_FETCH_FAILED: '최근 채팅을 불러오지 못했습니다.',
+    RECENT_FETCHING: '최근 채팅을 불러오는 중입니다.',
+    SYSTEM: {
+        ENTER: '참가자가 입장했습니다.',
+        LEAVE: '참가자가 퇴장했습니다.',
+        KICK: '참가자가 강퇴되었습니다.',
+        READY_CHANGED: '준비 상태가 변경되었습니다.',
+        HOST_CHANGED: '방장이 변경되었습니다.',
+        DEFAULT: '로비 상태가 변경되었습니다.',
+    },
 } as const;
 
 export const LOBBY_EMPTY_STATE_COPY = {

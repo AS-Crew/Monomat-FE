@@ -1,31 +1,35 @@
 import { type ReactNode, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Gamepad2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import {
     startLobbyGame,
     updateLobbyMap,
     updateLobbyReady,
+    updateLobbySettings,
 } from '../api/lobbyApi';
 import { NavigationBar } from '../components/common/NavigationBar';
 import { HostLobbyActionCard } from '../components/lobby/HostLobbyActionCard';
-import { LobbyChatPlaceholder } from '../components/lobby/LobbyChatPlaceholder';
+import { LobbyChatPanel } from '../components/lobby/LobbyChatPanel';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { LobbyHeaderCard } from '../components/lobby/LobbyHeaderCard';
 import { LobbyMapInfoCard } from '../components/lobby/LobbyMapInfoCard';
+import { ParticipantLobbyActionCard } from '../components/lobby/ParticipantLobbyActionCard';
 import { LobbyPlayersCard } from '../components/lobby/LobbyPlayersCard';
 import { LobbyRoomLayout } from '../components/lobby/LobbyRoomLayout';
 import { LobbyRoomTopControls } from '../components/lobby/LobbyRoomTopControls';
+import { LobbySettingsEditor } from '../components/lobby/LobbySettingsEditor';
 import { MapSelectModal } from '../components/lobby/MapSelectModal';
 import { LOBBY_ROOM_COPY, LOBBY_ROUTES } from '../constants/lobby';
 import {
     lobbyDetailQueryKey,
     useLobbyDetail,
 } from '../hooks/useLobbyDetail';
+import { useLobbyChat } from '../hooks/useLobbyChat';
 import { useLobbySocket } from '../hooks/useLobbySocket';
 import { useAuthStore } from '../store/useAuthStore';
 import type { MapSummary } from '../types/map';
+import type { UpdateLobbySettingsRequest } from '../types/lobby';
 
 interface LobbyActionMessage {
     inviteCode: string;
@@ -142,8 +146,13 @@ export function LobbyRoom() {
     const inviteCode = inviteCodeParam?.trim();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const userId = useAuthStore((state) => state.userId);
     const userIdentifier = useAuthStore((state) => state.userIdentifier);
-    const { connectionStatus, gameStatus } = useLobbySocket(inviteCode);
+    const lobbyChat = useLobbyChat(inviteCode);
+    const { gameStatus } = useLobbySocket(
+        inviteCode,
+        lobbyChat.handleLobbyMessageBody,
+    );
     const {
         data: lobbyDetail,
         isLoading,
@@ -172,6 +181,24 @@ export function LobbyRoom() {
         userIdentifier &&
         lobbyDetail.hostId === userIdentifier,
     );
+    const hostNickname = useMemo(() => {
+        if (!lobbyDetail) {
+            return LOBBY_ROOM_COPY.HOST_UNKNOWN;
+        }
+
+        const hostPlayer =
+            lobbyDetail.players.find((player) => player.host) ??
+            lobbyDetail.players.find(
+                (player) =>
+                    player.userIdentifier === lobbyDetail.hostId,
+            );
+
+        return (
+            hostPlayer?.nickname?.trim() ||
+            lobbyDetail.hostNickname?.trim() ||
+            LOBBY_ROOM_COPY.HOST_UNKNOWN
+        );
+    }, [lobbyDetail]);
     const currentReady = currentPlayer?.ready ?? false;
     const readySummary = useMemo(() => {
         const players = lobbyDetail?.players ?? [];
@@ -261,6 +288,36 @@ export function LobbyRoom() {
         },
     });
 
+    const settingsMutation = useMutation({
+        mutationFn: (request: UpdateLobbySettingsRequest) => {
+            if (!inviteCode) {
+                throw new Error(LOBBY_ROOM_COPY.INVALID_INVITE_CODE);
+            }
+
+            return updateLobbySettings(inviteCode, request);
+        },
+        onMutate: () => {
+            setActionMessage(null);
+            setActionErrorMessage(null);
+        },
+        onSuccess: async () => {
+            await invalidateLobbyDetail();
+        },
+        onError: (mutationError) => {
+            if (!inviteCode) {
+                return;
+            }
+
+            setActionErrorMessage({
+                inviteCode,
+                message: getErrorMessage(
+                    mutationError,
+                    LOBBY_ROOM_COPY.SETTINGS_SAVE_FAILED,
+                ),
+            });
+        },
+    });
+
     const startMutation = useMutation({
         mutationFn: () => {
             if (!inviteCode) {
@@ -299,7 +356,12 @@ export function LobbyRoom() {
     });
 
     const handleReadyClick = () => {
-        if (!currentPlayer || isHost || readyMutation.isPending) {
+        if (
+            !currentPlayer ||
+            isHost ||
+            lobbyDetail?.status !== 'WAITING' ||
+            readyMutation.isPending
+        ) {
             return;
         }
 
@@ -311,7 +373,8 @@ export function LobbyRoom() {
             !isHost ||
             !lobbyDetail?.canStart ||
             startMutation.isPending ||
-            mapMutation.isPending
+            mapMutation.isPending ||
+            settingsMutation.isPending
         ) {
             return;
         }
@@ -324,7 +387,8 @@ export function LobbyRoom() {
             !isHost ||
             lobbyDetail?.status !== 'WAITING' ||
             mapMutation.isPending ||
-            startMutation.isPending
+            startMutation.isPending ||
+            settingsMutation.isPending
         ) {
             return;
         }
@@ -344,6 +408,20 @@ export function LobbyRoom() {
         }
 
         mapMutation.mutate(map);
+    };
+
+    const handleSettingsSubmit = (
+        request: UpdateLobbySettingsRequest,
+    ) => {
+        if (
+            !isHost ||
+            lobbyDetail?.status !== 'WAITING' ||
+            settingsMutation.isPending
+        ) {
+            return;
+        }
+
+        settingsMutation.mutate(request);
     };
 
     if (!inviteCode) {
@@ -382,8 +460,6 @@ export function LobbyRoom() {
         );
     }
 
-    const isReadyButtonDisabled =
-        readyMutation.isPending || !currentPlayer || isHost;
     const isWaitingLobby = lobbyDetail.status === 'WAITING';
     const hasSelectedMap =
         lobbyDetail.mapId != null && Boolean(lobbyDetail.mapTitle?.trim());
@@ -393,9 +469,11 @@ export function LobbyRoom() {
         readyTargetCount: readySummary.readyTargetCount,
         waitingCount: readySummary.waitingCount,
     });
-    const displayedHostStartGuideMessage = mapMutation.isPending
-        ? LOBBY_ROOM_COPY.MAP_CHANGE_PENDING_GUIDE
-        : hostStartGuideMessage;
+    const displayedHostStartGuideMessage = settingsMutation.isPending
+        ? LOBBY_ROOM_COPY.SETTINGS_CHANGE_PENDING_GUIDE
+        : mapMutation.isPending
+            ? LOBBY_ROOM_COPY.MAP_CHANGE_PENDING_GUIDE
+            : hostStartGuideMessage;
     const currentActionMessage =
         actionMessage?.inviteCode === inviteCode ? actionMessage.message : null;
     const currentActionErrorMessage =
@@ -462,21 +540,50 @@ export function LobbyRoom() {
                             currentPlayers={lobbyDetail.currentPlayers}
                             maxPlayers={lobbyDetail.maxPlayers}
                             currentUserIdentifier={userIdentifier}
+                            hostId={lobbyDetail.hostId}
+                            hostNickname={
+                                lobbyDetail.hostNickname ?? null
+                            }
                         />
                     }
                     settingsCard={
-                        <LobbyMapInfoCard
-                            questionCount={lobbyDetail.questionCount}
-                            timeLimitSeconds={lobbyDetail.timeLimitSeconds}
-                            maxPlayers={lobbyDetail.maxPlayers}
-                        />
+                        isHost ? (
+                            <LobbySettingsEditor
+                                key={[
+                                    lobbyDetail.inviteCode,
+                                    lobbyDetail.maxPlayers,
+                                    lobbyDetail.questionCount,
+                                    lobbyDetail.timeLimitSeconds,
+                                ].join(':')}
+                                maxPlayers={lobbyDetail.maxPlayers}
+                                questionCount={lobbyDetail.questionCount}
+                                timeLimitSeconds={
+                                    lobbyDetail.timeLimitSeconds
+                                }
+                                currentPlayers={
+                                    lobbyDetail.currentPlayers
+                                }
+                                isEditable={isWaitingLobby}
+                                isSaving={settingsMutation.isPending}
+                                onSubmit={handleSettingsSubmit}
+                            />
+                        ) : (
+                            <LobbyMapInfoCard
+                                questionCount={lobbyDetail.questionCount}
+                                timeLimitSeconds={
+                                    lobbyDetail.timeLimitSeconds
+                                }
+                                maxPlayers={lobbyDetail.maxPlayers}
+                            />
+                        )
                     }
                     actionSlot={
                         isHost ? (
                             <HostLobbyActionCard
                                 canStart={
                                     lobbyDetail.canStart &&
-                                    !mapMutation.isPending
+                                    !mapMutation.isPending &&
+                                    !settingsMutation.isPending
                                 }
                                 isStarting={startMutation.isPending}
                                 startGuideMessage={
@@ -493,39 +600,32 @@ export function LobbyRoom() {
                                 onStartClick={handleStartClick}
                             />
                         ) : (
-                            <section aria-label={LOBBY_ROOM_COPY.ACTION_TITLE}>
-                                <p className="sr-only">
-                                    {currentPlayer
-                                        ? LOBBY_ROOM_COPY.READY_SYNCED
-                                        : LOBBY_ROOM_COPY.READY_WAIT_PLAYER}
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={handleReadyClick}
-                                    disabled={isReadyButtonDisabled}
-                                    className={`flex h-[45px] w-full items-center justify-center gap-2 rounded-lg text-base font-bold leading-none text-white transition disabled:cursor-not-allowed disabled:bg-[#D3D3D7] ${
-                                        currentReady
-                                            ? 'bg-[var(--monomat-text-strong)] hover:bg-black'
-                                            : 'bg-[#00B368] hover:bg-[#009b5a]'
-                                    }`}
-                                >
-                                    <Gamepad2
-                                        size={20}
-                                        strokeWidth={2.3}
-                                        aria-hidden="true"
-                                    />
-                                    {readyMutation.isPending
-                                        ? LOBBY_ROOM_COPY.READY_PENDING
-                                        : currentReady
-                                            ? LOBBY_ROOM_COPY.CANCEL_READY
-                                            : LOBBY_ROOM_COPY.SUBMIT_READY}
-                                </button>
-                            </section>
+                            <ParticipantLobbyActionCard
+                                hostNickname={hostNickname}
+                                isReady={currentReady}
+                                isWaitingLobby={isWaitingLobby}
+                                hasCurrentPlayer={Boolean(currentPlayer)}
+                                isUpdating={readyMutation.isPending}
+                                onReadyClick={handleReadyClick}
+                            />
                         )
                     }
                     chatSlot={
-                        <LobbyChatPlaceholder
-                            connectionStatus={connectionStatus}
+                        <LobbyChatPanel
+                            key={lobbyDetail.inviteCode}
+                            messages={lobbyChat.messages}
+                            currentUserId={userId}
+                            connectionStatus={lobbyChat.connectionStatus}
+                            isRecentChatsLoading={
+                                lobbyChat.isRecentChatsLoading
+                            }
+                            hasLoadedRecentChats={
+                                lobbyChat.hasLoadedRecentChats
+                            }
+                            recentChatsError={lobbyChat.recentChatsError}
+                            sendError={lobbyChat.sendError}
+                            isSending={lobbyChat.isSending}
+                            onSendMessage={lobbyChat.sendMessage}
                         />
                     }
                 />

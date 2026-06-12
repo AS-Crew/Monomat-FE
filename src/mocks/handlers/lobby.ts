@@ -6,6 +6,7 @@
 import { http, HttpResponse } from 'msw';
 import { API_ENDPOINTS } from '../../constants/endpoints';
 import { CREATE_LOBBY_POLICY } from '../../constants/lobby';
+import { updateLobbySettingsRequestSchema } from '../../schemas/lobbySchema';
 import { mockLobbyItems, mockLobbyPageResponse } from '../data/lobbies';
 import { mockMapItems } from '../data/maps';
 
@@ -16,7 +17,9 @@ import type {
     LobbyListItem,
     LobbyPlayerResponse,
     LobbySortQuery,
+    UpdateLobbySettingsRequest,
 } from '../../types/lobby';
+import type { LobbyChatMessage } from '../../types/lobbyChat';
 
 const LOBBY_CATEGORIES = ['K-POP', 'J-POP', 'POP', 'OST', '애니'] as const;
 const LOBBY_SORT_QUERIES = [
@@ -26,17 +29,60 @@ const LOBBY_SORT_QUERIES = [
 ] as const;
 
 let latestCreatedLobby: LobbyDetailResponse | null = null;
+const MOCK_PARTICIPANT_USER_IDENTIFIER =
+    '22222222-2222-4222-8222-222222222222';
 const mockLobbyDetailOverrides = new Map<
     string,
     Partial<Pick<
         LobbyDetailResponse,
-        'mapId' | 'mapTitle' | 'mapCategory' | 'questionCount'
+        | 'mapId'
+        | 'mapTitle'
+        | 'mapCategory'
+        | 'maxPlayers'
+        | 'questionCount'
+        | 'timeLimitSeconds'
     >>
 >();
+const mockLobbyReadyOverrides = new Map<string, Map<string, boolean>>();
+
+function createMockRecentLobbyChats(code: string): LobbyChatMessage[] {
+    return [
+        {
+            messageId: `${code}-chat-1`,
+            type: 'CHAT',
+            roomId: code,
+            sender: 'mock-player-songking',
+            senderId: 5,
+            senderNickname: '노래왕',
+            content: 'K-POP 방 같이 하실 분~',
+            timestamp: '2026-06-12T11:43:00.000Z',
+            sentAt: '2026-06-12T11:43:00.000Z',
+        },
+        {
+            type: 'READY_CHANGED',
+            roomId: code,
+            sender: MOCK_PARTICIPANT_USER_IDENTIFIER,
+            content: `${MOCK_PARTICIPANT_USER_IDENTIFIER}님이 준비 완료 상태로 변경했습니다.`,
+            timestamp: '2026-06-12T11:44:00.000Z',
+        },
+        {
+            messageId: `${code}-chat-2`,
+            type: 'CHAT',
+            roomId: code,
+            sender: 'mock-player-night',
+            senderId: 6,
+            senderNickname: '심야괴담회',
+            content:
+                '시간은 24시간 표기법으로 표시되고, 긴 메시지는 채팅 영역 안에서 자연스럽게 줄바꿈됩니다.',
+            timestamp: '2026-06-12T11:45:00.000Z',
+            sentAt: '2026-06-12T11:45:00.000Z',
+        },
+    ];
+}
 
 const MOCK_PLAYER_POOL = [
     {
-        userIdentifier: 'mock-player-yuki',
+        userIdentifier: MOCK_PARTICIPANT_USER_IDENTIFIER,
         nickname: '유키',
         ready: false,
     },
@@ -179,6 +225,7 @@ function createLobbyDetailFromItem(
         host: true,
         ready: true,
     };
+    const readyOverrides = mockLobbyReadyOverrides.get(lobby.code);
     const players: LobbyPlayerResponse[] = [
         hostPlayer,
         ...selectMockPlayerPool(lobby)
@@ -187,7 +234,9 @@ function createLobbyDetailFromItem(
                 userIdentifier: player.userIdentifier,
                 nickname: player.nickname,
                 host: false,
-                ready: player.ready,
+                ready:
+                    readyOverrides?.get(player.userIdentifier) ??
+                    player.ready,
             })),
     ];
 
@@ -196,7 +245,7 @@ function createLobbyDetailFromItem(
         title: lobby.title,
         hostId: lobby.hostId ?? 'mock-host',
         hostNickname: lobby.hostNickname ?? 'Mock Host',
-        maxPlayers: lobby.maxPlayers,
+        maxPlayers: override?.maxPlayers ?? lobby.maxPlayers,
         currentPlayers: lobby.currentPlayers,
         status: lobby.status,
         mapId: override?.mapId ?? lobby.mapId,
@@ -206,6 +255,7 @@ function createLobbyDetailFromItem(
             override?.questionCount ??
             lobby.questionCount ?? CREATE_LOBBY_POLICY.DEFAULT_QUESTION_COUNT,
         timeLimitSeconds:
+            override?.timeLimitSeconds ??
             lobby.timeLimitSeconds ??
             CREATE_LOBBY_POLICY.DEFAULT_TIME_LIMIT_SECONDS,
         players,
@@ -313,6 +363,143 @@ export const lobbyHandlers = [
         return HttpResponse.json(createLobbyDetailFromItem(lobby));
     }),
 
+    http.get(API_ENDPOINTS.LOBBY.RECENT_CHATS(':code'), ({ params }) => {
+        const code = typeof params.code === 'string' ? params.code : '';
+        const lobbyExists =
+            latestCreatedLobby?.inviteCode === code ||
+            mockLobbyItems.some((item) => item.code === code);
+
+        if (!lobbyExists) {
+            return HttpResponse.json(
+                {
+                    message: '로비를 찾을 수 없습니다.',
+                },
+                { status: 404 },
+            );
+        }
+
+        return HttpResponse.json(createMockRecentLobbyChats(code));
+    }),
+
+    http.patch(
+        API_ENDPOINTS.LOBBY.READY(':code'),
+        async ({ params, request }) => {
+            const code = typeof params.code === 'string' ? params.code : '';
+            let payload: unknown;
+
+            try {
+                payload = await request.json();
+            } catch {
+                return HttpResponse.json(
+                    { message: '요청 본문 형식이 올바르지 않습니다.' },
+                    { status: 400 },
+                );
+            }
+
+            if (
+                !payload ||
+                typeof payload !== 'object' ||
+                Array.isArray(payload) ||
+                typeof (payload as { ready?: unknown }).ready !== 'boolean'
+            ) {
+                return HttpResponse.json(
+                    { message: '준비 상태는 필수입니다.' },
+                    { status: 400 },
+                );
+            }
+
+            const ready = (payload as { ready: boolean }).ready;
+
+            if (latestCreatedLobby?.inviteCode === code) {
+                if (latestCreatedLobby.status !== 'WAITING') {
+                    return HttpResponse.json(
+                        {
+                            message:
+                                '게임이 이미 시작된 로비에는 입장할 수 없습니다.',
+                        },
+                        { status: 409 },
+                    );
+                }
+
+                const participant = latestCreatedLobby.players.find(
+                    (player) => !player.host,
+                );
+
+                if (!participant) {
+                    return HttpResponse.json(
+                        {
+                            message:
+                                '로비 참여자만 준비 상태를 변경할 수 있습니다.',
+                        },
+                        { status: 403 },
+                    );
+                }
+
+                const players = latestCreatedLobby.players.map((player) =>
+                    player.userIdentifier === participant.userIdentifier
+                        ? { ...player, ready }
+                        : player,
+                );
+
+                latestCreatedLobby = {
+                    ...latestCreatedLobby,
+                    players,
+                    canStart: canStartMockLobby({
+                        status: latestCreatedLobby.status,
+                        mapId: latestCreatedLobby.mapId,
+                        mapTitle: latestCreatedLobby.mapTitle,
+                        players,
+                    }),
+                };
+
+                return new HttpResponse(null, { status: 204 });
+            }
+
+            const lobby = mockLobbyItems.find((item) => item.code === code);
+
+            if (!lobby) {
+                return HttpResponse.json(
+                    { message: '로비를 찾을 수 없습니다.' },
+                    { status: 404 },
+                );
+            }
+
+            if (lobby.status !== 'WAITING') {
+                return HttpResponse.json(
+                    {
+                        message:
+                            '게임이 이미 시작된 로비에는 입장할 수 없습니다.',
+                    },
+                    { status: 409 },
+                );
+            }
+
+            const lobbyDetail = createLobbyDetailFromItem(lobby);
+            const participant = lobbyDetail.players.find(
+                (player) =>
+                    player.userIdentifier ===
+                    MOCK_PARTICIPANT_USER_IDENTIFIER,
+            );
+
+            if (!participant) {
+                return HttpResponse.json(
+                    {
+                        message:
+                            '로비 참여자만 준비 상태를 변경할 수 있습니다.',
+                    },
+                    { status: 403 },
+                );
+            }
+
+            const readyOverrides =
+                mockLobbyReadyOverrides.get(code) ?? new Map<string, boolean>();
+            readyOverrides.set(participant.userIdentifier, ready);
+            mockLobbyReadyOverrides.set(code, readyOverrides);
+
+            return new HttpResponse(null, { status: 204 });
+        },
+    ),
+
     http.patch(API_ENDPOINTS.LOBBY.MAP(':code'), async ({ params, request }) => {
         const code = typeof params.code === 'string' ? params.code : '';
         const payload = (await request.json()) as { mapId?: unknown };
@@ -367,6 +554,7 @@ export const lobbyHandlers = [
         }
 
         mockLobbyDetailOverrides.set(code, {
+            ...mockLobbyDetailOverrides.get(code),
             mapId: selectedMap.mapId,
             mapTitle: selectedMap.title,
             mapCategory: selectedMap.category,
@@ -375,6 +563,138 @@ export const lobbyHandlers = [
 
         return new HttpResponse(null, { status: 204 });
     }),
+
+    http.patch(
+        API_ENDPOINTS.LOBBY.SETTINGS(':code'),
+        async ({ params, request }) => {
+            const code = typeof params.code === 'string' ? params.code : '';
+            let payload: unknown;
+
+            try {
+                payload = await request.json();
+            } catch {
+                return HttpResponse.json(
+                    { message: '요청 본문 형식이 올바르지 않습니다.' },
+                    { status: 400 },
+                );
+            }
+
+            const parsed = updateLobbySettingsRequestSchema.safeParse(payload);
+
+            if (!parsed.success) {
+                return HttpResponse.json(
+                    { message: '로비 설정값의 허용 범위를 확인해주세요.' },
+                    { status: 400 },
+                );
+            }
+
+            const settings: UpdateLobbySettingsRequest = parsed.data;
+
+            if (latestCreatedLobby?.inviteCode === code) {
+                if (latestCreatedLobby.status !== 'WAITING') {
+                    return HttpResponse.json(
+                        {
+                            message:
+                                '게임이 이미 시작된 로비에서는 설정을 변경할 수 없습니다.',
+                        },
+                        { status: 409 },
+                    );
+                }
+
+                if (settings.maxPlayers < latestCreatedLobby.currentPlayers) {
+                    return HttpResponse.json(
+                        {
+                            message:
+                                '최대 인원은 현재 참가자 수보다 작을 수 없습니다.',
+                        },
+                        { status: 409 },
+                    );
+                }
+
+                const selectedMap = latestCreatedLobby.mapId == null
+                    ? null
+                    : mockMapItems.find(
+                        (map) => map.mapId === latestCreatedLobby?.mapId,
+                    ) ?? null;
+
+                if (
+                    selectedMap &&
+                    settings.questionCount > selectedMap.numOfSong
+                ) {
+                    return HttpResponse.json(
+                        {
+                            message:
+                                '문제 수는 선택된 맵의 등록 곡 수를 초과할 수 없습니다.',
+                        },
+                        { status: 409 },
+                    );
+                }
+
+                latestCreatedLobby = {
+                    ...latestCreatedLobby,
+                    ...settings,
+                };
+
+                return new HttpResponse(null, { status: 204 });
+            }
+
+            const lobby = mockLobbyItems.find((item) => item.code === code);
+
+            if (!lobby) {
+                return HttpResponse.json(
+                    { message: '로비를 찾을 수 없습니다.' },
+                    { status: 404 },
+                );
+            }
+
+            if (lobby.status !== 'WAITING') {
+                return HttpResponse.json(
+                    {
+                        message:
+                            '게임이 이미 시작된 로비에서는 설정을 변경할 수 없습니다.',
+                    },
+                    { status: 409 },
+                );
+            }
+
+            if (settings.maxPlayers < lobby.currentPlayers) {
+                return HttpResponse.json(
+                    {
+                        message:
+                            '최대 인원은 현재 참가자 수보다 작을 수 없습니다.',
+                    },
+                    { status: 409 },
+                );
+            }
+
+            const override = mockLobbyDetailOverrides.get(code);
+            const selectedMapId = override?.mapId ?? lobby.mapId;
+            const selectedMap = selectedMapId == null
+                ? null
+                : mockMapItems.find((map) => map.mapId === selectedMapId) ??
+                    null;
+
+            if (
+                selectedMap &&
+                settings.questionCount > selectedMap.numOfSong
+            ) {
+                return HttpResponse.json(
+                    {
+                        message:
+                            '문제 수는 선택된 맵의 등록 곡 수를 초과할 수 없습니다.',
+                    },
+                    { status: 409 },
+                );
+            }
+
+            mockLobbyDetailOverrides.set(code, {
+                ...override,
+                ...settings,
+            });
+
+            return new HttpResponse(null, { status: 204 });
+        },
+    ),
 
     // 클라이언트가 GET 메서드로 로비 목록 엔드포인트에 요청을 보낼 때 이를 가로챈다.
     http.get(API_ENDPOINTS.LOBBY.LIST, ({ request }) => {

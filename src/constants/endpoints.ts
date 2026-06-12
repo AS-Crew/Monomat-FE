@@ -45,8 +45,12 @@ export const API_ENDPOINTS = {
         LIST: createApiEndpoint('/api/lobbies'),
         DETAIL: (code: string) => createApiEndpoint(`/api/lobbies/${code}`),
         MAP: (code: string) => createApiEndpoint(`/api/lobbies/${code}/map`),
+        SETTINGS: (code: string) =>
+            createApiEndpoint(`/api/lobbies/${code}/settings`),
         READY: (code: string) => createApiEndpoint(`/api/lobbies/${code}/ready`),
         START: (code: string) => createApiEndpoint(`/api/lobbies/${code}/start`),
+        RECENT_CHATS: (code: string) =>
+            createApiEndpoint(`/api/lobbies/${code}/chats/recent`),
     },
 
     MAP: {

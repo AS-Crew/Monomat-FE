@@ -5,7 +5,7 @@ import {
     Users,
     type LucideIcon,
 } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import {
     NicknameForm,
@@ -15,6 +15,7 @@ import {
     HOME_COPY,
     HOME_FEATURES,
 } from '../constants/home';
+import { STORAGE_KEYS } from '../constants/storage';
 import { useAuthStore } from '../store/useAuthStore';
 import { MonomatLogo } from '../components/common/MonomatLogo';
 
@@ -27,30 +28,29 @@ const FEATURE_ICON: Record<
     users: Users,
 };
 
-interface HomeLocationState {
-    authMode?: AuthMode;
-}
-
-function getRequestedAuthMode(state: unknown): AuthMode | null {
-    if (
-        state &&
-        typeof state === 'object' &&
-        'authMode' in state &&
-        (state as HomeLocationState).authMode === 'register'
-    ) {
-        return 'register';
+function shouldOpenRegisterForm(searchParams: URLSearchParams) {
+    if (searchParams.get('authMode') === 'register') {
+        return true;
     }
 
-    return null;
+    try {
+        return sessionStorage.getItem(
+            STORAGE_KEYS.REGISTER_ENTRY_INTENT,
+        ) === 'true';
+    } catch {
+        return false;
+    }
 }
 
 export const Home = () => {
     const navigate = useNavigate();
-    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
     const accessToken = useAuthStore((state) => state.accessToken);
     const isHydrated = useAuthStore((state) => state.isHydrated);
     const [authMode, setAuthMode] = useState<AuthMode>(
-        () => getRequestedAuthMode(location.state) ?? 'member',
+        () => shouldOpenRegisterForm(searchParams)
+            ? 'register'
+            : 'member',
     );
     const isRegisterMode = authMode === 'register';
 
@@ -65,6 +65,30 @@ export const Home = () => {
         }
     }, [accessToken, isHydrated, navigate]);
 
+    useEffect(() => {
+        try {
+            sessionStorage.removeItem(
+                STORAGE_KEYS.REGISTER_ENTRY_INTENT,
+            );
+        } catch {
+            // sessionStorage를 사용할 수 없어도 현재 화면 상태는 유지한다.
+        }
+    }, []);
+
+    const handleAuthModeChange = (nextMode: AuthMode) => {
+        setAuthMode(nextMode);
+
+        if (
+            nextMode !== 'register' &&
+            searchParams.get('authMode') === 'register'
+        ) {
+            const nextSearchParams = new URLSearchParams(searchParams);
+
+            nextSearchParams.delete('authMode');
+            setSearchParams(nextSearchParams, { replace: true });
+        }
+    };
+
     if (!isHydrated || accessToken) {
         return null;
     }
@@ -74,7 +98,7 @@ export const Home = () => {
             <main className="flex min-h-screen min-w-0 items-start justify-center bg-[var(--monomat-page-bg)] px-5 py-8 sm:py-[72px] lg:pt-[105px]">
                 <NicknameForm
                     mode={authMode}
-                    onModeChange={setAuthMode}
+                    onModeChange={handleAuthModeChange}
                 />
             </main>
         );
@@ -125,7 +149,7 @@ export const Home = () => {
             <section className="flex min-w-0 items-start justify-center bg-[var(--monomat-page-bg)] px-5 py-8 sm:px-8 sm:py-12 md:px-6 md:pt-[72px] lg:px-8 lg:pt-[105px] xl:px-10">
                 <NicknameForm
                     mode={authMode}
-                    onModeChange={setAuthMode}
+                    onModeChange={handleAuthModeChange}
                 />
             </section>
         </main>

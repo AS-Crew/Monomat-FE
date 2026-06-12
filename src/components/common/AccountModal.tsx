@@ -14,6 +14,7 @@ import {
     updateMyNickname,
 } from '../../api/userApi';
 import { GUEST_NICKNAME_POLICY } from '../../constants/auth';
+import { STORAGE_KEYS } from '../../constants/storage';
 import { useAuthStore } from '../../store/useAuthStore';
 import { getAvatarColor } from '../../utils/avatarColor';
 import { validateGuestNickname } from '../../utils/validateNickname';
@@ -168,8 +169,24 @@ function AccountModalContent({
 
     const handleRegisterClick = () => {
         handleClose();
+
+        try {
+            sessionStorage.setItem(
+                STORAGE_KEYS.REGISTER_ENTRY_INTENT,
+                'true',
+            );
+        } catch (error) {
+            console.error(
+                '[AccountModal] 회원가입 화면 이동 상태 저장 실패:',
+                error,
+            );
+        }
+
         clearSession();
-        navigate('/', { state: { authMode: 'register' } });
+        navigate('/?authMode=register', {
+            replace: true,
+            flushSync: true,
+        });
     };
 
     const handleLogout = () => {
