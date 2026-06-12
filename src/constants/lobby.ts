@@ -164,6 +164,16 @@ export const LOBBY_ROOM_COPY = {
         '모든 조건이 충족되었습니다. 게임을 시작할 수 있습니다.',
     MAP_CHANGE_PENDING_GUIDE:
         '맵 변경 사항을 반영하는 중입니다. 잠시 후 시작할 수 있습니다.',
+    SETTINGS_CHANGE_PENDING_GUIDE:
+        '설정 변경 사항을 반영하는 중입니다. 잠시 후 시작할 수 있습니다.',
+    SETTINGS_SAVE: '설정 저장',
+    SETTINGS_SAVE_PENDING: '저장 중...',
+    SETTINGS_SAVE_FAILED: '로비 설정 변경에 실패했습니다.',
+    SETTINGS_UNCHANGED: '변경된 설정이 없습니다.',
+    SETTINGS_NOT_WAITING:
+        '게임이 시작된 로비에서는 설정을 변경할 수 없습니다.',
+    SETTINGS_MAX_PLAYERS_CONFLICT:
+        '최대 인원은 현재 참가자 수보다 작을 수 없습니다.',
     READY_SYNCED: '준비 상태는 서버 이벤트로 다시 동기화됩니다.',
     READY_WAIT_PLAYER: '참여자 정보 동기화 후 준비할 수 있습니다.',
     START_REQUESTED: '게임 시작 요청을 보냈습니다.',
