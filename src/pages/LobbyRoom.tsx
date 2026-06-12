@@ -10,7 +10,7 @@ import {
 } from '../api/lobbyApi';
 import { NavigationBar } from '../components/common/NavigationBar';
 import { HostLobbyActionCard } from '../components/lobby/HostLobbyActionCard';
-import { LobbyChatPlaceholder } from '../components/lobby/LobbyChatPlaceholder';
+import { LobbyChatPanel } from '../components/lobby/LobbyChatPanel';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { LobbyHeaderCard } from '../components/lobby/LobbyHeaderCard';
 import { LobbyMapInfoCard } from '../components/lobby/LobbyMapInfoCard';
@@ -25,6 +25,7 @@ import {
     lobbyDetailQueryKey,
     useLobbyDetail,
 } from '../hooks/useLobbyDetail';
+import { useLobbyChat } from '../hooks/useLobbyChat';
 import { useLobbySocket } from '../hooks/useLobbySocket';
 import { useAuthStore } from '../store/useAuthStore';
 import type { MapSummary } from '../types/map';
@@ -145,8 +146,13 @@ export function LobbyRoom() {
     const inviteCode = inviteCodeParam?.trim();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const userId = useAuthStore((state) => state.userId);
     const userIdentifier = useAuthStore((state) => state.userIdentifier);
-    const { connectionStatus, gameStatus } = useLobbySocket(inviteCode);
+    const lobbyChat = useLobbyChat(inviteCode);
+    const { gameStatus } = useLobbySocket(
+        inviteCode,
+        lobbyChat.handleLobbyMessageBody,
+    );
     const {
         data: lobbyDetail,
         isLoading,
@@ -605,8 +611,21 @@ export function LobbyRoom() {
                         )
                     }
                     chatSlot={
-                        <LobbyChatPlaceholder
-                            connectionStatus={connectionStatus}
+                        <LobbyChatPanel
+                            key={lobbyDetail.inviteCode}
+                            messages={lobbyChat.messages}
+                            currentUserId={userId}
+                            connectionStatus={lobbyChat.connectionStatus}
+                            isRecentChatsLoading={
+                                lobbyChat.isRecentChatsLoading
+                            }
+                            hasLoadedRecentChats={
+                                lobbyChat.hasLoadedRecentChats
+                            }
+                            recentChatsError={lobbyChat.recentChatsError}
+                            sendError={lobbyChat.sendError}
+                            isSending={lobbyChat.isSending}
+                            onSendMessage={lobbyChat.sendMessage}
                         />
                     }
                 />

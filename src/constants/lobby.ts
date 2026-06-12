@@ -193,6 +193,44 @@ export const LOBBY_ROOM_COPY = {
     INVALID_INVITE_CODE: '초대 코드가 올바르지 않습니다.',
 } as const;
 
+export const LOBBY_CHAT_POLICY = {
+    MAX_MESSAGE_LENGTH: 500,
+    MAX_RECENT_MESSAGES: 50,
+    SEND_COOLDOWN_MS: 1000,
+    REPEATED_MESSAGE_COOLDOWN_MS: 5000,
+    AUTO_SCROLL_THRESHOLD_PX: 80,
+} as const;
+
+export const LOBBY_CHAT_COPY = {
+    TITLE: '로비 채팅',
+    CONNECTED: '접속 중',
+    RECONNECTING: '재연결 중',
+    DISCONNECTED: '연결 끊김',
+    EMPTY: '아직 채팅이 없습니다.',
+    EMPTY_DESCRIPTION: '첫 메시지를 보내 대화를 시작해보세요.',
+    PARTICIPANT_FALLBACK: '참가자',
+    ME: '나',
+    INPUT_PLACEHOLDER: '메시지를 입력하세요',
+    INPUT_DISABLED_PLACEHOLDER: '채팅 서버에 연결 중입니다.',
+    SEND_ARIA_LABEL: '로비 채팅 메시지 전송',
+    MESSAGE_REQUIRED: '메시지를 입력해주세요.',
+    MESSAGE_TOO_LONG: '메시지는 500자 이하로 입력해주세요.',
+    SEND_DISCONNECTED: '채팅 서버에 연결된 후 전송할 수 있습니다.',
+    SEND_TOO_FAST: '메시지를 너무 빠르게 전송하고 있습니다.',
+    SEND_REPEATED: '같은 메시지는 5초 후 다시 보낼 수 있습니다.',
+    SEND_FAILED: '메시지 전송에 실패했습니다.',
+    RECENT_FETCH_FAILED: '최근 채팅을 불러오지 못했습니다.',
+    RECENT_FETCHING: '최근 채팅을 불러오는 중입니다.',
+    SYSTEM: {
+        ENTER: '참가자가 입장했습니다.',
+        LEAVE: '참가자가 퇴장했습니다.',
+        KICK: '참가자가 강퇴되었습니다.',
+        READY_CHANGED: '준비 상태가 변경되었습니다.',
+        HOST_CHANGED: '방장이 변경되었습니다.',
+        DEFAULT: '로비 상태가 변경되었습니다.',
+    },
+} as const;
+
 export const LOBBY_EMPTY_STATE_COPY = {
     TITLE: '현재 조건에 맞는 로비가 없습니다.',
     DESCRIPTION: '검색어나 카테고리 조건을 변경해보세요.',

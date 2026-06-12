@@ -30,7 +30,10 @@ function parseSocketMessageType(body: string): string {
     return body;
 }
 
-export function useLobbySocket(inviteCode: string | undefined) {
+export function useLobbySocket(
+    inviteCode: string | undefined,
+    onLobbyMessageBody?: (body: string) => void,
+) {
     const normalizedInviteCode = inviteCode?.trim() ?? '';
     const queryClient = useQueryClient();
     const stompClient = useSocketStore((state) => state.stompClient);
@@ -49,8 +52,9 @@ export function useLobbySocket(inviteCode: string | undefined) {
 
         const lobbySubscription = stompClient.subscribe(
             SOCKET_SUBSCRIBE.LOBBY(normalizedInviteCode),
-            () => {
+            (frame) => {
                 // 이 구독 자체가 BE의 로비 참여자 등록 트리거다.
+                onLobbyMessageBody?.(frame.body);
             },
         );
 
@@ -89,7 +93,13 @@ export function useLobbySocket(inviteCode: string | undefined) {
             refreshSubscription.unsubscribe();
             gameSubscription.unsubscribe();
         };
-    }, [normalizedInviteCode, stompClient, connectionStatus, queryClient]);
+    }, [
+        normalizedInviteCode,
+        stompClient,
+        connectionStatus,
+        queryClient,
+        onLobbyMessageBody,
+    ]);
 
     const gameStatus: LobbyGameStatus =
         gameStartedInviteCode === normalizedInviteCode ? 'started' : 'idle';
