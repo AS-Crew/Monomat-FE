@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { CREATE_LOBBY_POLICY } from '../constants/lobby';
+import type { UpdateLobbySettingsRequest } from '../types/lobby';
+
 export const lobbyCategorySchema = z.enum([
     'K-POP',
     'J-POP',
@@ -74,6 +77,19 @@ export const lobbyDetailResponseSchema = z.object({
     players: z.array(lobbyPlayerResponseSchema),
     canStart: z.boolean(),
 });
+
+export const updateLobbySettingsRequestSchema: z.ZodType<UpdateLobbySettingsRequest> =
+    z.object({
+        maxPlayers: z.number().int()
+            .min(CREATE_LOBBY_POLICY.MIN_PLAYERS)
+            .max(CREATE_LOBBY_POLICY.MAX_PLAYERS),
+        questionCount: z.number().int()
+            .min(CREATE_LOBBY_POLICY.MIN_QUESTION_COUNT)
+            .max(CREATE_LOBBY_POLICY.MAX_QUESTION_COUNT),
+        timeLimitSeconds: z.number().int()
+            .min(CREATE_LOBBY_POLICY.MIN_TIME_LIMIT_SECONDS)
+            .max(CREATE_LOBBY_POLICY.MAX_TIME_LIMIT_SECONDS),
+    });
 
 export const lobbyPageResponseSchema = z.object({
     items: z.array(lobbyListItemSchema),

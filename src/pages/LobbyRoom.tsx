@@ -7,6 +7,7 @@ import {
     startLobbyGame,
     updateLobbyMap,
     updateLobbyReady,
+    updateLobbySettings,
 } from '../api/lobbyApi';
 import { NavigationBar } from '../components/common/NavigationBar';
 import { HostLobbyActionCard } from '../components/lobby/HostLobbyActionCard';
@@ -17,6 +18,7 @@ import { LobbyMapInfoCard } from '../components/lobby/LobbyMapInfoCard';
 import { LobbyPlayersCard } from '../components/lobby/LobbyPlayersCard';
 import { LobbyRoomLayout } from '../components/lobby/LobbyRoomLayout';
 import { LobbyRoomTopControls } from '../components/lobby/LobbyRoomTopControls';
+import { LobbySettingsEditor } from '../components/lobby/LobbySettingsEditor';
 import { MapSelectModal } from '../components/lobby/MapSelectModal';
 import { LOBBY_ROOM_COPY, LOBBY_ROUTES } from '../constants/lobby';
 import {
@@ -26,6 +28,7 @@ import {
 import { useLobbySocket } from '../hooks/useLobbySocket';
 import { useAuthStore } from '../store/useAuthStore';
 import type { MapSummary } from '../types/map';
+import type { UpdateLobbySettingsRequest } from '../types/lobby';
 
 interface LobbyActionMessage {
     inviteCode: string;
@@ -261,6 +264,36 @@ export function LobbyRoom() {
         },
     });
 
+    const settingsMutation = useMutation({
+        mutationFn: (request: UpdateLobbySettingsRequest) => {
+            if (!inviteCode) {
+                throw new Error(LOBBY_ROOM_COPY.INVALID_INVITE_CODE);
+            }
+
+            return updateLobbySettings(inviteCode, request);
+        },
+        onMutate: () => {
+            setActionMessage(null);
+            setActionErrorMessage(null);
+        },
+        onSuccess: async () => {
+            await invalidateLobbyDetail();
+        },
+        onError: (mutationError) => {
+            if (!inviteCode) {
+                return;
+            }
+
+            setActionErrorMessage({
+                inviteCode,
+                message: getErrorMessage(
+                    mutationError,
+                    LOBBY_ROOM_COPY.SETTINGS_SAVE_FAILED,
+                ),
+            });
+        },
+    });
+
     const startMutation = useMutation({
         mutationFn: () => {
             if (!inviteCode) {
@@ -311,7 +344,8 @@ export function LobbyRoom() {
             !isHost ||
             !lobbyDetail?.canStart ||
             startMutation.isPending ||
-            mapMutation.isPending
+            mapMutation.isPending ||
+            settingsMutation.isPending
         ) {
             return;
         }
@@ -324,7 +358,8 @@ export function LobbyRoom() {
             !isHost ||
             lobbyDetail?.status !== 'WAITING' ||
             mapMutation.isPending ||
-            startMutation.isPending
+            startMutation.isPending ||
+            settingsMutation.isPending
         ) {
             return;
         }
@@ -344,6 +379,20 @@ export function LobbyRoom() {
         }
 
         mapMutation.mutate(map);
+    };
+
+    const handleSettingsSubmit = (
+        request: UpdateLobbySettingsRequest,
+    ) => {
+        if (
+            !isHost ||
+            lobbyDetail?.status !== 'WAITING' ||
+            settingsMutation.isPending
+        ) {
+            return;
+        }
+
+        settingsMutation.mutate(request);
     };
 
     if (!inviteCode) {
@@ -393,9 +442,11 @@ export function LobbyRoom() {
         readyTargetCount: readySummary.readyTargetCount,
         waitingCount: readySummary.waitingCount,
     });
-    const displayedHostStartGuideMessage = mapMutation.isPending
-        ? LOBBY_ROOM_COPY.MAP_CHANGE_PENDING_GUIDE
-        : hostStartGuideMessage;
+    const displayedHostStartGuideMessage = settingsMutation.isPending
+        ? LOBBY_ROOM_COPY.SETTINGS_CHANGE_PENDING_GUIDE
+        : mapMutation.isPending
+            ? LOBBY_ROOM_COPY.MAP_CHANGE_PENDING_GUIDE
+            : hostStartGuideMessage;
     const currentActionMessage =
         actionMessage?.inviteCode === inviteCode ? actionMessage.message : null;
     const currentActionErrorMessage =
@@ -465,18 +516,43 @@ export function LobbyRoom() {
                         />
                     }
                     settingsCard={
-                        <LobbyMapInfoCard
-                            questionCount={lobbyDetail.questionCount}
-                            timeLimitSeconds={lobbyDetail.timeLimitSeconds}
-                            maxPlayers={lobbyDetail.maxPlayers}
-                        />
+                        isHost ? (
+                            <LobbySettingsEditor
+                                key={[
+                                    lobbyDetail.inviteCode,
+                                    lobbyDetail.maxPlayers,
+                                    lobbyDetail.questionCount,
+                                    lobbyDetail.timeLimitSeconds,
+                                ].join(':')}
+                                maxPlayers={lobbyDetail.maxPlayers}
+                                questionCount={lobbyDetail.questionCount}
+                                timeLimitSeconds={
+                                    lobbyDetail.timeLimitSeconds
+                                }
+                                currentPlayers={
+                                    lobbyDetail.currentPlayers
+                                }
+                                isEditable={isWaitingLobby}
+                                isSaving={settingsMutation.isPending}
+                                onSubmit={handleSettingsSubmit}
+                            />
+                        ) : (
+                            <LobbyMapInfoCard
+                                questionCount={lobbyDetail.questionCount}
+                                timeLimitSeconds={
+                                    lobbyDetail.timeLimitSeconds
+                                }
+                                maxPlayers={lobbyDetail.maxPlayers}
+                            />
+                        )
                     }
                     actionSlot={
                         isHost ? (
                             <HostLobbyActionCard
                                 canStart={
                                     lobbyDetail.canStart &&
-                                    !mapMutation.isPending
+                                    !mapMutation.isPending &&
+                                    !settingsMutation.isPending
                                 }
                                 isStarting={startMutation.isPending}
                                 startGuideMessage={

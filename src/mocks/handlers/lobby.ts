@@ -6,6 +6,7 @@
 import { http, HttpResponse } from 'msw';
 import { API_ENDPOINTS } from '../../constants/endpoints';
 import { CREATE_LOBBY_POLICY } from '../../constants/lobby';
+import { updateLobbySettingsRequestSchema } from '../../schemas/lobbySchema';
 import { mockLobbyItems, mockLobbyPageResponse } from '../data/lobbies';
 import { mockMapItems } from '../data/maps';
 
@@ -16,6 +17,7 @@ import type {
     LobbyListItem,
     LobbyPlayerResponse,
     LobbySortQuery,
+    UpdateLobbySettingsRequest,
 } from '../../types/lobby';
 
 const LOBBY_CATEGORIES = ['K-POP', 'J-POP', 'POP', 'OST', '애니'] as const;
@@ -30,7 +32,12 @@ const mockLobbyDetailOverrides = new Map<
     string,
     Partial<Pick<
         LobbyDetailResponse,
-        'mapId' | 'mapTitle' | 'mapCategory' | 'questionCount'
+        | 'mapId'
+        | 'mapTitle'
+        | 'mapCategory'
+        | 'maxPlayers'
+        | 'questionCount'
+        | 'timeLimitSeconds'
     >>
 >();
 
@@ -196,7 +203,7 @@ function createLobbyDetailFromItem(
         title: lobby.title,
         hostId: lobby.hostId ?? 'mock-host',
         hostNickname: lobby.hostNickname ?? 'Mock Host',
-        maxPlayers: lobby.maxPlayers,
+        maxPlayers: override?.maxPlayers ?? lobby.maxPlayers,
         currentPlayers: lobby.currentPlayers,
         status: lobby.status,
         mapId: override?.mapId ?? lobby.mapId,
@@ -206,6 +213,7 @@ function createLobbyDetailFromItem(
             override?.questionCount ??
             lobby.questionCount ?? CREATE_LOBBY_POLICY.DEFAULT_QUESTION_COUNT,
         timeLimitSeconds:
+            override?.timeLimitSeconds ??
             lobby.timeLimitSeconds ??
             CREATE_LOBBY_POLICY.DEFAULT_TIME_LIMIT_SECONDS,
         players,
@@ -367,6 +375,7 @@ export const lobbyHandlers = [
         }
 
         mockLobbyDetailOverrides.set(code, {
+            ...mockLobbyDetailOverrides.get(code),
             mapId: selectedMap.mapId,
             mapTitle: selectedMap.title,
             mapCategory: selectedMap.category,
@@ -375,6 +384,138 @@ export const lobbyHandlers = [
 
         return new HttpResponse(null, { status: 204 });
     }),
+
+    http.patch(
+        API_ENDPOINTS.LOBBY.SETTINGS(':code'),
+        async ({ params, request }) => {
+            const code = typeof params.code === 'string' ? params.code : '';
+            let payload: unknown;
+
+            try {
+                payload = await request.json();
+            } catch {
+                return HttpResponse.json(
+                    { message: '요청 본문 형식이 올바르지 않습니다.' },
+                    { status: 400 },
+                );
+            }
+
+            const parsed = updateLobbySettingsRequestSchema.safeParse(payload);
+
+            if (!parsed.success) {
+                return HttpResponse.json(
+                    { message: '로비 설정값의 허용 범위를 확인해주세요.' },
+                    { status: 400 },
+                );
+            }
+
+            const settings: UpdateLobbySettingsRequest = parsed.data;
+
+            if (latestCreatedLobby?.inviteCode === code) {
+                if (latestCreatedLobby.status !== 'WAITING') {
+                    return HttpResponse.json(
+                        {
+                            message:
+                                '게임이 이미 시작된 로비에서는 설정을 변경할 수 없습니다.',
+                        },
+                        { status: 409 },
+                    );
+                }
+
+                if (settings.maxPlayers < latestCreatedLobby.currentPlayers) {
+                    return HttpResponse.json(
+                        {
+                            message:
+                                '최대 인원은 현재 참가자 수보다 작을 수 없습니다.',
+                        },
+                        { status: 409 },
+                    );
+                }
+
+                const selectedMap = latestCreatedLobby.mapId == null
+                    ? null
+                    : mockMapItems.find(
+                        (map) => map.mapId === latestCreatedLobby?.mapId,
+                    ) ?? null;
+
+                if (
+                    selectedMap &&
+                    settings.questionCount > selectedMap.numOfSong
+                ) {
+                    return HttpResponse.json(
+                        {
+                            message:
+                                '문제 수는 선택된 맵의 등록 곡 수를 초과할 수 없습니다.',
+                        },
+                        { status: 409 },
+                    );
+                }
+
+                latestCreatedLobby = {
+                    ...latestCreatedLobby,
+                    ...settings,
+                };
+
+                return new HttpResponse(null, { status: 204 });
+            }
+
+            const lobby = mockLobbyItems.find((item) => item.code === code);
+
+            if (!lobby) {
+                return HttpResponse.json(
+                    { message: '로비를 찾을 수 없습니다.' },
+                    { status: 404 },
+                );
+            }
+
+            if (lobby.status !== 'WAITING') {
+                return HttpResponse.json(
+                    {
+                        message:
+                            '게임이 이미 시작된 로비에서는 설정을 변경할 수 없습니다.',
+                    },
+                    { status: 409 },
+                );
+            }
+
+            if (settings.maxPlayers < lobby.currentPlayers) {
+                return HttpResponse.json(
+                    {
+                        message:
+                            '최대 인원은 현재 참가자 수보다 작을 수 없습니다.',
+                    },
+                    { status: 409 },
+                );
+            }
+
+            const override = mockLobbyDetailOverrides.get(code);
+            const selectedMapId = override?.mapId ?? lobby.mapId;
+            const selectedMap = selectedMapId == null
+                ? null
+                : mockMapItems.find((map) => map.mapId === selectedMapId) ??
+                    null;
+
+            if (
+                selectedMap &&
+                settings.questionCount > selectedMap.numOfSong
+            ) {
+                return HttpResponse.json(
+                    {
+                        message:
+                            '문제 수는 선택된 맵의 등록 곡 수를 초과할 수 없습니다.',
+                    },
+                    { status: 409 },
+                );
+            }
+
+            mockLobbyDetailOverrides.set(code, {
+                ...override,
+                ...settings,
+            });
+
+            return new HttpResponse(null, { status: 204 });
+        },
+    ),
 
     // 클라이언트가 GET 메서드로 로비 목록 엔드포인트에 요청을 보낼 때 이를 가로챈다.
     http.get(API_ENDPOINTS.LOBBY.LIST, ({ request }) => {

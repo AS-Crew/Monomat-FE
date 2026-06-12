@@ -101,6 +101,12 @@ export interface UpdateLobbyMapRequest {
     mapId: number;
 }
 
+export interface UpdateLobbySettingsRequest {
+    maxPlayers: number;
+    questionCount: number;
+    timeLimitSeconds: number;
+}
+
 export interface CreateLobbyRequest {
     title: string;
     maxPlayers: number;
