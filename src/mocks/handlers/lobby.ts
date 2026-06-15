@@ -38,6 +38,7 @@ const mockLobbyDetailOverrides = new Map<
         | 'mapId'
         | 'mapTitle'
         | 'mapCategory'
+        | 'mapNumOfSong'
         | 'maxPlayers'
         | 'questionCount'
         | 'timeLimitSeconds'
@@ -219,6 +220,10 @@ function createLobbyDetailFromItem(
     lobby: LobbyListItem,
 ): LobbyDetailResponse {
     const override = mockLobbyDetailOverrides.get(lobby.code);
+    const mapId = override?.mapId ?? lobby.mapId;
+    const selectedMap = mapId == null
+        ? null
+        : mockMapItems.find((map) => map.mapId === mapId) ?? null;
     const hostPlayer: LobbyPlayerResponse = {
         userIdentifier: lobby.hostId ?? 'mock-host',
         nickname: lobby.hostNickname ?? 'Mock Host',
@@ -248,9 +253,11 @@ function createLobbyDetailFromItem(
         maxPlayers: override?.maxPlayers ?? lobby.maxPlayers,
         currentPlayers: lobby.currentPlayers,
         status: lobby.status,
-        mapId: override?.mapId ?? lobby.mapId,
+        mapId,
         mapTitle: override?.mapTitle ?? lobby.mapTitle,
         mapCategory: override?.mapCategory ?? lobby.mapCategory,
+        mapNumOfSong:
+            override?.mapNumOfSong ?? selectedMap?.numOfSong ?? null,
         questionCount:
             override?.questionCount ??
             lobby.questionCount ?? CREATE_LOBBY_POLICY.DEFAULT_QUESTION_COUNT,
@@ -279,15 +286,16 @@ export const lobbyHandlers = [
             ? payload.maxPlayers
             : CREATE_LOBBY_POLICY.DEFAULT_MAX_PLAYERS;
         const isPrivate = Boolean(payload.isPrivate);
-        const questionCount = typeof payload.questionCount === 'number'
-            ? payload.questionCount
-            : CREATE_LOBBY_POLICY.DEFAULT_QUESTION_COUNT;
-        const timeLimitSeconds = typeof payload.timeLimitSeconds === 'number'
-            ? payload.timeLimitSeconds
-            : CREATE_LOBBY_POLICY.DEFAULT_TIME_LIMIT_SECONDS;
         const selectedMap = typeof payload.mapId === 'number'
             ? mockMapItems.find((map) => map.mapId === payload.mapId) ?? null
             : null;
+        const questionCount = typeof payload.questionCount === 'number'
+            ? payload.questionCount
+            : selectedMap?.numOfSong ??
+                CREATE_LOBBY_POLICY.DEFAULT_QUESTION_COUNT;
+        const timeLimitSeconds = typeof payload.timeLimitSeconds === 'number'
+            ? payload.timeLimitSeconds
+            : CREATE_LOBBY_POLICY.DEFAULT_TIME_LIMIT_SECONDS;
         const inviteCode = 'NEW123';
 
         latestCreatedLobby = {
@@ -301,6 +309,7 @@ export const lobbyHandlers = [
             mapId: selectedMap?.mapId ?? null,
             mapTitle: selectedMap?.title ?? null,
             mapCategory: selectedMap?.category ?? null,
+            mapNumOfSong: selectedMap?.numOfSong ?? null,
             questionCount,
             timeLimitSeconds,
             players: [
@@ -521,6 +530,7 @@ export const lobbyHandlers = [
                 mapId: selectedMap.mapId,
                 mapTitle: selectedMap.title,
                 mapCategory: selectedMap.category,
+                mapNumOfSong: selectedMap.numOfSong,
                 questionCount: selectedMap.numOfSong,
             };
 
@@ -558,6 +568,7 @@ export const lobbyHandlers = [
             mapId: selectedMap.mapId,
             mapTitle: selectedMap.title,
             mapCategory: selectedMap.category,
+            mapNumOfSong: selectedMap.numOfSong,
             questionCount: selectedMap.numOfSong,
         });
 

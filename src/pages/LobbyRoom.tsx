@@ -30,6 +30,10 @@ import { useLobbySocket } from '../hooks/useLobbySocket';
 import { useAuthStore } from '../store/useAuthStore';
 import type { MapSummary } from '../types/map';
 import type { UpdateLobbySettingsRequest } from '../types/lobby';
+import {
+    clampLobbyQuestionCount,
+    hasValidLobbyMapSongCount,
+} from '../utils/lobbyQuestionCount';
 
 interface LobbyActionMessage {
     inviteCode: string;
@@ -421,7 +425,20 @@ export function LobbyRoom() {
             return;
         }
 
-        settingsMutation.mutate(request);
+        if (
+            lobbyDetail.mapNumOfSong !== null &&
+            !hasValidLobbyMapSongCount(lobbyDetail.mapNumOfSong)
+        ) {
+            return;
+        }
+
+        settingsMutation.mutate({
+            ...request,
+            questionCount: clampLobbyQuestionCount(
+                request.questionCount,
+                lobbyDetail.mapNumOfSong,
+            ),
+        });
     };
 
     if (!inviteCode) {
@@ -554,9 +571,11 @@ export function LobbyRoom() {
                                     lobbyDetail.maxPlayers,
                                     lobbyDetail.questionCount,
                                     lobbyDetail.timeLimitSeconds,
+                                    lobbyDetail.mapNumOfSong,
                                 ].join(':')}
                                 maxPlayers={lobbyDetail.maxPlayers}
                                 questionCount={lobbyDetail.questionCount}
+                                mapNumOfSong={lobbyDetail.mapNumOfSong}
                                 timeLimitSeconds={
                                     lobbyDetail.timeLimitSeconds
                                 }
@@ -570,6 +589,7 @@ export function LobbyRoom() {
                         ) : (
                             <LobbyMapInfoCard
                                 questionCount={lobbyDetail.questionCount}
+                                mapNumOfSong={lobbyDetail.mapNumOfSong}
                                 timeLimitSeconds={
                                     lobbyDetail.timeLimitSeconds
                                 }

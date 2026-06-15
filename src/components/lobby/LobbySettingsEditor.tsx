@@ -10,8 +10,14 @@ import {
 } from '../../constants/lobby';
 import { updateLobbySettingsRequestSchema } from '../../schemas/lobbySchema';
 import type { UpdateLobbySettingsRequest } from '../../types/lobby';
+import {
+    clampLobbyQuestionCount,
+    getLobbyQuestionCountMax,
+    hasValidLobbyMapSongCount,
+} from '../../utils/lobbyQuestionCount';
 
 interface LobbySettingsEditorProps extends UpdateLobbySettingsRequest {
+    mapNumOfSong: number | null;
     currentPlayers: number;
     isEditable: boolean;
     isSaving: boolean;
@@ -30,6 +36,10 @@ interface LobbySettingsRangeProps {
 }
 
 function getRangeBackground(value: number, min: number, max: number) {
+    if (max <= min) {
+        return 'var(--monomat-primary)';
+    }
+
     const progress = ((value - min) / (max - min)) * 100;
 
     return `linear-gradient(to right, var(--monomat-primary) ${progress}%, var(--monomat-border-input) ${progress}%)`;
@@ -80,14 +90,23 @@ export function LobbySettingsEditor({
     maxPlayers,
     questionCount,
     timeLimitSeconds,
+    mapNumOfSong,
     currentPlayers,
     isEditable,
     isSaving,
     onSubmit,
 }: LobbySettingsEditorProps) {
+    const questionCountMax = getLobbyQuestionCountMax(mapNumOfSong);
+    const hasValidMapSongCount =
+        hasValidLobbyMapSongCount(mapNumOfSong);
+    const hasEmptySelectedMap =
+        mapNumOfSong !== null && !hasValidMapSongCount;
     const [formState, setFormState] = useState<UpdateLobbySettingsRequest>({
         maxPlayers,
-        questionCount,
+        questionCount: clampLobbyQuestionCount(
+            questionCount,
+            mapNumOfSong,
+        ),
         timeLimitSeconds,
     });
     const [validationMessage, setValidationMessage] = useState<string | null>(
@@ -131,7 +150,21 @@ export function LobbySettingsEditor({
             return;
         }
 
-        const parsed = updateLobbySettingsRequestSchema.safeParse(formState);
+        if (hasEmptySelectedMap) {
+            setValidationMessage(
+                LOBBY_ROOM_COPY.SETTINGS_QUESTION_COUNT_EMPTY_MAP,
+            );
+            return;
+        }
+
+        const request = {
+            ...formState,
+            questionCount: clampLobbyQuestionCount(
+                formState.questionCount,
+                mapNumOfSong,
+            ),
+        };
+        const parsed = updateLobbySettingsRequestSchema.safeParse(request);
 
         if (!parsed.success) {
             setValidationMessage('설정값의 허용 범위를 확인해주세요.');
@@ -182,8 +215,8 @@ export function LobbySettingsEditor({
                     label={LOBBY_ROOM_COPY.QUESTION_COUNT}
                     value={formState.questionCount}
                     min={CREATE_LOBBY_POLICY.MIN_QUESTION_COUNT}
-                    max={CREATE_LOBBY_POLICY.MAX_QUESTION_COUNT}
-                    disabled={isDisabled}
+                    max={questionCountMax}
+                    disabled={isDisabled || !hasValidMapSongCount}
                     onChange={(value) =>
                         updateFormState('questionCount', value)
                     }
@@ -201,6 +234,16 @@ export function LobbySettingsEditor({
                     }
                 />
             </div>
+
+            <p className="mt-3 break-keep text-xs font-medium leading-5 text-[var(--monomat-text-muted)]">
+                {hasValidMapSongCount
+                    ? mapNumOfSong > questionCountMax
+                        ? `이 맵은 최대 ${mapNumOfSong}곡이지만, 로비는 최대 ${questionCountMax}라운드까지 설정할 수 있습니다.`
+                        : `이 맵은 최대 ${questionCountMax}라운드까지 진행할 수 있습니다.`
+                    : hasEmptySelectedMap
+                        ? LOBBY_ROOM_COPY.SETTINGS_QUESTION_COUNT_EMPTY_MAP
+                        : LOBBY_ROOM_COPY.SETTINGS_QUESTION_COUNT_MAP_REQUIRED}
+            </p>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-h-5">
@@ -220,7 +263,8 @@ export function LobbySettingsEditor({
                     disabled={
                         isDisabled ||
                         !isDirty ||
-                        hasPlayerCountConflict
+                        hasPlayerCountConflict ||
+                        hasEmptySelectedMap
                     }
                     className="h-10 w-full rounded-lg bg-[var(--monomat-primary)] px-5 text-sm font-bold text-white transition hover:bg-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)] sm:w-auto"
                 >

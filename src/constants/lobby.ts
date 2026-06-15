@@ -182,6 +182,10 @@ export const LOBBY_ROOM_COPY = {
         '게임이 시작된 로비에서는 설정을 변경할 수 없습니다.',
     SETTINGS_MAX_PLAYERS_CONFLICT:
         '최대 인원은 현재 참가자 수보다 작을 수 없습니다.',
+    SETTINGS_QUESTION_COUNT_MAP_REQUIRED:
+        '맵을 선택하면 라운드 수를 설정할 수 있습니다.',
+    SETTINGS_QUESTION_COUNT_EMPTY_MAP:
+        '등록된 곡이 없는 맵에서는 로비 설정을 저장할 수 없습니다.',
     READY_SYNCED: '준비 상태는 서버 이벤트로 다시 동기화됩니다.',
     READY_WAIT_PLAYER: '참여자 정보 동기화 후 준비할 수 있습니다.',
     START_REQUESTED: '게임 시작 요청을 보냈습니다.',

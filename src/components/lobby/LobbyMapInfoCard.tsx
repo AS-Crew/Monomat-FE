@@ -2,9 +2,11 @@ import {
     CREATE_LOBBY_POLICY,
     LOBBY_ROOM_COPY,
 } from '../../constants/lobby';
+import { getLobbyQuestionCountMax } from '../../utils/lobbyQuestionCount';
 
 interface LobbyMapInfoCardProps {
     questionCount: number;
+    mapNumOfSong: number | null;
     timeLimitSeconds: number;
     maxPlayers: number;
 }
@@ -44,9 +46,12 @@ function SettingRule({
 
 export function LobbyMapInfoCard({
     questionCount,
+    mapNumOfSong,
     timeLimitSeconds,
     maxPlayers,
 }: LobbyMapInfoCardProps) {
+    const questionCountMax = getLobbyQuestionCountMax(mapNumOfSong);
+
     return (
         <section className="min-h-[123px] rounded-2xl bg-white px-[25px] py-5 text-left shadow-[0_4px_16px_rgba(0,0,0,0.16)]">
             <h2 className="!m-0 !text-lg !font-bold !leading-6 !text-[var(--monomat-text-strong)]">
@@ -69,7 +74,7 @@ export function LobbyMapInfoCard({
                     progress={getProgressPercent(
                         questionCount,
                         CREATE_LOBBY_POLICY.MIN_QUESTION_COUNT,
-                        CREATE_LOBBY_POLICY.MAX_QUESTION_COUNT,
+                        questionCountMax,
                     )}
                 />
                 <SettingRule
