@@ -87,6 +87,7 @@ export interface LobbyDetailResponse {
     mapId: number | null;
     mapTitle: string | null;
     mapCategory: LobbyCategory | null;
+    mapNumOfSong: number | null;
     questionCount: number;
     timeLimitSeconds: number;
     players: LobbyPlayerResponse[];

@@ -4,6 +4,7 @@ import {
     type ReactNode,
     type MouseEvent,
     useEffect,
+    useRef,
     useState,
 } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -31,6 +32,11 @@ import {
     formatMapDescription,
     formatMapOwnerNickname,
 } from '../utils/mapFormat';
+import {
+    clampLobbyQuestionCount,
+    getLobbyQuestionCountMax,
+    hasValidLobbyMapSongCount,
+} from '../utils/lobbyQuestionCount';
 
 interface LobbyCreateFormState {
     title: string;
@@ -77,6 +83,10 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
 }
 
 function getRangeBackground(value: number, min: number, max: number) {
+    if (max <= min) {
+        return 'var(--monomat-primary)';
+    }
+
     const progress = ((value - min) / (max - min)) * 100;
 
     return `linear-gradient(to right, var(--monomat-primary) ${progress}%, var(--monomat-border-input) ${progress}%)`;
@@ -96,12 +106,22 @@ function createRequestFromFormState(
         return `로비 이름은 최대 ${CREATE_LOBBY_POLICY.TITLE_MAX_LENGTH}자까지 입력할 수 있습니다.`;
     }
 
+    if (
+        selectedMap &&
+        !hasValidLobbyMapSongCount(selectedMap.numOfSong)
+    ) {
+        return '곡이 1개 이상 등록된 맵을 선택해주세요.';
+    }
+
     return {
         title,
         maxPlayers: formState.maxPlayers,
         isPrivate: formState.isPrivate,
         mapId: selectedMap?.mapId ?? null,
-        questionCount: formState.questionCount,
+        questionCount: clampLobbyQuestionCount(
+            formState.questionCount,
+            selectedMap?.numOfSong,
+        ),
         timeLimitSeconds: formState.timeLimitSeconds,
     };
 }
@@ -257,6 +277,7 @@ export function LobbyCreate() {
     const [isMapSelectModalOpen, setIsMapSelectModalOpen] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const appliedPreselectedMapIdRef = useRef<number | null>(null);
     const mapIdParam = searchParams.get(LOBBY_QUERY_PARAMS.MAP_ID);
     const parsedMapId = Number(mapIdParam);
     const hasPreselectedMapId = mapIdParam !== null;
@@ -273,9 +294,22 @@ export function LobbyCreate() {
     });
 
     useEffect(() => {
-        if (preselectedMapQuery.data) {
-            setSelectedMap(mapDetailToSummary(preselectedMapQuery.data));
+        if (
+            !preselectedMapQuery.data ||
+            appliedPreselectedMapIdRef.current ===
+                preselectedMapQuery.data.id
+        ) {
+            return;
         }
+
+        const map = mapDetailToSummary(preselectedMapQuery.data);
+
+        appliedPreselectedMapIdRef.current = map.mapId;
+        setSelectedMap(map);
+        setFormState((currentFormState) => ({
+            ...currentFormState,
+            questionCount: getLobbyQuestionCountMax(map.numOfSong),
+        }));
     }, [preselectedMapQuery.data]);
 
     const preselectedMapErrorMessage = !hasPreselectedMapId
@@ -314,7 +348,18 @@ export function LobbyCreate() {
     };
 
     const handleMapConfirm = (map: MapSummary) => {
+        const isSameMap = selectedMap?.mapId === map.mapId;
+
         setSelectedMap(map);
+        setFormState((currentFormState) => ({
+            ...currentFormState,
+            questionCount: isSameMap
+                ? clampLobbyQuestionCount(
+                    currentFormState.questionCount,
+                    map.numOfSong,
+                )
+                : getLobbyQuestionCountMax(map.numOfSong),
+        }));
         setErrorMessage(null);
     };
 
@@ -323,8 +368,29 @@ export function LobbyCreate() {
     ) => {
         event.stopPropagation();
         setSelectedMap(null);
+        setFormState((currentFormState) => ({
+            ...currentFormState,
+            questionCount: CREATE_LOBBY_POLICY.DEFAULT_QUESTION_COUNT,
+        }));
         setErrorMessage(null);
     };
+
+    const questionCountMax = getLobbyQuestionCountMax(
+        selectedMap?.numOfSong,
+    );
+    const isQuestionCountDisabled =
+        isSubmitting ||
+        Boolean(
+            selectedMap &&
+            !hasValidLobbyMapSongCount(selectedMap.numOfSong),
+        );
+    const questionCountGuide = selectedMap
+        ? selectedMap.numOfSong > questionCountMax
+            ? `이 맵은 최대 ${selectedMap.numOfSong}곡이지만, 로비는 최대 ${questionCountMax}라운드까지 설정할 수 있습니다.`
+            : hasValidLobbyMapSongCount(selectedMap.numOfSong)
+                ? `이 맵은 최대 ${questionCountMax}라운드까지 진행할 수 있습니다.`
+                : '등록된 곡이 없어 라운드 수를 설정할 수 없습니다.'
+        : `맵을 선택하지 않으면 기본 ${CREATE_LOBBY_POLICY.DEFAULT_QUESTION_COUNT}라운드, 최대 ${CREATE_LOBBY_POLICY.MAX_QUESTION_COUNT}라운드로 설정됩니다.`;
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -504,8 +570,8 @@ export function LobbyCreate() {
                                 label="라운드 수"
                                 value={formState.questionCount}
                                 min={CREATE_LOBBY_POLICY.MIN_QUESTION_COUNT}
-                                max={CREATE_LOBBY_POLICY.MAX_QUESTION_COUNT}
-                                disabled={isSubmitting}
+                                max={questionCountMax}
+                                disabled={isQuestionCountDisabled}
                                 onChange={(value) =>
                                     updateFormState('questionCount', value)
                                 }
@@ -529,7 +595,11 @@ export function LobbyCreate() {
                             />
                         </div>
 
-                        <p className="mt-[29px] h-5 text-base leading-5 text-[var(--monomat-text-muted)]">
+                        <p className="mt-3 min-h-5 break-keep text-xs font-medium leading-5 text-[var(--monomat-text-muted)]">
+                            {questionCountGuide}
+                        </p>
+
+                        <p className="mt-3 h-5 text-base leading-5 text-[var(--monomat-text-muted)]">
                             공개 설정
                         </p>
 

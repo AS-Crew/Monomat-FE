@@ -72,6 +72,7 @@ export const lobbyDetailResponseSchema = z.object({
     mapId: z.number().int().positive().nullable(),
     mapTitle: z.string().min(1).nullable(),
     mapCategory: lobbyCategorySchema.nullable(),
+    mapNumOfSong: z.number().int().nonnegative().nullable(),
     questionCount: z.number().int().positive(),
     timeLimitSeconds: z.number().int().positive(),
     players: z.array(lobbyPlayerResponseSchema),
