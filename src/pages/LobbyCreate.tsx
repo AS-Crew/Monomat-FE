@@ -36,6 +36,7 @@ import {
     clampLobbyQuestionCount,
     getLobbyQuestionCountMax,
     hasValidLobbyMapSongCount,
+    normalizeLobbyQuestionCountInput,
 } from '../utils/lobbyQuestionCount';
 
 interface LobbyCreateFormState {
@@ -55,6 +56,8 @@ interface LobbyRangeControlProps {
     max: number;
     disabled: boolean;
     onChange: (value: number) => void;
+    showNumberInput?: boolean;
+    numberInputAriaLabel?: string;
 }
 
 interface VisibilityOptionProps {
@@ -200,20 +203,84 @@ function LobbyRangeControl({
     max,
     disabled,
     onChange,
+    showNumberInput = false,
+    numberInputAriaLabel,
 }: LobbyRangeControlProps) {
+    const [numberInputValue, setNumberInputValue] = useState<string | null>(
+        null,
+    );
+    const displayedNumberInputValue = numberInputValue ?? String(value);
+
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         onChange(Number(event.target.value));
     };
 
+    const handleNumberInputChange = (
+        event: ChangeEvent<HTMLInputElement>,
+    ) => {
+        const nextValue = event.target.value;
+        const parsedValue = Number(nextValue);
+
+        setNumberInputValue(nextValue);
+
+        if (
+            nextValue.trim() === '' ||
+            !Number.isFinite(parsedValue)
+        ) {
+            return;
+        }
+
+        onChange(
+            normalizeLobbyQuestionCountInput(
+                nextValue,
+                max,
+                value,
+            ),
+        );
+    };
+
+    const handleNumberInputBlur = () => {
+        const normalizedValue = normalizeLobbyQuestionCountInput(
+            displayedNumberInputValue,
+            max,
+            value,
+        );
+
+        setNumberInputValue(null);
+        onChange(normalizedValue);
+    };
+
     return (
-        <label htmlFor={id} className="block min-w-0">
-            <span className="mb-[9px] block h-5 text-base leading-5 text-[var(--monomat-text-muted)]">
-                {label} :{' '}
-                <strong className="font-semibold text-black">
-                    {value}
-                    {unit}
-                </strong>
-            </span>
+        <div className="block min-w-0">
+            <div className="mb-[9px] flex min-h-8 items-center justify-between gap-3">
+                <label
+                    htmlFor={id}
+                    className="min-w-0 text-base leading-5 text-[var(--monomat-text-muted)]"
+                >
+                    {label} :{' '}
+                    <strong className="font-semibold text-black">
+                        {value}
+                        {unit}
+                    </strong>
+                </label>
+
+                {showNumberInput && (
+                    <input
+                        type="number"
+                        inputMode="numeric"
+                        min={min}
+                        max={max}
+                        step={1}
+                        value={displayedNumberInputValue}
+                        disabled={disabled}
+                        aria-label={numberInputAriaLabel ?? label}
+                        onFocus={() => setNumberInputValue(String(value))}
+                        onChange={handleNumberInputChange}
+                        onBlur={handleNumberInputBlur}
+                        className="h-8 w-[72px] shrink-0 rounded-lg border border-[var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-2 text-right text-sm font-semibold text-[var(--monomat-text-strong)] outline-none transition focus:border-[var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                    />
+                )}
+            </div>
 
             <input
                 id={id}
@@ -228,7 +295,7 @@ function LobbyRangeControl({
                 }}
                 className="block h-[7px] w-full cursor-pointer appearance-none rounded-[3px] border border-[var(--monomat-border-input)] outline-none transition disabled:cursor-not-allowed disabled:opacity-60 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-[var(--monomat-primary)] [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--monomat-primary)]"
             />
-        </label>
+        </div>
     );
 }
 
@@ -385,11 +452,9 @@ export function LobbyCreate() {
             !hasValidLobbyMapSongCount(selectedMap.numOfSong),
         );
     const questionCountGuide = selectedMap
-        ? selectedMap.numOfSong > questionCountMax
-            ? `이 맵은 최대 ${selectedMap.numOfSong}곡이지만, 로비는 최대 ${questionCountMax}라운드까지 설정할 수 있습니다.`
-            : hasValidLobbyMapSongCount(selectedMap.numOfSong)
-                ? `이 맵은 최대 ${questionCountMax}라운드까지 진행할 수 있습니다.`
-                : '등록된 곡이 없어 라운드 수를 설정할 수 없습니다.'
+        ? hasValidLobbyMapSongCount(selectedMap.numOfSong)
+            ? `이 맵은 최대 ${questionCountMax}라운드까지 진행할 수 있습니다.`
+            : '등록된 곡이 없어 라운드 수를 설정할 수 없습니다.'
         : `맵을 선택하지 않으면 기본 ${CREATE_LOBBY_POLICY.DEFAULT_QUESTION_COUNT}라운드, 최대 ${CREATE_LOBBY_POLICY.MAX_QUESTION_COUNT}라운드로 설정됩니다.`;
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -575,6 +640,8 @@ export function LobbyCreate() {
                                 onChange={(value) =>
                                     updateFormState('questionCount', value)
                                 }
+                                showNumberInput
+                                numberInputAriaLabel="라운드 수 직접 입력"
                             />
 
                             <LobbyRangeControl
