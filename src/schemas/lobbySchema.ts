@@ -85,8 +85,7 @@ export const updateLobbySettingsRequestSchema: z.ZodType<UpdateLobbySettingsRequ
             .min(CREATE_LOBBY_POLICY.MIN_PLAYERS)
             .max(CREATE_LOBBY_POLICY.MAX_PLAYERS),
         questionCount: z.number().int()
-            .min(CREATE_LOBBY_POLICY.MIN_QUESTION_COUNT)
-            .max(CREATE_LOBBY_POLICY.MAX_QUESTION_COUNT),
+            .min(CREATE_LOBBY_POLICY.MIN_QUESTION_COUNT),
         timeLimitSeconds: z.number().int()
             .min(CREATE_LOBBY_POLICY.MIN_TIME_LIMIT_SECONDS)
             .max(CREATE_LOBBY_POLICY.MAX_TIME_LIMIT_SECONDS),

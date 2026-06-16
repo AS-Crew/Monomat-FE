@@ -13,10 +13,7 @@ export function getLobbyQuestionCountMax(
         return CREATE_LOBBY_POLICY.MAX_QUESTION_COUNT;
     }
 
-    return Math.min(
-        mapNumOfSong,
-        CREATE_LOBBY_POLICY.MAX_QUESTION_COUNT,
-    );
+    return mapNumOfSong;
 }
 
 export function clampLobbyQuestionCount(
@@ -29,5 +26,25 @@ export function clampLobbyQuestionCount(
             CREATE_LOBBY_POLICY.MIN_QUESTION_COUNT,
         ),
         getLobbyQuestionCountMax(mapNumOfSong),
+    );
+}
+
+export function normalizeLobbyQuestionCountInput(
+    inputValue: string,
+    mapNumOfSong?: number | null,
+    fallbackQuestionCount: number = CREATE_LOBBY_POLICY.MIN_QUESTION_COUNT,
+): number {
+    const parsedValue = Number(inputValue);
+
+    if (!Number.isFinite(parsedValue)) {
+        return clampLobbyQuestionCount(
+            fallbackQuestionCount,
+            mapNumOfSong,
+        );
+    }
+
+    return clampLobbyQuestionCount(
+        Math.trunc(parsedValue),
+        mapNumOfSong,
     );
 }

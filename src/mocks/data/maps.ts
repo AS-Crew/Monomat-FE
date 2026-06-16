@@ -79,6 +79,19 @@ export const mockPublicMapItems: MapSummary[] = [
         ownerId: 106,
         ownerNickname: 'OST콜렉터',
     },
+    {
+        mapId: 7,
+        title: '70곡 라운드 정책 검증 맵',
+        description: '기본 상한을 넘는 라운드 설정을 확인하기 위한 mock 맵입니다.',
+        category: 'POP',
+        numOfSong: 70,
+        totalPlayTime: 12_600,
+        playCount: 12,
+        isPublic: true,
+        pendingPublic: false,
+        ownerId: 107,
+        ownerNickname: 'MockTester',
+    },
 ];
 
 export const mockMyMapItems: MapSummary[] = [
