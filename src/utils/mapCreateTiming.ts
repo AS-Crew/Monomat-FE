@@ -1,24 +1,16 @@
 import { MAP_CREATE_POLICY } from '../constants/map';
 
-export interface MapCreateTiming {
-    startTime: number;
-    endTime: number;
-}
-
-export function getMapCreateTiming(
+export function getMapCreatePreviewEndTime(
     startTime: number,
     playDurationSeconds: number =
         MAP_CREATE_POLICY.API_FALLBACK_PLAY_DURATION_SECONDS,
-): MapCreateTiming {
+): number {
     const normalizedPlayDuration =
         Number.isInteger(playDurationSeconds) && playDurationSeconds > 0
             ? playDurationSeconds
             : MAP_CREATE_POLICY.API_FALLBACK_PLAY_DURATION_SECONDS;
 
-    return {
-        startTime,
-        endTime: startTime + normalizedPlayDuration,
-    };
+    return startTime + normalizedPlayDuration;
 }
 
 export function getMapCreateTimingError(
@@ -41,9 +33,12 @@ export function getMapCreateTimingError(
         return '시작 시간은 0 이상의 정수로 입력해주세요.';
     }
 
-    const timing = getMapCreateTiming(startTime, playDurationSeconds);
+    const previewEndTime = getMapCreatePreviewEndTime(
+        startTime,
+        playDurationSeconds,
+    );
 
-    if (timing.endTime <= timing.startTime) {
+    if (previewEndTime <= startTime) {
         return '종료 시간은 시작 시간보다 커야 합니다.';
     }
 
@@ -55,11 +50,11 @@ export function getMapCreateTimingError(
         return null;
     }
 
-    if (timing.startTime >= videoDurationSeconds) {
+    if (startTime >= videoDurationSeconds) {
         return `시작 시간은 영상 길이 ${Math.floor(videoDurationSeconds)}초보다 작아야 합니다.`;
     }
 
-    if (timing.endTime > videoDurationSeconds) {
+    if (previewEndTime > videoDurationSeconds) {
         const latestStartTime = Math.max(
             MAP_CREATE_POLICY.MIN_START_TIME_SECONDS,
             Math.floor(

@@ -5,6 +5,7 @@ import {
     DEFAULT_MAP_LIST_PAGE,
     DEFAULT_MAP_LIST_SIZE,
     DEFAULT_MAP_SORT_OPTION,
+    MAP_CREATE_POLICY,
     MAP_CATEGORY_OPTIONS,
     MAP_CATEGORY_QUERY_VALUE,
     MY_MAP_LIST_PAGE_SIZE,
@@ -182,11 +183,9 @@ export const mapHandlers = [
                     ...mockMyMapItems.map((map) => map.mapId),
                 ) + 1;
             const createdAt = new Date().toISOString();
-            const totalPlayTime = payload.items.reduce(
-                (total, item) =>
-                    total + (item.endTime - item.startTime),
-                0,
-            );
+            const totalPlayTime =
+                payload.items.length *
+                MAP_CREATE_POLICY.API_FALLBACK_PLAY_DURATION_SECONDS;
             const createdMap = {
                 id: nextMapId,
                 ownerId: 999,
@@ -209,7 +208,6 @@ export const mapHandlers = [
                 youtubeUrl: item.youtubeUrl,
                 videoId: null,
                 startTime: item.startTime,
-                endTime: item.endTime,
                 title: null,
                 artist: null,
                 thumbnailUrl: null,

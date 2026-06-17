@@ -57,7 +57,6 @@ export const mapItemResponseSchema = z.object({
     youtubeUrl: z.string().min(1),
     videoId: z.string().min(1).nullable(),
     startTime: z.number().int().min(0),
-    endTime: z.number().int().positive(),
     title: z.string().nullable(),
     artist: z.string().nullable(),
     thumbnailUrl: z.string().nullable(),

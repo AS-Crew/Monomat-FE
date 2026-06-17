@@ -65,7 +65,6 @@ export interface ManageMapItemRequest {
     orderNum: number;
     youtubeUrl: string;
     startTime: number;
-    endTime: number;
     answers: string[];
     hint: string;
     hintTime: number | null;
@@ -80,7 +79,6 @@ export interface CreateMapItemRequest {
     orderNum: number;
     youtubeUrl: string;
     startTime: number;
-    endTime: number;
     answers: string[];
     hint: string;
     hintTime?: number | null;
@@ -121,7 +119,6 @@ export interface MapItemResponse {
     youtubeUrl: string;
     videoId: string | null;
     startTime: number;
-    endTime: number;
     title: string | null;
     artist: string | null;
     thumbnailUrl: string | null;
