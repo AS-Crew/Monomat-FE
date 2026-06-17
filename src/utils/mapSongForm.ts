@@ -1,9 +1,6 @@
 import { MAP_CREATE_POLICY } from '../constants/map';
 import { normalizeAnswerList } from './answerNormalizer';
-import {
-    getMapCreateTiming,
-    getMapCreateTimingError,
-} from './mapCreateTiming';
+import { getMapCreateTimingError } from './mapCreateTiming';
 
 import type {
     CreateMapWithItemsItemRequest,
@@ -43,11 +40,6 @@ export function createMapItemRequestFromSong(
     song: CreateMapSongFormState,
     orderNum: number,
 ): CreateMapWithItemsItemRequest {
-    const timing = getMapCreateTiming(
-        Number(song.startTime),
-        song.playDurationSeconds ??
-            MAP_CREATE_POLICY.API_FALLBACK_PLAY_DURATION_SECONDS,
-    );
     const hintTime = song.hintTime;
     const hasValidHintTime =
         typeof hintTime === 'number' &&
@@ -58,8 +50,7 @@ export function createMapItemRequestFromSong(
     return {
         orderNum,
         youtubeUrl: song.youtubeUrl.trim(),
-        startTime: timing.startTime,
-        endTime: timing.endTime,
+        startTime: Number(song.startTime),
         answers: song.answers
             .map((answer) => answer.trim())
             .filter(Boolean),

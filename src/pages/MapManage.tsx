@@ -68,7 +68,8 @@ function createManageSongForm(
         videoDurationSeconds: null,
         answers: [...item.answers],
         hintTime: item.hintTime,
-        playDurationSeconds: Math.max(1, item.endTime - item.startTime),
+        playDurationSeconds:
+            MAP_CREATE_POLICY.API_FALLBACK_PLAY_DURATION_SECONDS,
     };
 }
 
