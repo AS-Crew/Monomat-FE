@@ -1,4 +1,9 @@
-import { type ReactNode, useMemo, useState } from 'react';
+import {
+    type ReactNode,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -20,6 +25,7 @@ import { LobbyRoomLayout } from '../components/lobby/LobbyRoomLayout';
 import { LobbyRoomTopControls } from '../components/lobby/LobbyRoomTopControls';
 import { LobbySettingsEditor } from '../components/lobby/LobbySettingsEditor';
 import { MapSelectModal } from '../components/lobby/MapSelectModal';
+import { GAME_ROUTES } from '../constants/game';
 import { LOBBY_ROOM_COPY, LOBBY_ROUTES } from '../constants/lobby';
 import {
     lobbyDetailQueryKey,
@@ -157,6 +163,15 @@ export function LobbyRoom() {
         inviteCode,
         lobbyChat.handleLobbyMessageBody,
     );
+
+    useEffect(() => {
+        if (!inviteCode || gameStatus !== 'started') {
+            return;
+        }
+
+        navigate(GAME_ROUTES.PLAY(inviteCode), { replace: true });
+    }, [gameStatus, inviteCode, navigate]);
+
     const {
         data: lobbyDetail,
         isLoading,
@@ -519,8 +534,7 @@ export function LobbyRoom() {
                     }
                     feedbackSlot={
                         (currentActionErrorMessage ||
-                            currentActionMessage ||
-                            gameStatus === 'started') && (
+                            currentActionMessage) && (
                             <section
                                 role={
                                     currentActionErrorMessage
@@ -534,9 +548,7 @@ export function LobbyRoom() {
                                 }`}
                             >
                                 {currentActionErrorMessage ??
-                                    (gameStatus === 'started'
-                                        ? LOBBY_ROOM_COPY.GAME_STARTED_PENDING_ROUTE
-                                        : currentActionMessage)}
+                                    currentActionMessage}
                             </section>
                         )
                     }
