@@ -6,7 +6,8 @@ export interface GameRankingEntry {
 }
 
 export interface GameChatDisplayMessage {
-    nickname: string;
+    type: GameChatMessageType;
+    nickname: string | null;
     time: string;
     content: string;
 }
@@ -79,9 +80,14 @@ export type GameChatMessageType = 'CHAT' | 'SYSTEM';
 export interface GameChatMessage {
     type: GameChatMessageType;
     roomId: string;
-    sender: string;
+    sender?: string | null;
     content: string;
     timestamp: string;
+}
+
+export interface GameInputRequest {
+    roundNo: number;
+    content: string;
 }
 
 export interface GameRoundCorrectEvent {

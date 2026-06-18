@@ -1,13 +1,14 @@
 import { useCallback, useEffect } from 'react';
 
 import { getCurrentGameRoundStatus } from '../api/gameApi';
-import { GAME_CHAT_POLICY } from '../constants/game';
+import { GAME_COPY, GAME_INPUT_POLICY } from '../constants/game';
 import {
     SOCKET_PUBLISH,
     SOCKET_SUBSCRIBE,
 } from '../constants/socketEvents';
 import {
     gameChatMessageSchema,
+    gameInputRequestSchema,
     gameRoundCorrectEventSchema,
     gameRoundEndEventSchema,
     gameRoundEventSchema,
@@ -16,6 +17,7 @@ import { useGameStore } from '../store/useGameStore';
 import { useSocketStore } from '../store/useSocketStore';
 
 import type { Client, IMessage, StompSubscription } from '@stomp/stompjs';
+import type { GameInputRequest } from '../types/game';
 import type { ZodType } from 'zod';
 
 type MessageListener = (message: IMessage) => void;
@@ -110,7 +112,10 @@ function parseMessage<T>(
         const errorMessage = `${destination} 메시지 검증에 실패했습니다.`;
 
         useGameStore.getState().setError(errorMessage);
-        console.warn(`[useGameSocket] ${errorMessage}`, result.error);
+        console.warn(`[useGameSocket] ${errorMessage}`, {
+            payload,
+            issues: result.error.issues,
+        });
         return null;
     }
 
@@ -125,6 +130,9 @@ export function useGameSocket(inviteCode: string | undefined) {
         (state) => state.subscriptionStatus,
     );
     const currentRoundNo = useGameStore((state) => state.currentRoundNo);
+    const isSubmittingGameInput = useGameStore(
+        (state) => state.isSubmittingGameInput,
+    );
 
     useEffect(() => {
         const gameStore = useGameStore.getState();
@@ -294,18 +302,52 @@ export function useGameSocket(inviteCode: string | undefined) {
             });
 
             subscribe(chatDestination, (message) => {
+                if (import.meta.env.DEV) {
+                    console.debug(
+                        '[useGameSocket] 인게임 채팅 raw 수신',
+                        {
+                            destination:
+                                message.headers.destination ??
+                                chatDestination,
+                            body: message.body,
+                        },
+                    );
+                }
+
                 const chatMessage = parseMessage(
                     message,
                     gameChatMessageSchema,
                     chatDestination,
                 );
 
-                if (
-                    chatMessage &&
-                    chatMessage.roomId === normalizedInviteCode
-                ) {
-                    useGameStore.getState().appendChatMessage(chatMessage);
+                if (!chatMessage) {
+                    return;
                 }
+
+                if (import.meta.env.DEV) {
+                    console.debug(
+                        '[useGameSocket] 인게임 채팅 수신',
+                        chatMessage,
+                    );
+                }
+
+                if (
+                    chatMessage.roomId &&
+                    chatMessage.roomId !== normalizedInviteCode
+                ) {
+                    console.warn(
+                        '[useGameSocket] 구독 destination과 채팅 roomId가 일치하지 않습니다.',
+                        {
+                            destination: chatDestination,
+                            inviteCode: normalizedInviteCode,
+                            roomId: chatMessage.roomId,
+                        },
+                    );
+                }
+
+                // 구독 destination이 게임별로 분리되어 있으므로 roomId 불일치만으로
+                // 정상 수신 메시지를 버리지 않는다.
+                useGameStore.getState().appendChatMessage(chatMessage);
             });
 
             subscribe(answersDestination, (message) => {
@@ -336,9 +378,10 @@ export function useGameSocket(inviteCode: string | undefined) {
         };
     }, [connectionStatus, normalizedInviteCode, stompClient]);
 
-    const sendMessage = useCallback(
+    const submitGameInput = useCallback(
         (content: string) => {
             const trimmedContent = content.trim();
+            const gameStore = useGameStore.getState();
 
             if (
                 !normalizedInviteCode ||
@@ -347,39 +390,66 @@ export function useGameSocket(inviteCode: string | undefined) {
                 subscriptionStatus !== 'subscribed' ||
                 currentRoundNo == null
             ) {
-                useGameStore.getState().setError(
-                    '게임 채팅을 보낼 수 없는 연결 상태입니다.',
+                gameStore.failGameInputSubmission(
+                    currentRoundNo == null
+                        ? GAME_COPY.GAME_INPUT_WAITING
+                        : GAME_COPY.GAME_INPUT_CONNECTING,
                 );
                 return false;
             }
 
-            if (
-                !trimmedContent ||
-                trimmedContent.length > GAME_CHAT_POLICY.MAX_MESSAGE_LENGTH
-            ) {
-                useGameStore.getState().setError(
-                    `게임 채팅은 1자 이상 ${GAME_CHAT_POLICY.MAX_MESSAGE_LENGTH}자 이하로 입력해주세요.`,
+            const request: GameInputRequest = {
+                roundNo: currentRoundNo,
+                content: trimmedContent,
+            };
+            const parsedRequest =
+                gameInputRequestSchema.safeParse(request);
+
+            if (!parsedRequest.success) {
+                gameStore.failGameInputSubmission(
+                    trimmedContent.length >
+                        GAME_INPUT_POLICY.MAX_MESSAGE_LENGTH
+                        ? GAME_COPY.GAME_INPUT_TOO_LONG
+                        : '정답 또는 메시지를 입력해주세요.',
                 );
+                return false;
+            }
+
+            if (!gameStore.startGameInputSubmission()) {
                 return false;
             }
 
             try {
+                const destination =
+                    SOCKET_PUBLISH.GAME_INPUT(normalizedInviteCode);
+
+                if (import.meta.env.DEV) {
+                    console.debug(
+                        '[useGameSocket] 인게임 통합 입력 publish',
+                        {
+                            destination,
+                            payload: parsedRequest.data,
+                        },
+                    );
+                }
+
                 stompClient.publish({
-                    destination:
-                        SOCKET_PUBLISH.GAME_CHAT(normalizedInviteCode),
-                    body: JSON.stringify({
-                        roundNo: currentRoundNo,
-                        content: trimmedContent,
-                    }),
+                    destination,
+                    body: JSON.stringify(parsedRequest.data),
                 });
-                useGameStore.getState().setError(null);
+                gameStore.completeGameInputSubmission(
+                    parsedRequest.data.content,
+                );
                 return true;
             } catch (error) {
-                const errorMessage = '게임 채팅 전송에 실패했습니다.';
+                const errorMessage =
+                    '정답 또는 메시지 전송에 실패했습니다.';
 
-                useGameStore.getState().setError(errorMessage);
+                gameStore.failGameInputSubmission(errorMessage);
                 console.warn(`[useGameSocket] ${errorMessage}`, error);
                 return false;
+            } finally {
+                gameStore.finishGameInputSubmission();
             }
         },
         [
@@ -394,10 +464,11 @@ export function useGameSocket(inviteCode: string | undefined) {
     return {
         connectionStatus,
         subscriptionStatus,
-        canSendMessage:
+        canSubmitGameInput:
             connectionStatus === 'connected' &&
             subscriptionStatus === 'subscribed' &&
-            currentRoundNo != null,
-        sendMessage,
+            currentRoundNo != null &&
+            !isSubmittingGameInput,
+        submitGameInput,
     };
 }

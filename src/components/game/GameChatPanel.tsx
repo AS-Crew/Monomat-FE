@@ -25,11 +25,24 @@ export function GameChatPanel({ messages }: GameChatPanelProps) {
                         {messages.map((chatMessage, index) => (
                             <li
                                 key={`${chatMessage.nickname}-${chatMessage.time}-${index}`}
-                                className="min-w-0"
+                                className={
+                                    chatMessage.type === 'SYSTEM'
+                                        ? 'min-w-0 rounded-lg bg-[var(--monomat-page-bg)] px-3 py-2'
+                                        : 'min-w-0'
+                                }
                             >
                                 <div className="flex min-w-0 items-baseline gap-2">
-                                    <span className="min-w-0 truncate text-base font-semibold leading-[19px] text-[var(--monomat-primary)]">
-                                        {chatMessage.nickname}
+                                    <span
+                                        className={`min-w-0 truncate text-base font-semibold leading-[19px] ${
+                                            chatMessage.type === 'SYSTEM'
+                                                ? 'text-[var(--monomat-text-muted)]'
+                                                : 'text-[var(--monomat-primary)]'
+                                        }`}
+                                    >
+                                        {chatMessage.type === 'SYSTEM'
+                                            ? GAME_COPY.CHAT_SYSTEM_SENDER
+                                            : chatMessage.nickname ??
+                                              GAME_COPY.CHAT_UNKNOWN_SENDER}
                                     </span>
                                     <time className="shrink-0 text-xs leading-[19px] text-[#73788A]">
                                         {chatMessage.time}

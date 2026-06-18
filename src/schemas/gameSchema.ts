@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { GAME_INPUT_POLICY } from '../constants/game';
+
 export const gameRoundEndReasonSchema = z.enum([
     'TIMEOUT',
     'SKIP_VOTE',
@@ -65,12 +67,62 @@ export const gameRoundEndEventSchema = z.object({
     endReason: gameRoundEndReasonSchema,
 });
 
-export const gameChatMessageSchema = z.object({
-    type: z.enum(['CHAT', 'SYSTEM']),
-    roomId: z.string().min(1),
-    sender: z.string().min(1),
+const gameChatMessageBaseSchema = z.object({
+    roomId: z.string().nullish(),
+    sender: z.string().nullish(),
+    senderNickname: z.string().nullish(),
     content: z.string(),
-    timestamp: z.string().min(1),
+    timestamp: z.string().nullish(),
+    sentAt: z.string().nullish(),
+});
+
+const gameChatEventSchema = gameChatMessageBaseSchema
+    .extend({
+        type: z.literal('CHAT'),
+    })
+    .refine(
+        (message) =>
+            Boolean(
+                message.sender?.trim() ||
+                message.senderNickname?.trim(),
+            ),
+        {
+            message: 'CHAT 메시지에는 발신자 정보가 필요합니다.',
+            path: ['sender'],
+        },
+    );
+
+const gameSystemMessageSchema = gameChatMessageBaseSchema.extend({
+    type: z.literal('SYSTEM'),
+});
+
+export const gameChatMessageSchema = z
+    .union([gameChatEventSchema, gameSystemMessageSchema])
+    .transform((message) => ({
+        type: message.type,
+        roomId: message.roomId?.trim() ?? '',
+        sender:
+            message.type === 'SYSTEM'
+                ? message.sender?.trim() ||
+                  message.senderNickname?.trim() ||
+                  'SYSTEM'
+                : message.sender?.trim() ||
+                  message.senderNickname?.trim() ||
+                  '',
+        content: message.content,
+        timestamp:
+            message.timestamp?.trim() ||
+            message.sentAt?.trim() ||
+            new Date().toISOString(),
+    }));
+
+export const gameInputRequestSchema = z.object({
+    roundNo: z.number().int().positive(),
+    content: z
+        .string()
+        .trim()
+        .min(1)
+        .max(GAME_INPUT_POLICY.MAX_MESSAGE_LENGTH),
 });
 
 export const gameRoundCorrectEventSchema = z.object({
