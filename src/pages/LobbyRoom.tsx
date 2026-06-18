@@ -1,7 +1,9 @@
 import {
     type ReactNode,
+    useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -163,21 +165,60 @@ export function LobbyRoom() {
         inviteCode,
         lobbyChat.handleLobbyMessageBody,
     );
+    const navigatedInviteCodeRef = useRef<string | null>(null);
+    const initialStatusCheckedInviteCodeRef = useRef<string | null>(null);
+
+    const navigateToGame = useCallback(
+        (targetInviteCode: string) => {
+            if (navigatedInviteCodeRef.current === targetInviteCode) {
+                return;
+            }
+
+            navigatedInviteCodeRef.current = targetInviteCode;
+            navigate(GAME_ROUTES.PLAY(targetInviteCode), {
+                replace: true,
+            });
+        },
+        [navigate],
+    );
+
+    useEffect(() => {
+        navigatedInviteCodeRef.current = null;
+        initialStatusCheckedInviteCodeRef.current = null;
+    }, [inviteCode]);
 
     useEffect(() => {
         if (!inviteCode || gameStatus !== 'started') {
             return;
         }
 
-        navigate(GAME_ROUTES.PLAY(inviteCode), { replace: true });
-    }, [gameStatus, inviteCode, navigate]);
+        navigateToGame(inviteCode);
+    }, [gameStatus, inviteCode, navigateToGame]);
 
     const {
         data: lobbyDetail,
         isLoading,
+        isFetching,
         isError,
         error,
     } = useLobbyDetail(inviteCode);
+
+    useEffect(() => {
+        if (
+            !inviteCode ||
+            !lobbyDetail ||
+            isFetching ||
+            initialStatusCheckedInviteCodeRef.current === inviteCode
+        ) {
+            return;
+        }
+
+        initialStatusCheckedInviteCodeRef.current = inviteCode;
+
+        if (lobbyDetail.status === 'PLAYING') {
+            navigateToGame(inviteCode);
+        }
+    }, [inviteCode, isFetching, lobbyDetail, navigateToGame]);
 
     const [actionMessage, setActionMessage] =
         useState<LobbyActionMessage | null>(null);
