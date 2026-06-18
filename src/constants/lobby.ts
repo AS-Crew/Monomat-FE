@@ -189,8 +189,6 @@ export const LOBBY_ROOM_COPY = {
     READY_SYNCED: '준비 상태는 서버 이벤트로 다시 동기화됩니다.',
     READY_WAIT_PLAYER: '참여자 정보 동기화 후 준비할 수 있습니다.',
     START_REQUESTED: '게임 시작 요청을 보냈습니다.',
-    GAME_STARTED_PENDING_ROUTE:
-        '게임이 시작되었습니다. 게임 화면 전환은 추후 연결됩니다.',
     MAP_CHANGE_FAILED: '로비 맵 변경에 실패했습니다.',
     READY_CHANGE_FAILED: '준비 상태 변경에 실패했습니다.',
     START_FAILED: '게임 시작에 실패했습니다.',

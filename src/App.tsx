@@ -9,11 +9,13 @@ import { useSocket } from './hooks/useSocket';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AppLayout } from './components/common/AppLayout';
 import { ViewportGuard } from './components/common/ViewportGuard';
+import { GAME_ROUTES } from './constants/game';
 import { LOBBY_ROUTES } from './constants/lobby';
 import { MAP_ROUTES } from './constants/map';
 
 // 페이지 컴포넌트
 import { Home } from './pages/Home';
+import { InGamePage } from './pages/InGamePage';
 import { Lobbies } from './pages/Lobbies';
 import { LobbyCreate } from './pages/LobbyCreate';
 import { LobbyRoom } from './pages/LobbyRoom';
@@ -121,6 +123,17 @@ function AppRoutes() {
                         <AppLayout>
                             <ProtectedRoute>
                                 <LobbyRoom />
+                            </ProtectedRoute>
+                        </AppLayout>
+                    }
+                />
+
+                <Route
+                    path={GAME_ROUTES.PLAY_PATTERN}
+                    element={
+                        <AppLayout>
+                            <ProtectedRoute>
+                                <InGamePage />
                             </ProtectedRoute>
                         </AppLayout>
                     }
