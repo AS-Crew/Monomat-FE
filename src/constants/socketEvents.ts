@@ -19,7 +19,8 @@ export const SOCKET_PUBLISH = {
     CHAT_LOBBY: (code: string) => `/app/chat/lobby/${code}`,
 
     // 인게임 중앙 입력에서 정답 또는 일반 채팅을 보낼 때 사용한다.
-    GAME_CHAT: (code: string) => `/app/game/${code}/chat`,
+    // BE 경로명은 chat이지만 FE에서는 통합 입력 역할을 명시한다.
+    GAME_INPUT: (code: string) => `/app/game/${code}/chat`,
 } as const;
 
 // 구독 경로 (서버 → 클라이언트)

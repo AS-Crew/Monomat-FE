@@ -17,12 +17,20 @@ export const GAME_COPY = {
     NOW_PLAYING: '지금 재생 중',
     PLAYER_GUIDE: '제목을 맞춰보세요',
     PLAYER_PLACEHOLDER_ARIA_LABEL: '음악 플레이어 준비 영역',
-    ANSWER_PLACEHOLDER: '정답 또는 메시지를 입력하세요',
-    ANSWER_ACTION_ARIA_LABEL: '정답 또는 채팅 메시지 보내기',
+    GAME_INPUT_PLACEHOLDER: '정답 또는 메시지를 입력하세요',
+    GAME_INPUT_ACTION_ARIA_LABEL: '정답 또는 채팅 메시지 보내기',
+    GAME_INPUT_WAITING: '라운드 정보를 기다리는 중입니다.',
+    GAME_INPUT_CONNECTING: '게임 서버에 연결 중입니다.',
+    GAME_INPUT_TOO_LONG: '입력은 최대 500자까지 가능합니다.',
+    GAME_INPUT_CORRECT: '정답입니다.',
+    GAME_INPUT_FUZZY_CORRECT:
+        '정답입니다. 오타가 있었지만 정답으로 인정됐습니다.',
     CHAT_TITLE: '게임 채팅',
     CHAT_EMPTY: '아직 채팅 메시지가 없습니다.',
+    CHAT_SYSTEM_SENDER: '시스템',
+    CHAT_UNKNOWN_SENDER: '알 수 없음',
 } as const;
 
-export const GAME_CHAT_POLICY = {
+export const GAME_INPUT_POLICY = {
     MAX_MESSAGE_LENGTH: 500,
 } as const;

@@ -1,11 +1,11 @@
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { GameAnswerInput } from '../components/game/GameAnswerInput';
 import { GameChatPanel } from '../components/game/GameChatPanel';
 import { GameHeader } from '../components/game/GameHeader';
 import { GamePlayerPanel } from '../components/game/GamePlayerPanel';
 import { GameRankingCard } from '../components/game/GameRankingCard';
 import { GameRoundStatusBar } from '../components/game/GameRoundStatusBar';
+import { GameUnifiedInput } from '../components/game/GameUnifiedInput';
 import { InGameLayout } from '../components/game/InGameLayout';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { GAME_COPY } from '../constants/game';
@@ -72,8 +72,15 @@ export function InGamePage() {
     const rankings = useGameStore((state) => state.rankings);
     const chatMessages = useGameStore((state) => state.chatMessages);
     const currentRoundNo = useGameStore((state) => state.currentRoundNo);
+    const correctAnswer = useGameStore((state) => state.correctAnswer);
+    const isSubmittingGameInput = useGameStore(
+        (state) => state.isSubmittingGameInput,
+    );
+    const gameInputErrorMessage = useGameStore(
+        (state) => state.gameInputErrorMessage,
+    );
 
-    const { canSendMessage, sendMessage } =
+    const { connectionStatus, canSubmitGameInput, submitGameInput } =
         useGameSocket(validInviteCode);
 
     const hasCurrentGameState = gameInviteCode === validInviteCode;
@@ -90,11 +97,52 @@ export function InGamePage() {
     const displayedChatMessages: readonly GameChatDisplayMessage[] =
         hasCurrentGameState
             ? chatMessages.map((message) => ({
-                nickname: message.sender,
+                type: message.type,
+                nickname: message.sender?.trim() || null,
                 time: formatGameChatTime(message.timestamp),
                 content: message.content,
             }))
             : [];
+    const gameInputStatus = (() => {
+        if (gameInputErrorMessage) {
+            return {
+                message: gameInputErrorMessage,
+                tone: 'error' as const,
+            };
+        }
+
+        if (
+            hasCurrentGameState &&
+            correctAnswer &&
+            correctAnswer.roundNo === currentRoundNo
+        ) {
+            return {
+                message: correctAnswer.isFuzzy
+                    ? GAME_COPY.GAME_INPUT_FUZZY_CORRECT
+                    : GAME_COPY.GAME_INPUT_CORRECT,
+                tone: 'success' as const,
+            };
+        }
+
+        if (connectionStatus !== 'connected') {
+            return {
+                message: GAME_COPY.GAME_INPUT_CONNECTING,
+                tone: 'default' as const,
+            };
+        }
+
+        if (!hasCurrentGameState || currentRoundNo == null) {
+            return {
+                message: GAME_COPY.GAME_INPUT_WAITING,
+                tone: 'default' as const,
+            };
+        }
+
+        return {
+            message: null,
+            tone: 'default' as const,
+        };
+    })();
 
     const handleLeave = () => {
         navigate(LOBBY_ROUTES.LIST);
@@ -131,9 +179,12 @@ export function InGamePage() {
                             />
                         }
                         answerInput={
-                            <GameAnswerInput
-                                disabled={!canSendMessage}
-                                onSubmit={sendMessage}
+                            <GameUnifiedInput
+                                disabled={!canSubmitGameInput}
+                                isSubmitting={isSubmittingGameInput}
+                                onSubmit={submitGameInput}
+                                statusMessage={gameInputStatus.message}
+                                statusTone={gameInputStatus.tone}
                             />
                         }
                         chat={
