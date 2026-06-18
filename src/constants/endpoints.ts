@@ -53,6 +53,11 @@ export const API_ENDPOINTS = {
             createApiEndpoint(`/api/lobbies/${code}/chats/recent`),
     },
 
+    GAME: {
+        CURRENT_ROUND: (code: string) =>
+            createApiEndpoint(`/api/game/${code}/round/current`),
+    },
+
     MAP: {
         LIST: createApiEndpoint('/api/maps'),
         CREATE: createApiEndpoint('/api/maps'),

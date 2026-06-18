@@ -13,46 +13,52 @@ export function GameRankingCard({ entries }: GameRankingCardProps) {
                 {GAME_COPY.RANKING_TITLE}
             </h2>
 
-            <ol className="mt-2 space-y-[7px]">
-                {entries.map((entry) => (
-                    <li
-                        key={`${entry.rank}-${entry.nickname}`}
-                        className={`grid h-[40px] grid-cols-[20px_minmax(0,1fr)_48px] items-center gap-[3px] rounded-xl px-[7px] ${
-                            entry.isCurrentUser
-                                ? 'bg-[#EBEDFF]'
-                                : 'bg-[#F1F2F5]'
-                        }`}
-                    >
-                        <span
-                            className={`text-center text-xs font-semibold ${
+            {entries.length === 0 ? (
+                <p className="mt-8 text-center text-sm font-medium text-[var(--monomat-text-muted)]">
+                    {GAME_COPY.RANKING_EMPTY}
+                </p>
+            ) : (
+                <ol className="mt-2 space-y-[7px]">
+                    {entries.map((entry) => (
+                        <li
+                            key={`${entry.rank}-${entry.nickname}`}
+                            className={`grid h-[40px] grid-cols-[20px_minmax(0,1fr)_48px] items-center gap-[3px] rounded-xl px-[7px] ${
                                 entry.isCurrentUser
-                                    ? 'text-[#FF9400]'
-                                    : 'text-[#7B808D]'
+                                    ? 'bg-[#EBEDFF]'
+                                    : 'bg-[#F1F2F5]'
                             }`}
                         >
-                            {entry.rank}
-                        </span>
-                        <span
-                            className={`truncate text-base font-semibold ${
-                                entry.isCurrentUser
-                                    ? 'text-[#5542BC]'
-                                    : 'text-[#303540]'
-                            }`}
-                        >
-                            {entry.nickname}
-                        </span>
-                        <span
-                            className={`text-right text-sm font-semibold tabular-nums ${
-                                entry.isCurrentUser
-                                    ? 'text-[#4D38B7]'
-                                    : 'text-black'
-                            }`}
-                        >
-                            {entry.score}
-                        </span>
-                    </li>
-                ))}
-            </ol>
+                            <span
+                                className={`text-center text-xs font-semibold ${
+                                    entry.isCurrentUser
+                                        ? 'text-[#FF9400]'
+                                        : 'text-[#7B808D]'
+                                }`}
+                            >
+                                {entry.rank}
+                            </span>
+                            <span
+                                className={`truncate text-base font-semibold ${
+                                    entry.isCurrentUser
+                                        ? 'text-[#5542BC]'
+                                        : 'text-[#303540]'
+                                }`}
+                            >
+                                {entry.nickname}
+                            </span>
+                            <span
+                                className={`text-right text-sm font-semibold tabular-nums ${
+                                    entry.isCurrentUser
+                                        ? 'text-[#4D38B7]'
+                                        : 'text-black'
+                                }`}
+                            >
+                                {entry.score}
+                            </span>
+                        </li>
+                    ))}
+                </ol>
+            )}
         </section>
     );
 }

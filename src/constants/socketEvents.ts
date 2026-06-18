@@ -17,6 +17,9 @@ export const SOCKET_PUBLISH = {
     // code는 로비의 6자리 초대 코드이다.
     // 예 : SOCKET_PUBLISH.CHAT_LOBBY('ABC123') → '/app/chat/lobby/ABC123'
     CHAT_LOBBY: (code: string) => `/app/chat/lobby/${code}`,
+
+    // 인게임 중앙 입력에서 정답 또는 일반 채팅을 보낼 때 사용한다.
+    GAME_CHAT: (code: string) => `/app/game/${code}/chat`,
 } as const;
 
 // 구독 경로 (서버 → 클라이언트)
@@ -36,6 +39,18 @@ export const SOCKET_SUBSCRIBE = {
 
     // 특정 로비의 게임 시작 이벤트를 수신한다.
     LOBBY_GAME: (code: string) => `/topic/lobby/${code}/game`,
+
+    // 특정 게임의 라운드 준비/재생/스킵 이벤트를 수신한다.
+    GAME_ROUND: (code: string) => `/topic/game/${code}/round`,
+
+    // 특정 게임의 라운드 종료 메타데이터와 랭킹을 수신한다.
+    GAME_ROUND_END: (code: string) => `/topic/game/${code}/round-end`,
+
+    // 특정 게임의 일반/시스템 채팅 메시지를 수신한다.
+    GAME_CHAT: (code: string) => `/topic/game/${code}/chat`,
+
+    // 현재 사용자의 인게임 정답 알림을 수신한다.
+    GAME_ANSWERS: '/user/queue/game/answers',
 } as const;
 
 export const SOCKET_MESSAGES = {

@@ -1,15 +1,18 @@
 import { GAME_COPY } from '../../constants/game';
 
 interface GameRoundStatusBarProps {
-    remainingSeconds: number;
-    progressPercent: number;
+    remainingSeconds: number | null;
+    progressPercent: number | null;
 }
 
 export function GameRoundStatusBar({
     remainingSeconds,
     progressPercent,
 }: GameRoundStatusBarProps) {
-    const normalizedProgress = Math.min(Math.max(progressPercent, 0), 100);
+    const normalizedProgress =
+        progressPercent == null
+            ? 0
+            : Math.min(Math.max(progressPercent, 0), 100);
 
     return (
         <section className="h-20 rounded-2xl bg-white px-[27px] pt-[19px] shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
@@ -18,7 +21,9 @@ export function GameRoundStatusBar({
                     {GAME_COPY.REMAINING_TIME}
                 </span>
                 <span className="text-base font-bold leading-none text-[var(--monomat-primary)] tabular-nums">
-                    {remainingSeconds}s
+                    {remainingSeconds == null
+                        ? GAME_COPY.ROUND_WAITING
+                        : `${remainingSeconds}s`}
                 </span>
             </div>
 
