@@ -8,17 +8,34 @@ import { GameRankingCard } from '../components/game/GameRankingCard';
 import { GameRoundStatusBar } from '../components/game/GameRoundStatusBar';
 import { InGameLayout } from '../components/game/InGameLayout';
 import { LobbyFooter } from '../components/lobby/LobbyFooter';
-import {
-    GAME_CHAT_PREVIEW,
-    GAME_COPY,
-    GAME_PREVIEW,
-    GAME_RANKING_PREVIEW,
-} from '../constants/game';
+import { GAME_COPY } from '../constants/game';
 import { LOBBY_ROUTES } from '../constants/lobby';
+import { useGameSocket } from '../hooks/useGameSocket';
+import { useAuthStore } from '../store/useAuthStore';
+import { useGameStore } from '../store/useGameStore';
 import {
     normalizeInviteCode,
     validateInviteCode,
 } from '../utils/inviteCode';
+
+import type {
+    GameChatDisplayMessage,
+    GameRankingEntry,
+} from '../types/game';
+
+function formatGameChatTime(timestamp: string) {
+    const date = new Date(timestamp);
+
+    if (Number.isNaN(date.getTime())) {
+        return timestamp;
+    }
+
+    return date.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+}
 
 function InGameStateCard({ onBack }: { onBack: () => void }) {
     return (
@@ -49,6 +66,35 @@ export function InGamePage() {
     const navigate = useNavigate();
     const inviteCode = normalizeInviteCode(inviteCodeParam ?? '');
     const inviteCodeError = validateInviteCode(inviteCode);
+    const validInviteCode = inviteCodeError ? undefined : inviteCode;
+    const userIdentifier = useAuthStore((state) => state.userIdentifier);
+    const gameInviteCode = useGameStore((state) => state.inviteCode);
+    const rankings = useGameStore((state) => state.rankings);
+    const chatMessages = useGameStore((state) => state.chatMessages);
+    const currentRoundNo = useGameStore((state) => state.currentRoundNo);
+
+    const { canSendMessage, sendMessage } =
+        useGameSocket(validInviteCode);
+
+    const hasCurrentGameState = gameInviteCode === validInviteCode;
+    const rankingEntries: readonly GameRankingEntry[] =
+        hasCurrentGameState && rankings
+            ? rankings.map((ranking) => ({
+                rank: ranking.rank,
+                nickname: ranking.nickname,
+                score: ranking.score,
+                isCurrentUser:
+                    ranking.userIdentifier === userIdentifier,
+            }))
+            : [];
+    const displayedChatMessages: readonly GameChatDisplayMessage[] =
+        hasCurrentGameState
+            ? chatMessages.map((message) => ({
+                nickname: message.sender,
+                time: formatGameChatTime(message.timestamp),
+                content: message.content,
+            }))
+            : [];
 
     const handleLeave = () => {
         navigate(LOBBY_ROUTES.LIST);
@@ -65,28 +111,35 @@ export function InGamePage() {
                     <InGameLayout
                         ranking={
                             <GameRankingCard
-                                entries={GAME_RANKING_PREVIEW}
+                                entries={rankingEntries}
                             />
                         }
                         roundStatus={
                             <GameRoundStatusBar
-                                remainingSeconds={
-                                    GAME_PREVIEW.remainingSeconds
-                                }
-                                progressPercent={
-                                    GAME_PREVIEW.timeProgressPercent
-                                }
+                                remainingSeconds={null}
+                                progressPercent={null}
                             />
                         }
                         player={
                             <GamePlayerPanel
-                                currentRound={GAME_PREVIEW.currentRound}
-                                totalRounds={GAME_PREVIEW.totalRounds}
+                                currentRound={
+                                    hasCurrentGameState &&
+                                    currentRoundNo != null
+                                        ? currentRoundNo
+                                        : null
+                                }
                             />
                         }
-                        answerInput={<GameAnswerInput />}
+                        answerInput={
+                            <GameAnswerInput
+                                disabled={!canSendMessage}
+                                onSubmit={sendMessage}
+                            />
+                        }
                         chat={
-                            <GameChatPanel messages={GAME_CHAT_PREVIEW} />
+                            <GameChatPanel
+                                messages={displayedChatMessages}
+                            />
                         }
                     />
                 </main>
