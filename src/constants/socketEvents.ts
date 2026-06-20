@@ -21,6 +21,10 @@ export const SOCKET_PUBLISH = {
     // 인게임 중앙 입력에서 정답 또는 일반 채팅을 보낼 때 사용한다.
     // BE 경로명은 chat이지만 FE에서는 통합 입력 역할을 명시한다.
     GAME_INPUT: (code: string) => `/app/game/${code}/chat`,
+
+    // 로비에서 명시적으로 퇴장할 때 사용한다. (BE: payload 없음)
+    // 이 메시지를 보내지 않으면 BE는 연결이 끊길 때까지 참여자를 유지한다.
+    LOBBY_LEAVE: (code: string) => `/app/lobby/${code}/leave`,
 } as const;
 
 // 구독 경로 (서버 → 클라이언트)

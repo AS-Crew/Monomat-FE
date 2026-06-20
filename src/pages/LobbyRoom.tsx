@@ -161,7 +161,7 @@ export function LobbyRoom() {
     const userId = useAuthStore((state) => state.userId);
     const userIdentifier = useAuthStore((state) => state.userIdentifier);
     const lobbyChat = useLobbyChat(inviteCode);
-    const { gameStatus } = useLobbySocket(
+    const { gameStatus, leaveLobby } = useLobbySocket(
         inviteCode,
         lobbyChat.handleLobbyMessageBody,
     );
@@ -275,6 +275,9 @@ export function LobbyRoom() {
     }, [lobbyDetail]);
 
     const handleNavigateLobbyList = () => {
+        // navigate 전에 leave를 보내 다른 참여자 화면에서 즉시 빠지도록 한다.
+        // (언마운트 시 구독 해제보다 먼저, 연결이 살아 있을 때 발행)
+        leaveLobby();
         navigate(LOBBY_ROUTES.LIST);
     };
 
