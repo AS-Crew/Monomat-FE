@@ -72,6 +72,37 @@ export function InGamePage() {
     const rankings = useGameStore((state) => state.rankings);
     const chatMessages = useGameStore((state) => state.chatMessages);
     const currentRoundNo = useGameStore((state) => state.currentRoundNo);
+    const roundReady = useGameStore((state) => state.roundReady);
+    const playbackStarted = useGameStore(
+        (state) => state.playbackStarted,
+    );
+    const roundSkipped = useGameStore((state) => state.roundSkipped);
+    const roundEnd = useGameStore((state) => state.roundEnd);
+    const playerReady = useGameStore((state) => state.playerReady);
+    const playerBuffering = useGameStore(
+        (state) => state.playerBuffering,
+    );
+    const playerPlaying = useGameStore(
+        (state) => state.playerPlaying,
+    );
+    const playerErrorMessage = useGameStore(
+        (state) => state.playerErrorMessage,
+    );
+    const markPlayerReady = useGameStore(
+        (state) => state.markPlayerReady,
+    );
+    const markPlayerBuffering = useGameStore(
+        (state) => state.markPlayerBuffering,
+    );
+    const markPlayerPlaying = useGameStore(
+        (state) => state.markPlayerPlaying,
+    );
+    const markPlayerEnded = useGameStore(
+        (state) => state.markPlayerEnded,
+    );
+    const setPlayerError = useGameStore(
+        (state) => state.setPlayerError,
+    );
     const correctAnswer = useGameStore((state) => state.correctAnswer);
     const isSubmittingGameInput = useGameStore(
         (state) => state.isSubmittingGameInput,
@@ -103,6 +134,19 @@ export function InGamePage() {
                 content: message.content,
             }))
             : [];
+    const activeRoundReady =
+        hasCurrentGameState &&
+        roundReady?.roundNo === currentRoundNo
+            ? roundReady
+            : null;
+    const isRoundFinished =
+        activeRoundReady != null &&
+        (roundEnd != null ||
+            roundSkipped?.roundNo === activeRoundReady.roundNo);
+    const shouldPlay =
+        activeRoundReady != null &&
+        !isRoundFinished &&
+        playbackStarted?.roundNo === activeRoundReady.roundNo;
     const gameInputStatus = (() => {
         if (gameInputErrorMessage) {
             return {
@@ -176,6 +220,24 @@ export function InGamePage() {
                                         ? currentRoundNo
                                         : null
                                 }
+                                roundReady={activeRoundReady}
+                                shouldPlay={shouldPlay}
+                                isRoundFinished={isRoundFinished}
+                                playerReady={playerReady}
+                                playerBuffering={playerBuffering}
+                                playerPlaying={playerPlaying}
+                                playerErrorMessage={
+                                    playerErrorMessage
+                                }
+                                onPlayerReady={markPlayerReady}
+                                onPlayerBuffering={
+                                    markPlayerBuffering
+                                }
+                                onPlayerPlaying={
+                                    markPlayerPlaying
+                                }
+                                onPlayerEnded={markPlayerEnded}
+                                onPlayerError={setPlayerError}
                             />
                         }
                         answerInput={

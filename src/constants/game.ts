@@ -17,6 +17,15 @@ export const GAME_COPY = {
     NOW_PLAYING: '지금 재생 중',
     PLAYER_GUIDE: '제목을 맞춰보세요',
     PLAYER_PLACEHOLDER_ARIA_LABEL: '음악 플레이어 준비 영역',
+    PLAYER_PREPARING: '영상 준비 중',
+    PLAYER_WAITING: '라운드 재생 대기 중',
+    PLAYER_BUFFERING: '버퍼링 중',
+    PLAYER_PLAYING: '지금 재생 중',
+    PLAYER_ERROR: '영상을 재생할 수 없습니다.',
+    PLAYER_EMBED_ERROR:
+        '영상이 비공개이거나 임베드할 수 없습니다.',
+    PLAYER_UNAVAILABLE_ERROR:
+        '영상이 삭제되었거나 비공개 상태입니다.',
     GAME_INPUT_PLACEHOLDER: '정답 또는 메시지를 입력하세요',
     GAME_INPUT_ACTION_ARIA_LABEL: '정답 또는 채팅 메시지 보내기',
     GAME_INPUT_WAITING: '라운드 정보를 기다리는 중입니다.',
