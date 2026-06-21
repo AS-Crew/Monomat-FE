@@ -5,6 +5,7 @@ import { useMemberLoginSession } from '../../hooks/useMemberLoginSession';
 import { useRegisterSession } from '../../hooks/useRegisterSession';
 import { AUTH_LABELS, AUTH_MESSAGES } from '../../constants/auth';
 import { AuthGlobalErrorMessage } from './AuthErrorMessage';
+import { ConcurrentLoginConfirmModal } from './ConcurrentLoginConfirmModal';
 import { GuestForm } from './GuestForm';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
@@ -80,8 +81,11 @@ export function AuthEntryForm({
     const activeGlobalErrorMessage = activeErrorField
         ? null
         : activeErrorMessage;
-    const isActiveSubmitting = isMemberMode
-        ? memberSession.isSubmitting
+    const isMemberInteractionLocked =
+        memberSession.isSubmitting ||
+        memberSession.isConcurrentLoginConfirmOpen;
+    const isActiveInteractionLocked = isMemberMode
+        ? isMemberInteractionLocked
         : guestSession.isSubmitting;
     const hasTopFeedback = Boolean(activeGlobalErrorMessage || successMessage);
 
@@ -95,6 +99,7 @@ export function AuthEntryForm({
     const handleModeChange = (nextMode: AuthMode) => {
         if (
             memberSession.isSubmitting ||
+            memberSession.isConcurrentLoginConfirmOpen ||
             guestSession.isSubmitting ||
             registerSession.isSubmitting ||
             nextMode === mode
@@ -203,7 +208,7 @@ export function AuthEntryForm({
                             type="button"
                             role="tab"
                             aria-selected={isSelected}
-                            disabled={isActiveSubmitting}
+                            disabled={isActiveInteractionLocked}
                             onClick={() => handleModeChange(authMode)}
                             className={`min-h-9 min-w-0 rounded-lg px-2 text-sm leading-5 transition disabled:cursor-not-allowed ${
                                 isSelected
@@ -228,7 +233,7 @@ export function AuthEntryForm({
                     loginId={loginId}
                     password={memberPassword}
                     autoLogin={autoLogin}
-                    isSubmitting={memberSession.isSubmitting}
+                    isSubmitting={isMemberInteractionLocked}
                     errorMessage={memberSession.errorMessage}
                     errorField={memberSession.errorField}
                     onLoginIdChange={(value) => {
@@ -265,7 +270,7 @@ export function AuthEntryForm({
 
             <button
                 type="button"
-                disabled={isActiveSubmitting}
+                disabled={isActiveInteractionLocked}
                 onClick={() => handleModeChange(isMemberMode ? 'guest' : 'member')}
                 className="min-h-12 w-full min-w-0 rounded-lg border border-[color:var(--monomat-border-input)] bg-white px-3 text-[15px] font-bold leading-5 text-[var(--monomat-text-strong)] transition hover:bg-[var(--monomat-page-bg)] disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -281,13 +286,26 @@ export function AuthEntryForm({
 
                 <button
                     type="button"
-                    disabled={isActiveSubmitting}
+                    disabled={isActiveInteractionLocked}
                     onClick={() => handleModeChange('register')}
                     className="font-semibold text-[var(--monomat-primary)] transition hover:text-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {AUTH_LABELS.SIGNUP}
                 </button>
             </footer>
+
+            {memberSession.isConcurrentLoginConfirmOpen ? (
+                <ConcurrentLoginConfirmModal
+                    isSubmitting={memberSession.isSubmitting}
+                    onCancel={memberSession.cancelConcurrentLogin}
+                    onConfirm={() => {
+                        void memberSession.forceLoginWithAccount(
+                            loginId,
+                            memberPassword,
+                        );
+                    }}
+                />
+            ) : null}
         </div>
     );
 }

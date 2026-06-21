@@ -48,10 +48,21 @@ export const AUTH_MESSAGES = {
 } as const;
 
 export const AUTH_ERROR_CODES = {
+    CONCURRENT_LOGIN_REJECTED: 'AUTH_CONCURRENT_LOGIN_REJECTED',
     INVALID_REFRESH_TOKEN: 'AUTH_INVALID_REFRESH_TOKEN',
     SESSION_EXPIRED: 'AUTH_SESSION_EXPIRED',
     UNAUTHENTICATED: 'AUTH_UNAUTHENTICATED',
     INVALID_AUTHORIZATION: 'AUTH_INVALID_AUTHORIZATION',
+} as const;
+
+export const CONCURRENT_LOGIN_CONFIRM_COPY = {
+    TITLE: '이미 로그인된 계정입니다',
+    DESCRIPTION:
+        '다른 기기 또는 브라우저에서 로그인된 세션이 있습니다. 기존 접속을 끊고 로그인하시겠습니까?',
+    CANCEL: '취소',
+    CONFIRM: '기존 접속 끊고 로그인',
+    SUBMITTING: '로그인 중...',
+    CLOSE_ARIA_LABEL: '강제 로그인 확인 닫기',
 } as const;
 
 export const AUTH_LABELS = {

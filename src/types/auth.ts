@@ -9,6 +9,7 @@ export interface GuestLoginRequest {
 export interface LoginRequest {
     loginId: string;
     password: string;
+    force?: boolean;
 }
 
 export interface RegisterRequest {
