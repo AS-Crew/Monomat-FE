@@ -305,6 +305,7 @@ export function useGameSocket(inviteCode: string | undefined) {
             try {
                 const status =
                     await getCurrentGameRoundStatus(normalizedInviteCode);
+                const clientReceivedAtMs = Date.now();
 
                 if (
                     isCancelled ||
@@ -314,7 +315,9 @@ export function useGameSocket(inviteCode: string | undefined) {
                     return;
                 }
 
-                useGameStore.getState().applyCurrentRoundStatus(status);
+                useGameStore
+                    .getState()
+                    .applyCurrentRoundStatus(status, clientReceivedAtMs);
             } catch (error: unknown) {
                 if (isCancelled) {
                     return;
@@ -436,6 +439,7 @@ export function useGameSocket(inviteCode: string | undefined) {
             const answersDestination = SOCKET_SUBSCRIBE.GAME_ANSWERS;
 
             subscribe(roundDestination, (message) => {
+                const clientReceivedAtMs = Date.now();
                 const event = parseMessage(
                     message,
                     gameRoundEventSchema,
@@ -443,7 +447,9 @@ export function useGameSocket(inviteCode: string | undefined) {
                 );
 
                 if (event) {
-                    useGameStore.getState().applyRoundEvent(event);
+                    useGameStore
+                        .getState()
+                        .applyRoundEvent(event, clientReceivedAtMs);
                 }
             });
 

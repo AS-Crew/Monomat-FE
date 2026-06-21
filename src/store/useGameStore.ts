@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 
+import {
+    calculatePlaybackEventTimeOffsetMs,
+    calculateRecoveryTimeOffsetMs,
+} from '../utils/serverTime';
+
 import type {
     CurrentGameRoundStatus,
     GameChatMessage,
@@ -39,14 +44,23 @@ interface GameState {
     isSubmittingGameInput: boolean;
     lastSubmittedContent: string | null;
     gameInputErrorMessage: string | null;
+    serverTimeOffsetMs: number | null;
+    serverTimeOffsetRoundNo: number | null;
+    serverTimeSyncSource: 'playback-event' | 'round-recovery' | null;
     initializeGame: (inviteCode: string) => void;
     setSubscriptionStatus: (status: GameSubscriptionStatus) => void;
     setError: (message: string | null) => void;
-    applyRoundEvent: (event: GameRoundEvent) => void;
+    applyRoundEvent: (
+        event: GameRoundEvent,
+        clientReceivedAtMs: number,
+    ) => void;
     applyRoundEnd: (event: GameRoundEndEvent) => void;
     appendChatMessage: (message: GameChatMessage) => void;
     applyCorrectAnswer: (event: GameRoundCorrectEvent) => void;
-    applyCurrentRoundStatus: (status: CurrentGameRoundStatus) => void;
+    applyCurrentRoundStatus: (
+        status: CurrentGameRoundStatus,
+        clientReceivedAtMs: number,
+    ) => void;
     markPlayerReady: (roundNo: number, videoId: string) => void;
     markPlayerBuffering: (roundNo: number, videoId: string) => void;
     markPlayerPlaying: (roundNo: number, videoId: string) => void;
@@ -96,6 +110,9 @@ function createEmptyGameState() {
         isSubmittingGameInput: false,
         lastSubmittedContent: null,
         gameInputErrorMessage: null,
+        serverTimeOffsetMs: null,
+        serverTimeOffsetRoundNo: null,
+        serverTimeSyncSource: null,
     };
 }
 
@@ -128,11 +145,18 @@ export const useGameStore = create<GameState>((set, get) => ({
         set({ errorMessage });
     },
 
-    applyRoundEvent: (event) => {
+    applyRoundEvent: (event, clientReceivedAtMs) => {
         const receivedState = createReceivedState();
         const currentState = get();
         const hasRoundChanged =
             currentState.currentRoundNo !== event.roundNo;
+        const resetServerTimeState = hasRoundChanged
+            ? {
+                serverTimeOffsetMs: null,
+                serverTimeOffsetRoundNo: null,
+                serverTimeSyncSource: null,
+            }
+            : {};
         const resetSubmissionState = hasRoundChanged
             ? {
                 isSubmittingGameInput: false,
@@ -147,6 +171,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                 set({
                     ...receivedState,
                     ...resetSubmissionState,
+                    ...resetServerTimeState,
                     currentRoundNo: event.roundNo,
                     roundReady: event,
                     playbackStarted:
@@ -163,7 +188,17 @@ export const useGameStore = create<GameState>((set, get) => ({
                     playerRoundNo: event.roundNo,
                 });
                 break;
-            case 'ROUND_PLAYBACK_STARTED':
+            case 'ROUND_PLAYBACK_STARTED': {
+                const playbackEventOffsetMs =
+                    calculatePlaybackEventTimeOffsetMs(
+                        event.serverStartedAt,
+                        clientReceivedAtMs,
+                    );
+                const hasRecoveryOffsetForRound =
+                    currentState.serverTimeOffsetRoundNo === event.roundNo &&
+                    currentState.serverTimeSyncSource === 'round-recovery' &&
+                    currentState.serverTimeOffsetMs != null;
+
                 set({
                     ...receivedState,
                     ...resetSubmissionState,
@@ -172,12 +207,23 @@ export const useGameStore = create<GameState>((set, get) => ({
                         : {}),
                     currentRoundNo: event.roundNo,
                     playbackStarted: event,
+                    ...(!hasRecoveryOffsetForRound &&
+                    playbackEventOffsetMs != null
+                        ? {
+                            serverTimeOffsetMs: playbackEventOffsetMs,
+                            serverTimeOffsetRoundNo: event.roundNo,
+                            serverTimeSyncSource:
+                                'playback-event' as const,
+                        }
+                        : resetServerTimeState),
                 });
                 break;
+            }
             case 'ROUND_SKIP_VOTE':
                 set({
                     ...receivedState,
                     ...resetSubmissionState,
+                    ...resetServerTimeState,
                     currentRoundNo: event.roundNo,
                     skipVote: event,
                 });
@@ -186,6 +232,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                 set({
                     ...receivedState,
                     ...resetSubmissionState,
+                    ...resetServerTimeState,
                     ...createEmptyPlayerState(),
                     currentRoundNo: event.roundNo,
                     roundSkipped: event,
@@ -227,10 +274,21 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
     },
 
-    applyCurrentRoundStatus: (status) => {
+    applyCurrentRoundStatus: (status, clientReceivedAtMs) => {
         set((state) => {
             const hasRoundChanged =
                 state.currentRoundNo !== status.roundNo;
+            const recoveryOffsetMs =
+                status.roundPhase === 'PLAYING' &&
+                status.serverStartedAt != null &&
+                status.remainingSeconds != null
+                    ? calculateRecoveryTimeOffsetMs({
+                        serverStartedAtMs: status.serverStartedAt,
+                        timeLimitSeconds: status.timeLimitSeconds,
+                        remainingSeconds: status.remainingSeconds,
+                        clientReceivedAtMs,
+                    })
+                    : null;
             let restoredRoundReady: GameRoundReadyEvent | null = null;
 
             if (
@@ -292,6 +350,20 @@ export const useGameStore = create<GameState>((set, get) => ({
                         correctAnswer: null,
                     }
                     : {}),
+                ...(recoveryOffsetMs != null
+                    ? {
+                        serverTimeOffsetMs: recoveryOffsetMs,
+                        serverTimeOffsetRoundNo: status.roundNo,
+                        serverTimeSyncSource:
+                            'round-recovery' as const,
+                    }
+                    : hasRoundChanged
+                        ? {
+                            serverTimeOffsetMs: null,
+                            serverTimeOffsetRoundNo: null,
+                            serverTimeSyncSource: null,
+                        }
+                        : {}),
             };
         });
     },
