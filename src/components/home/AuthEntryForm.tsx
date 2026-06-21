@@ -113,7 +113,11 @@ export function AuthEntryForm({
 
     const handleMemberSubmit = () => {
         setSuccessMessage(null);
-        void memberSession.loginWithAccount(loginId, memberPassword);
+        void memberSession.loginWithAccount(
+            loginId,
+            memberPassword,
+            autoLogin,
+        );
     };
 
     const handleGuestSubmit = () => {
@@ -302,6 +306,7 @@ export function AuthEntryForm({
                         void memberSession.forceLoginWithAccount(
                             loginId,
                             memberPassword,
+                            autoLogin,
                         );
                     }}
                 />

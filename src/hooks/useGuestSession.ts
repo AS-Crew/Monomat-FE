@@ -59,7 +59,9 @@ export function useGuestSession(): UseGuestSessionReturn {
                 nickname: trimmedNickname,
             });
 
-            setSession(session);
+            setSession(session, {
+                storageStrategy: 'local',
+            });
             navigate('/lobbies');
         } catch (error) {
             setErrorMessage(getErrorMessage(error));
