@@ -231,12 +231,58 @@ export const useGameStore = create<GameState>((set, get) => ({
         set((state) => {
             const hasRoundChanged =
                 state.currentRoundNo !== status.roundNo;
+            let restoredRoundReady: GameRoundReadyEvent | null = null;
+
+            if (
+                status.videoId != null &&
+                status.youtubeUrl != null &&
+                status.startTime != null &&
+                status.serverStartedAt != null
+            ) {
+                restoredRoundReady = {
+                    type: 'ROUND_READY' as const,
+                    videoId: status.videoId,
+                    youtubeUrl: status.youtubeUrl,
+                    startTime: status.startTime,
+                    timeLimitSeconds: status.timeLimitSeconds,
+                    roundNo: status.roundNo,
+                    serverStartedAt: status.serverStartedAt,
+                };
+            }
+
+            const restoredPlaybackStarted: GameRoundPlaybackStartedEvent | null =
+                restoredRoundReady != null &&
+                status.roundPhase === 'PLAYING'
+                ? {
+                    type: 'ROUND_PLAYBACK_STARTED' as const,
+                    roundNo: status.roundNo,
+                    serverStartedAt: restoredRoundReady.serverStartedAt,
+                    durationSeconds: status.timeLimitSeconds,
+                }
+                : null;
 
             return {
                 currentRoundNo: status.roundNo,
                 currentRoundStatus: status,
+                roundReady:
+                    state.roundReady?.roundNo === status.roundNo
+                        ? state.roundReady
+                        : restoredRoundReady,
+                playbackStarted:
+                    state.playbackStarted?.roundNo === status.roundNo
+                        ? state.playbackStarted
+                        : restoredPlaybackStarted,
                 ...(hasRoundChanged
                     ? createEmptyPlayerState()
+                    : {}),
+                ...(restoredRoundReady &&
+                (state.playerRoundNo !== status.roundNo ||
+                    state.currentVideoId !== restoredRoundReady.videoId)
+                    ? {
+                        ...createEmptyPlayerState(),
+                        currentVideoId: restoredRoundReady.videoId,
+                        playerRoundNo: status.roundNo,
+                    }
                     : {}),
                 ...(hasRoundChanged
                     ? {

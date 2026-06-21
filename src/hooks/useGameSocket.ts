@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 import { getCurrentGameRoundStatus } from '../api/gameApi';
 import { GAME_COPY, GAME_INPUT_POLICY } from '../constants/game';
@@ -28,6 +28,7 @@ interface SharedSubscription {
 }
 
 const MAX_TRACKED_MESSAGE_IDS = 500;
+const CURRENT_ROUND_RECOVERY_RETRY_DELAYS_MS = [0, 150, 300, 600] as const;
 
 const subscriptionsByClient = new WeakMap<
     Client,
@@ -133,9 +134,123 @@ export function useGameSocket(inviteCode: string | undefined) {
     const isSubmittingGameInput = useGameStore(
         (state) => state.isSubmittingGameInput,
     );
+    const pendingReadyRoundRef = useRef<number | null>(null);
+    const reportedReadyRoundsRef = useRef(new Set<number>());
+    const reportedPlaybackErrorsRef = useRef(new Set<string>());
+
+    const publishReadyToPlay = useCallback(
+        (roundNo: number) => {
+            if (
+                !normalizedInviteCode ||
+                !stompClient ||
+                connectionStatus !== 'connected' ||
+                subscriptionStatus !== 'subscribed' ||
+                reportedReadyRoundsRef.current.has(roundNo)
+            ) {
+                return false;
+            }
+
+            reportedReadyRoundsRef.current.add(roundNo);
+
+            try {
+                stompClient.publish({
+                    destination: SOCKET_PUBLISH.GAME_READY_TO_PLAY(
+                        normalizedInviteCode,
+                    ),
+                    body: JSON.stringify({ roundNo }),
+                });
+
+                if (pendingReadyRoundRef.current === roundNo) {
+                    pendingReadyRoundRef.current = null;
+                }
+
+                return true;
+            } catch (error) {
+                reportedReadyRoundsRef.current.delete(roundNo);
+                console.warn(
+                    '[useGameSocket] player 준비 완료 전송에 실패했습니다.',
+                    error,
+                );
+                return false;
+            }
+        },
+        [
+            connectionStatus,
+            normalizedInviteCode,
+            stompClient,
+            subscriptionStatus,
+        ],
+    );
+
+    const reportPlayerReady = useCallback(
+        (roundNo: number) => {
+            pendingReadyRoundRef.current = roundNo;
+            publishReadyToPlay(roundNo);
+        },
+        [publishReadyToPlay],
+    );
+
+    const reportPlaybackError = useCallback(
+        (
+            roundNo: number,
+            errorCode: number | string | null,
+            message: string,
+        ) => {
+            if (
+                !normalizedInviteCode ||
+                !stompClient ||
+                connectionStatus !== 'connected' ||
+                !Number.isInteger(roundNo) ||
+                roundNo <= 0
+            ) {
+                return false;
+            }
+
+            const normalizedErrorCode =
+                errorCode == null
+                    ? 'UNKNOWN'
+                    : String(errorCode).slice(0, 100);
+            const reportKey = `${roundNo}:${normalizedErrorCode}`;
+
+            if (reportedPlaybackErrorsRef.current.has(reportKey)) {
+                return true;
+            }
+
+            reportedPlaybackErrorsRef.current.add(reportKey);
+
+            try {
+                stompClient.publish({
+                    destination: SOCKET_PUBLISH.GAME_PLAYBACK_ERROR(
+                        normalizedInviteCode,
+                    ),
+                    body: JSON.stringify({
+                        roundNo,
+                        errorCode: normalizedErrorCode,
+                        message:
+                            (
+                                message.trim() ||
+                                'YouTube 영상을 재생할 수 없습니다.'
+                            ).slice(0, 500),
+                    }),
+                });
+                return true;
+            } catch (error) {
+                reportedPlaybackErrorsRef.current.delete(reportKey);
+                console.warn(
+                    '[useGameSocket] 재생 오류 보고에 실패했습니다.',
+                    error,
+                );
+                return false;
+            }
+        },
+        [connectionStatus, normalizedInviteCode, stompClient],
+    );
 
     useEffect(() => {
         const gameStore = useGameStore.getState();
+        pendingReadyRoundRef.current = null;
+        reportedReadyRoundsRef.current.clear();
+        reportedPlaybackErrorsRef.current.clear();
 
         if (!normalizedInviteCode) {
             gameStore.reset();
@@ -154,14 +269,43 @@ export function useGameSocket(inviteCode: string | undefined) {
     }, [normalizedInviteCode]);
 
     useEffect(() => {
+        const pendingRoundNo = pendingReadyRoundRef.current;
+
+        if (pendingRoundNo != null) {
+            publishReadyToPlay(pendingRoundNo);
+        }
+    }, [publishReadyToPlay]);
+
+    useEffect(() => {
         if (!normalizedInviteCode) {
             return;
         }
 
         let isCancelled = false;
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-        void getCurrentGameRoundStatus(normalizedInviteCode)
-            .then((status) => {
+        const recoverCurrentRound = async (attempt: number) => {
+            const retryDelay =
+                CURRENT_ROUND_RECOVERY_RETRY_DELAYS_MS[attempt];
+
+            if (retryDelay == null) {
+                return;
+            }
+
+            if (retryDelay > 0) {
+                await new Promise<void>((resolve) => {
+                    retryTimer = setTimeout(resolve, retryDelay);
+                });
+            }
+
+            if (isCancelled) {
+                return;
+            }
+
+            try {
+                const status =
+                    await getCurrentGameRoundStatus(normalizedInviteCode);
+
                 if (
                     isCancelled ||
                     useGameStore.getState().inviteCode !==
@@ -171,9 +315,16 @@ export function useGameSocket(inviteCode: string | undefined) {
                 }
 
                 useGameStore.getState().applyCurrentRoundStatus(status);
-            })
-            .catch((error: unknown) => {
+            } catch (error: unknown) {
                 if (isCancelled) {
+                    return;
+                }
+
+                if (
+                    attempt + 1 <
+                    CURRENT_ROUND_RECOVERY_RETRY_DELAYS_MS.length
+                ) {
+                    await recoverCurrentRound(attempt + 1);
                     return;
                 }
 
@@ -182,10 +333,17 @@ export function useGameSocket(inviteCode: string | undefined) {
 
                 useGameStore.getState().setError(errorMessage);
                 console.warn(`[useGameSocket] ${errorMessage}`, error);
-            });
+            }
+        };
+
+        void recoverCurrentRound(0);
 
         return () => {
             isCancelled = true;
+
+            if (retryTimer) {
+                clearTimeout(retryTimer);
+            }
         };
     }, [normalizedInviteCode]);
 
@@ -469,6 +627,8 @@ export function useGameSocket(inviteCode: string | undefined) {
             subscriptionStatus === 'subscribed' &&
             currentRoundNo != null &&
             !isSubmittingGameInput,
+        reportPlayerReady,
+        reportPlaybackError,
         submitGameInput,
     };
 }

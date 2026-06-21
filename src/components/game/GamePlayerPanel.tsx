@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import {
     AlertCircle,
+    Headphones,
     LoaderCircle,
     Music2,
     Radio,
@@ -10,8 +12,13 @@ import { GameYoutubePlayer } from './GameYoutubePlayer';
 
 import type { GameRoundReadyEvent } from '../../types/game';
 
+const AUDIO_WAVE_BARS = [
+    12, 20, 30, 18, 36, 25, 40, 22, 34, 18, 28, 14, 24,
+] as const;
+
 interface GamePlayerPanelProps {
     currentRound: number | null;
+    totalQuestionCount: number | null;
     roundReady: GameRoundReadyEvent | null;
     shouldPlay: boolean;
     isRoundFinished: boolean;
@@ -45,6 +52,7 @@ function getPlayerErrorMessage(errorCode: number | null) {
 
 export function GamePlayerPanel({
     currentRound,
+    totalQuestionCount,
     roundReady,
     shouldPlay,
     isRoundFinished,
@@ -58,6 +66,7 @@ export function GamePlayerPanel({
     onPlayerEnded,
     onPlayerError,
 }: GamePlayerPanelProps) {
+    const [playRequestToken, setPlayRequestToken] = useState(0);
     const showPlayer = roundReady != null && !isRoundFinished;
 
     if (!showPlayer) {
@@ -85,7 +94,9 @@ export function GamePlayerPanel({
                 <p className="mt-5 text-sm leading-[17px] text-[var(--monomat-text-muted)] tabular-nums">
                     {currentRound == null
                         ? GAME_COPY.ROUND_WAITING
-                        : `${currentRound}번째 문제`}
+                        : totalQuestionCount == null
+                          ? `${currentRound}번째 문제`
+                          : `${currentRound} / ${totalQuestionCount} 문제`}
                 </p>
             </section>
         );
@@ -143,13 +154,88 @@ export function GamePlayerPanel({
     }[playerStatus.tone];
 
     return (
-        <section className="flex h-[440px] flex-col items-center overflow-hidden rounded-2xl bg-white px-6 pb-5 pt-6 text-center shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
-            <div className="relative aspect-video w-full max-w-[594px] shrink-0 overflow-hidden rounded-xl bg-[#111318] shadow-inner">
+        <section className="flex h-[440px] flex-col items-center overflow-hidden rounded-2xl bg-white px-6 pb-4 pt-4 text-center shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
+            <div className="relative flex h-[72px] w-full max-w-[594px] shrink-0 items-center overflow-hidden rounded-xl border border-[#E8EBF3] bg-[linear-gradient(145deg,#F9FAFD_0%,#F0F4FF_52%,#F8F9FC_100%)] px-4 text-left">
+                    <div
+                        className="absolute inset-0 opacity-60"
+                        aria-hidden="true"
+                        style={{
+                            backgroundImage:
+                                'radial-gradient(circle at 50% 45%, rgba(75,115,218,0.16), transparent 34%), radial-gradient(circle at 18% 20%, rgba(75,115,218,0.08), transparent 24%)',
+                        }}
+                    />
+
+                    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-4 border-white bg-[var(--monomat-primary)] shadow-[0_8px_20px_rgba(65,105,210,0.22)]">
+                        <Music2
+                            size={23}
+                            strokeWidth={2.4}
+                            className="text-white"
+                            aria-hidden="true"
+                        />
+                    </div>
+
+                    <div className="relative ml-3 min-w-0">
+                        <div className="flex items-center gap-1.5 text-[9px] font-extrabold tracking-[0.15em] text-[var(--monomat-primary)]">
+                            <Headphones size={12} aria-hidden="true" />
+                            {GAME_COPY.PLAYER_BLIND_LABEL}
+                        </div>
+                        <p className="mt-1 truncate text-sm font-extrabold text-[var(--monomat-text-strong)]">
+                            {GAME_COPY.PLAYER_LISTEN_GUIDE}
+                        </p>
+                        <p className="mt-0.5 text-[11px] font-medium text-[var(--monomat-text-muted)] tabular-nums">
+                            {currentRound == null
+                                ? GAME_COPY.ROUND_WAITING
+                                : totalQuestionCount == null
+                                  ? `${currentRound}번째 문제`
+                                  : `${currentRound} / ${totalQuestionCount} 문제`}
+                        </p>
+                    </div>
+
+                    <div
+                        className="relative ml-auto flex h-9 shrink-0 items-center gap-[3px]"
+                        aria-hidden="true"
+                    >
+                        {AUDIO_WAVE_BARS.slice(0, 9).map((height, index) => (
+                            <span
+                                key={`${height}-${index}`}
+                                className={`w-[3px] rounded-full bg-[var(--monomat-primary)] ${
+                                    playerPlaying
+                                        ? 'animate-pulse'
+                                        : 'opacity-35'
+                                }`}
+                                style={{
+                                    height: Math.max(8, height * 0.7),
+                                    animationDelay: `${index * 75}ms`,
+                                    animationDuration: '700ms',
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    {shouldPlay &&
+                    playerReady &&
+                    !playerPlaying &&
+                    !playerBuffering &&
+                    !playerErrorMessage ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setPlayRequestToken((token) => token + 1);
+                            }}
+                            className="relative ml-3 shrink-0 rounded-full bg-[var(--monomat-primary)] px-3 py-2 text-[11px] font-extrabold text-white transition hover:bg-[var(--monomat-primary-hover)]"
+                        >
+                            {GAME_COPY.PLAYER_START_SOUND}
+                        </button>
+                    ) : null}
+            </div>
+
+            <div className="relative mt-3 aspect-video w-full max-w-[480px] overflow-hidden rounded-xl bg-[var(--monomat-primary)] shadow-[0_12px_30px_rgba(15,23,42,0.18)]">
                 <GameYoutubePlayer
                     videoId={roundReady.videoId}
                     startTime={roundReady.startTime}
                     roundNo={roundReady.roundNo}
                     shouldPlay={shouldPlay}
+                    playRequestToken={playRequestToken}
                     onReady={() =>
                         onPlayerReady(
                             roundReady.roundNo,
@@ -184,53 +270,43 @@ export function GamePlayerPanel({
                     }
                 />
 
-                {(!playerReady ||
-                    !shouldPlay ||
-                    playerBuffering ||
-                    playerErrorMessage) && (
-                    <div
-                        className={`absolute inset-0 flex items-center justify-center px-6 ${
-                            playerErrorMessage
-                                ? 'bg-white/[0.96]'
-                                : !shouldPlay
-                                  ? 'bg-[#111318]'
-                                  : 'bg-[#111318]/72'
-                        }`}
-                    >
-                        <div
-                            className={`flex max-w-sm items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold shadow-sm ${statusToneClass}`}
-                            role="status"
-                            aria-live="polite"
-                        >
-                            <StatusIcon
-                                size={17}
-                                className={
-                                    playerStatus.tone === 'loading'
-                                        ? 'animate-spin'
-                                        : ''
-                                }
-                                aria-hidden="true"
-                            />
-                            <span>{playerStatus.label}</span>
-                        </div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--monomat-primary)] px-6 text-white">
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/25 bg-white/10">
+                        <Music2
+                            size={42}
+                            strokeWidth={2.3}
+                            aria-hidden="true"
+                        />
                     </div>
-                )}
+                    <p className="mt-5 text-base font-extrabold">
+                        {GAME_COPY.PLAYER_LISTEN_GUIDE}
+                    </p>
+                    <div
+                        className="mt-4 flex h-9 items-center gap-1"
+                        aria-hidden="true"
+                    >
+                        {AUDIO_WAVE_BARS.map((height, index) => (
+                            <span
+                                key={`${height}-${index}`}
+                                className={`w-1 rounded-full bg-white ${
+                                    playerPlaying
+                                        ? 'animate-pulse'
+                                        : 'opacity-40'
+                                }`}
+                                style={{
+                                    height,
+                                    animationDelay: `${index * 75}ms`,
+                                    animationDuration: '700ms',
+                                }}
+                            />
+                        ))}
+                    </div>
+                </div>
             </div>
 
-            <div className="mt-4 flex w-full max-w-[594px] items-center justify-between gap-4">
-                <div className="min-w-0 text-left">
-                    <p className="text-sm font-bold text-[var(--monomat-text-strong)]">
-                        {GAME_COPY.PLAYER_GUIDE}
-                    </p>
-                    <p className="mt-1 text-xs text-[var(--monomat-text-muted)] tabular-nums">
-                        {currentRound == null
-                            ? GAME_COPY.ROUND_WAITING
-                            : `${currentRound}번째 문제`}
-                    </p>
-                </div>
-
+            <div className="mt-2 flex w-full max-w-[594px] justify-center">
                 <div
-                    className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold ${statusToneClass}`}
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold ${statusToneClass}`}
                     role="status"
                     aria-live="polite"
                 >

@@ -7,6 +7,7 @@ interface GameYoutubePlayerProps {
     startTime: number;
     roundNo: number;
     shouldPlay: boolean;
+    playRequestToken: number;
     onReady: () => void;
     onBuffering: () => void;
     onPlaying: () => void;
@@ -26,6 +27,7 @@ export function GameYoutubePlayer({
     startTime,
     roundNo,
     shouldPlay,
+    playRequestToken,
     onReady,
     onBuffering,
     onPlaying,
@@ -69,6 +71,7 @@ export function GameYoutubePlayer({
         generationRef.current = generation;
         let isDisposed = false;
         let player: YT.Player | null = null;
+        let hasNotifiedReady = false;
         const playerMount = document.createElement('div');
 
         playerMount.className = 'h-full w-full';
@@ -105,11 +108,6 @@ export function GameYoutubePlayer({
                                 videoId,
                                 startSeconds: startTime,
                             });
-                            callbacksRef.current.onReady();
-
-                            if (shouldPlayRef.current) {
-                                event.target.playVideo();
-                            }
                         },
                         onStateChange: (event) => {
                             if (!isCurrentGeneration()) {
@@ -135,6 +133,12 @@ export function GameYoutubePlayer({
                                     }
                                     break;
                                 case YOUTUBE_PLAYER_STATE.CUED:
+                                    if (!hasNotifiedReady) {
+                                        hasNotifiedReady = true;
+                                        // BE ReadyToPlayRequest 계약에 맞춰 CUED 이후에만 준비 완료를 알린다.
+                                        callbacksRef.current.onReady();
+                                    }
+
                                     if (shouldPlayRef.current) {
                                         event.target.playVideo();
                                     }
@@ -202,13 +206,13 @@ export function GameYoutubePlayer({
         } else {
             player.pauseVideo();
         }
-    }, [shouldPlay]);
+    }, [playRequestToken, shouldPlay]);
 
     return (
         <div
             ref={containerRef}
-            className="h-full w-full overflow-hidden rounded-xl bg-[#111318] [&>iframe]:pointer-events-none [&>iframe]:h-full [&>iframe]:w-full"
-            aria-label="YouTube 음악 플레이어"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-0 [&>iframe]:h-full [&>iframe]:w-full"
         />
     );
 }

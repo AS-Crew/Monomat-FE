@@ -6,6 +6,7 @@ const YOUTUBE_HOSTS = new Set([
 ]);
 const YOUTUBE_IFRAME_API_SCRIPT_ID = 'youtube-iframe-api';
 const YOUTUBE_IFRAME_API_URL = 'https://www.youtube.com/iframe_api';
+const YOUTUBE_IFRAME_API_LOAD_TIMEOUT_MS = 10_000;
 
 export type YouTubeIframePlayer = YT.Player;
 
@@ -99,21 +100,53 @@ export function loadYouTubeIframeApi() {
         (resolve, reject) => {
             const previousReadyHandler =
                 window.onYouTubeIframeAPIReady;
-            const rejectLoad = () => {
+            let isSettled = false;
+            let script: HTMLScriptElement | null = null;
+
+            const finish = () => {
+                window.clearTimeout(timeoutId);
+
+                if (
+                    window.onYouTubeIframeAPIReady === readyHandler
+                ) {
+                    window.onYouTubeIframeAPIReady =
+                        previousReadyHandler;
+                }
+
+                script?.removeEventListener('error', handleScriptError);
+            };
+            const resolveLoad = () => {
+                if (isSettled || !window.YT?.Player) {
+                    return;
+                }
+
+                isSettled = true;
+                finish();
+                resolve(window.YT);
+            };
+            const rejectLoad = (error: Error) => {
+                if (isSettled) {
+                    return;
+                }
+
+                isSettled = true;
+                finish();
                 const script = document.getElementById(
                     YOUTUBE_IFRAME_API_SCRIPT_ID,
                 );
 
                 script?.remove();
                 youtubeIframeApiPromise = null;
-                reject(
+                reject(error);
+            };
+            const handleScriptError = () => {
+                rejectLoad(
                     new Error(
                         'YouTube IFrame API를 불러오지 못했습니다.',
                     ),
                 );
             };
-
-            window.onYouTubeIframeAPIReady = () => {
+            const readyHandler = () => {
                 try {
                     previousReadyHandler?.();
                 } catch (error) {
@@ -124,29 +157,46 @@ export function loadYouTubeIframeApi() {
                 }
 
                 if (window.YT?.Player) {
-                    resolve(window.YT);
+                    resolveLoad();
                     return;
                 }
 
-                rejectLoad();
+                rejectLoad(
+                    new Error(
+                        'YouTube IFrame API를 초기화하지 못했습니다.',
+                    ),
+                );
             };
+            const timeoutId = window.setTimeout(() => {
+                rejectLoad(
+                    new Error(
+                        'YouTube IFrame API 로드 시간이 초과되었습니다.',
+                    ),
+                );
+            }, YOUTUBE_IFRAME_API_LOAD_TIMEOUT_MS);
+
+            window.onYouTubeIframeAPIReady = readyHandler;
 
             const existingScript = document.getElementById(
                 YOUTUBE_IFRAME_API_SCRIPT_ID,
             );
+            script =
+                existingScript instanceof HTMLScriptElement
+                    ? existingScript
+                    : null;
 
-            if (existingScript) {
-                existingScript.addEventListener('error', rejectLoad, {
+            if (script) {
+                script.addEventListener('error', handleScriptError, {
                     once: true,
                 });
                 return;
             }
 
-            const script = document.createElement('script');
+            script = document.createElement('script');
             script.id = YOUTUBE_IFRAME_API_SCRIPT_ID;
             script.src = YOUTUBE_IFRAME_API_URL;
             script.async = true;
-            script.addEventListener('error', rejectLoad, {
+            script.addEventListener('error', handleScriptError, {
                 once: true,
             });
             document.head.appendChild(script);
