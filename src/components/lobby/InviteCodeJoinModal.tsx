@@ -145,7 +145,7 @@ export function InviteCodeJoinModal({
 
                 <h2
                     id="invite-code-join-modal-title"
-                    className="mb-3 text-center text-2xl font-bold text-[var(--monomat-text-strong)]"
+                    className="mb-3 text-center text-2xl font-bold !text-[var(--monomat-text-strong)]"
                 >
                     초대 코드로 입장
                 </h2>
