@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { SOCKET_MESSAGES, SOCKET_SUBSCRIBE } from '../constants/socketEvents';
+import {
+    SOCKET_MESSAGES,
+    SOCKET_PUBLISH,
+    SOCKET_SUBSCRIBE,
+} from '../constants/socketEvents';
 import { useSocketStore } from '../store/useSocketStore';
 import { lobbyDetailQueryKey } from './useLobbyDetail';
 
@@ -101,11 +105,34 @@ export function useLobbySocket(
         onLobbyMessageBody,
     ]);
 
+    // 로비에서 나갈 때 BE에 명시적 퇴장을 알린다.
+    // 구독 해제만으로는 BE가 연결 종료(새로고침/종료) 전까지 참여자를 유지하므로,
+    // 다른 참여자 화면에서 즉시 빠지려면 leave 메시지를 보내야 한다.
+    const leaveLobby = useCallback(() => {
+        if (
+            !stompClient ||
+            connectionStatus !== 'connected' ||
+            !normalizedInviteCode
+        ) {
+            return;
+        }
+
+        try {
+            stompClient.publish({
+                destination: SOCKET_PUBLISH.LOBBY_LEAVE(normalizedInviteCode),
+            });
+        } catch (error) {
+            // 발행 실패가 화면 이동을 막지 않도록 경고만 남긴다.
+            console.warn('[useLobbySocket] 로비 퇴장 메시지 전송 실패:', error);
+        }
+    }, [connectionStatus, normalizedInviteCode, stompClient]);
+
     const gameStatus: LobbyGameStatus =
         gameStartedInviteCode === normalizedInviteCode ? 'started' : 'idle';
 
     return {
         connectionStatus,
         gameStatus,
+        leaveLobby,
     };
 }
