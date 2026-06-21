@@ -393,11 +393,15 @@ export function LobbyRoom() {
             setActionMessage(null);
             setActionErrorMessage(null);
         },
-        onSuccess: () => {
+        onSuccess: async () => {
             if (inviteCode) {
-                navigateToGame(inviteCode);
-                return;
+                setActionMessage({
+                    inviteCode,
+                    message: LOBBY_ROOM_COPY.START_REQUESTED,
+                });
             }
+
+            await invalidateLobbyDetail();
         },
         onError: (mutationError) => {
             if (!inviteCode) {
