@@ -7,8 +7,16 @@ import { AUTH_ERROR_CODES, AUTH_MESSAGES } from '../constants/auth';
 import { useAuthStore } from '../store/useAuthStore';
 
 interface UseMemberLoginSessionReturn {
-    loginWithAccount: (loginId: string, password: string) => Promise<void>;
-    forceLoginWithAccount: (loginId: string, password: string) => Promise<void>;
+    loginWithAccount: (
+        loginId: string,
+        password: string,
+        autoLogin: boolean,
+    ) => Promise<void>;
+    forceLoginWithAccount: (
+        loginId: string,
+        password: string,
+        autoLogin: boolean,
+    ) => Promise<void>;
     cancelConcurrentLogin: () => void;
     isSubmitting: boolean;
     isConcurrentLoginConfirmOpen: boolean;
@@ -45,6 +53,7 @@ export function useMemberLoginSession(): UseMemberLoginSessionReturn {
         loginId: string,
         password: string,
         force: boolean,
+        autoLogin: boolean,
     ) => {
         const session = await login({
             loginId,
@@ -52,11 +61,17 @@ export function useMemberLoginSession(): UseMemberLoginSessionReturn {
             force,
         });
 
-        setSession(session);
+        setSession(session, {
+            storageStrategy: autoLogin ? 'local' : 'session',
+        });
         navigate('/lobbies');
     };
 
-    const loginWithAccount = async (loginId: string, password: string) => {
+    const loginWithAccount = async (
+        loginId: string,
+        password: string,
+        autoLogin: boolean,
+    ) => {
         const trimmedLoginId = loginId.trim();
 
         if (!trimmedLoginId) {
@@ -84,7 +99,7 @@ export function useMemberLoginSession(): UseMemberLoginSessionReturn {
             setErrorMessage(null);
             setErrorField(null);
 
-            await completeLogin(trimmedLoginId, password, false);
+            await completeLogin(trimmedLoginId, password, false, autoLogin);
         } catch (error) {
             if (
                 error instanceof ApiError &&
@@ -105,6 +120,7 @@ export function useMemberLoginSession(): UseMemberLoginSessionReturn {
     const forceLoginWithAccount = async (
         loginId: string,
         password: string,
+        autoLogin: boolean,
     ) => {
         if (
             !isConcurrentLoginConfirmOpen ||
@@ -119,7 +135,7 @@ export function useMemberLoginSession(): UseMemberLoginSessionReturn {
             setErrorMessage(null);
             setErrorField(null);
 
-            await completeLogin(loginId.trim(), password, true);
+            await completeLogin(loginId.trim(), password, true, autoLogin);
         } catch (error) {
             setIsConcurrentLoginConfirmOpen(false);
             setErrorMessage(getErrorMessage(error));

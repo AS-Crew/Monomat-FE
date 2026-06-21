@@ -32,6 +32,12 @@ export interface AuthSession extends AuthTokenSet {
     userIdentifier: string;
 }
 
+export type AuthStorageStrategy = 'local' | 'session';
+
+export interface SetSessionOptions {
+    storageStrategy?: AuthStorageStrategy;
+}
+
 export interface RefreshSessionResponse extends AuthTokenSet {
     userId: number;
     userType: UserType;
