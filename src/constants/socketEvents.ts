@@ -25,6 +25,14 @@ export const SOCKET_PUBLISH = {
     // 로비에서 명시적으로 퇴장할 때 사용한다. (BE: payload 없음)
     // 이 메시지를 보내지 않으면 BE는 연결이 끊길 때까지 참여자를 유지한다.
     LOBBY_LEAVE: (code: string) => `/app/lobby/${code}/leave`,
+
+    // 현재 라운드의 YouTube player 준비 완료를 서버에 알린다.
+    GAME_READY_TO_PLAY: (code: string) =>
+        `/app/game/${code}/ready-to-play`,
+
+    // YouTube 재생 오류를 서버에 보고해 자동 스킵 정책이 동작하도록 한다.
+    GAME_PLAYBACK_ERROR: (code: string) =>
+        `/app/game/${code}/playback-error`,
 } as const;
 
 // 구독 경로 (서버 → 클라이언트)

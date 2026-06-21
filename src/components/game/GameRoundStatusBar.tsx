@@ -29,7 +29,7 @@ export function GameRoundStatusBar({
 
             <div className="mt-[9px] h-2 overflow-hidden rounded-full bg-[#F1F2F5]">
                 <div
-                    className="h-full rounded-full bg-[var(--monomat-primary)]"
+                    className="h-full rounded-full bg-[var(--monomat-primary)] transition-[width] duration-300 ease-linear"
                     style={{ width: `${normalizedProgress}%` }}
                 />
             </div>

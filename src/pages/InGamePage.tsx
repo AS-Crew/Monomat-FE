@@ -1,3 +1,9 @@
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { GameChatPanel } from '../components/game/GameChatPanel';
@@ -11,6 +17,7 @@ import { LobbyFooter } from '../components/lobby/LobbyFooter';
 import { GAME_COPY } from '../constants/game';
 import { LOBBY_ROUTES } from '../constants/lobby';
 import { useGameSocket } from '../hooks/useGameSocket';
+import { useLobbyDetail } from '../hooks/useLobbyDetail';
 import { useAuthStore } from '../store/useAuthStore';
 import { useGameStore } from '../store/useGameStore';
 import {
@@ -72,6 +79,37 @@ export function InGamePage() {
     const rankings = useGameStore((state) => state.rankings);
     const chatMessages = useGameStore((state) => state.chatMessages);
     const currentRoundNo = useGameStore((state) => state.currentRoundNo);
+    const roundReady = useGameStore((state) => state.roundReady);
+    const playbackStarted = useGameStore(
+        (state) => state.playbackStarted,
+    );
+    const roundSkipped = useGameStore((state) => state.roundSkipped);
+    const roundEnd = useGameStore((state) => state.roundEnd);
+    const playerReady = useGameStore((state) => state.playerReady);
+    const playerBuffering = useGameStore(
+        (state) => state.playerBuffering,
+    );
+    const playerPlaying = useGameStore(
+        (state) => state.playerPlaying,
+    );
+    const playerErrorMessage = useGameStore(
+        (state) => state.playerErrorMessage,
+    );
+    const markPlayerReady = useGameStore(
+        (state) => state.markPlayerReady,
+    );
+    const markPlayerBuffering = useGameStore(
+        (state) => state.markPlayerBuffering,
+    );
+    const markPlayerPlaying = useGameStore(
+        (state) => state.markPlayerPlaying,
+    );
+    const markPlayerEnded = useGameStore(
+        (state) => state.markPlayerEnded,
+    );
+    const setPlayerError = useGameStore(
+        (state) => state.setPlayerError,
+    );
     const correctAnswer = useGameStore((state) => state.correctAnswer);
     const isSubmittingGameInput = useGameStore(
         (state) => state.isSubmittingGameInput,
@@ -79,9 +117,19 @@ export function InGamePage() {
     const gameInputErrorMessage = useGameStore(
         (state) => state.gameInputErrorMessage,
     );
+    const currentRoundStatus = useGameStore(
+        (state) => state.currentRoundStatus,
+    );
 
-    const { connectionStatus, canSubmitGameInput, submitGameInput } =
-        useGameSocket(validInviteCode);
+    const {
+        connectionStatus,
+        canSubmitGameInput,
+        reportPlaybackError,
+        reportPlayerReady,
+        submitGameInput,
+    } = useGameSocket(validInviteCode);
+    const { data: lobbyDetail } = useLobbyDetail(validInviteCode);
+    const reportedPlaybackErrorRoundNosRef = useRef(new Set<number>());
 
     const hasCurrentGameState = gameInviteCode === validInviteCode;
     const rankingEntries: readonly GameRankingEntry[] =
@@ -103,6 +151,109 @@ export function InGamePage() {
                 content: message.content,
             }))
             : [];
+    const activeRoundReady =
+        hasCurrentGameState &&
+        roundReady?.roundNo === currentRoundNo
+            ? roundReady
+            : null;
+    const isRoundFinished =
+        activeRoundReady != null &&
+        (roundEnd != null ||
+            roundSkipped?.roundNo === activeRoundReady.roundNo);
+    const shouldPlay =
+        activeRoundReady != null &&
+        !isRoundFinished &&
+        playbackStarted?.roundNo === activeRoundReady.roundNo;
+    const roundTimeLimitSeconds =
+        activeRoundReady?.timeLimitSeconds ??
+        currentRoundStatus?.timeLimitSeconds ??
+        lobbyDetail?.timeLimitSeconds ??
+        null;
+    const playbackStartedAt =
+        shouldPlay && playbackStarted
+            ? playbackStarted.serverStartedAt
+            : null;
+    const [countdownNow, setCountdownNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        if (playbackStartedAt == null) {
+            return;
+        }
+
+        const timer = window.setInterval(() => {
+            setCountdownNow(Date.now());
+        }, 250);
+
+        return () => {
+            window.clearInterval(timer);
+        };
+    }, [playbackStartedAt]);
+
+    const remainingSeconds = (() => {
+        if (isRoundFinished) {
+            return 0;
+        }
+
+        if (roundTimeLimitSeconds == null) {
+            return null;
+        }
+
+        if (playbackStartedAt == null) {
+            return (
+                currentRoundStatus?.remainingSeconds ??
+                roundTimeLimitSeconds
+            );
+        }
+
+        const elapsedSeconds = Math.max(
+            0,
+            (countdownNow - playbackStartedAt) / 1000,
+        );
+
+        return Math.max(
+            0,
+            Math.ceil(roundTimeLimitSeconds - elapsedSeconds),
+        );
+    })();
+
+    const progressPercent =
+        remainingSeconds == null || roundTimeLimitSeconds == null
+            ? null
+            : (remainingSeconds / roundTimeLimitSeconds) * 100;
+    const shouldStopPlayer =
+        isRoundFinished;
+    const shouldPlayPlayer =
+        shouldPlay && !shouldStopPlayer;
+
+    useEffect(() => {
+        reportedPlaybackErrorRoundNosRef.current.clear();
+    }, [currentRoundNo]);
+
+    const handlePlayerError = useCallback(
+        (
+            roundNo: number,
+            videoId: string,
+            errorCode: number | null,
+            message: string,
+        ) => {
+            setPlayerError(
+                roundNo,
+                videoId,
+                errorCode,
+                message,
+            );
+
+            if (
+                reportedPlaybackErrorRoundNosRef.current.has(roundNo)
+            ) {
+                return;
+            }
+
+            reportedPlaybackErrorRoundNosRef.current.add(roundNo);
+            reportPlaybackError(roundNo, errorCode, message);
+        },
+        [reportPlaybackError, setPlayerError],
+    );
     const gameInputStatus = (() => {
         if (gameInputErrorMessage) {
             return {
@@ -164,8 +315,8 @@ export function InGamePage() {
                         }
                         roundStatus={
                             <GameRoundStatusBar
-                                remainingSeconds={null}
-                                progressPercent={null}
+                                remainingSeconds={remainingSeconds}
+                                progressPercent={progressPercent}
                             />
                         }
                         player={
@@ -176,6 +327,30 @@ export function InGamePage() {
                                         ? currentRoundNo
                                         : null
                                 }
+                                totalQuestionCount={
+                                    lobbyDetail?.questionCount ?? null
+                                }
+                                roundReady={activeRoundReady}
+                                shouldPlay={shouldPlayPlayer}
+                                isRoundFinished={isRoundFinished}
+                                playerReady={playerReady}
+                                playerBuffering={playerBuffering}
+                                playerPlaying={playerPlaying}
+                                playerErrorMessage={
+                                    playerErrorMessage
+                                }
+                                onPlayerReady={(roundNo, videoId) => {
+                                    markPlayerReady(roundNo, videoId);
+                                    reportPlayerReady(roundNo);
+                                }}
+                                onPlayerBuffering={
+                                    markPlayerBuffering
+                                }
+                                onPlayerPlaying={
+                                    markPlayerPlaying
+                                }
+                                onPlayerEnded={markPlayerEnded}
+                                onPlayerError={handlePlayerError}
                             />
                         }
                         answerInput={
