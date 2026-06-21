@@ -132,12 +132,12 @@ export function InviteCodeJoinModal({
             aria-modal="true"
             aria-labelledby="invite-code-join-modal-title"
         >
-            <div className="relative w-[460px] rounded-2xl bg-white px-9 py-8 text-[#333338] shadow-xl">
+            <div className="relative w-[460px] rounded-2xl bg-white px-9 py-8 text-[var(--monomat-text-strong)] shadow-xl">
                 <button
                     type="button"
                     onClick={handleClose}
                     disabled={isSubmitting}
-                    className="absolute right-6 top-6 text-3xl leading-none text-[#808085] hover:text-[#333338] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="absolute right-6 top-6 text-3xl leading-none text-[var(--monomat-text-muted)] hover:text-[var(--monomat-text-strong)] disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="초대 코드 입장 모달 닫기"
                 >
                     ×
@@ -145,19 +145,19 @@ export function InviteCodeJoinModal({
 
                 <h2
                     id="invite-code-join-modal-title"
-                    className="mb-3 text-center text-2xl font-bold text-[#333338]"
+                    className="mb-3 text-center text-2xl font-bold !text-[var(--monomat-text-strong)]"
                 >
                     초대 코드로 입장
                 </h2>
 
-                <p className="mb-8 text-center text-sm text-[#808085]">
+                <p className="mb-8 text-center text-sm text-[var(--monomat-text-secondary)]">
                     전달받은 6자리 초대 코드를 입력해주세요.
                 </p>
 
                 <section className="mb-5">
                     <label
                         htmlFor="invite-code-input"
-                        className="mb-3 block text-sm font-bold text-[#333338]"
+                        className="mb-3 block text-sm font-bold text-[var(--monomat-text-strong)]"
                     >
                         초대 코드
                     </label>
@@ -172,10 +172,10 @@ export function InviteCodeJoinModal({
                         onChange={handleInputChange}
                         onEnter={handleJoinCheck}
                         placeholder="ABC123"
-                        className="h-13 w-full rounded-lg border border-[#CCCCD1] bg-[#F5F5F7] px-4 text-center font-mono text-2xl font-bold tracking-[0.35em] text-[#333338] outline-none transition placeholder:text-[#B5B5BA] focus:border-[#3873E6] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="h-13 w-full rounded-lg border border-[color:var(--monomat-border-input)] bg-[var(--monomat-page-bg)] px-4 text-center font-mono text-2xl font-bold tracking-[0.35em] text-[var(--monomat-text-strong)] outline-none transition placeholder:text-[var(--monomat-text-muted)] focus:border-[var(--monomat-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                     />
 
-                    <p className="mt-2 text-xs text-[#808085]">
+                    <p className="mt-2 text-xs text-[var(--monomat-text-muted)]">
                         영문 대문자와 숫자 조합 6자리만 입력할 수 있습니다.
                     </p>
                 </section>
@@ -190,22 +190,22 @@ export function InviteCodeJoinModal({
                 )}
 
                 {joinedLobby && (
-                    <section className="mb-5 rounded-xl bg-[#F5F5F7] px-4 py-4">
-                        <p className="mb-2 text-sm font-bold text-[#333338]">
+                    <section className="mb-5 rounded-xl bg-[var(--monomat-page-bg)] px-4 py-4">
+                        <p className="mb-2 text-sm font-bold text-[var(--monomat-text-strong)]">
                             입장 가능한 로비입니다.
                         </p>
 
                         <dl className="space-y-2 text-sm">
                             <div className="flex justify-between gap-4">
-                                <dt className="text-[#808085]">로비 이름</dt>
-                                <dd className="max-w-[240px] truncate font-semibold text-[#333338]">
+                                <dt className="text-[var(--monomat-text-muted)]">로비 이름</dt>
+                                <dd className="max-w-[240px] truncate font-semibold text-[var(--monomat-text-strong)]">
                                     {joinedLobby.title}
                                 </dd>
                             </div>
 
                             <div className="flex justify-between gap-4">
-                                <dt className="text-[#808085]">현재 인원</dt>
-                                <dd className="font-semibold text-[#333338]">
+                                <dt className="text-[var(--monomat-text-muted)]">현재 인원</dt>
+                                <dd className="font-semibold text-[var(--monomat-text-strong)]">
                                     {joinedLobby.currentPlayers}/
                                     {joinedLobby.maxPlayers}명
                                 </dd>
@@ -219,7 +219,7 @@ export function InviteCodeJoinModal({
                         type="button"
                         onClick={handleClose}
                         disabled={isSubmitting}
-                        className="h-12 flex-1 rounded-lg border border-[#CCCCD1] font-bold text-[#333338] hover:bg-[#F5F5F7] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="h-12 flex-1 rounded-lg border border-[color:var(--monomat-border-input)] font-bold text-[var(--monomat-text-strong)] hover:bg-[var(--monomat-page-bg)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         취소
                     </button>
@@ -228,7 +228,7 @@ export function InviteCodeJoinModal({
                         <button
                             type="button"
                             onClick={handleConfirmEnter}
-                            className="h-12 flex-1 rounded-lg bg-[#3873E6] font-bold text-white hover:bg-blue-600"
+                            className="h-12 flex-1 rounded-lg bg-[var(--monomat-primary)] font-bold text-white hover:bg-[var(--monomat-primary-hover)]"
                         >
                             입장하기
                         </button>
@@ -237,7 +237,7 @@ export function InviteCodeJoinModal({
                             type="button"
                             onClick={() => handleJoinCheck(inviteCodeInput)}
                             disabled={isSubmitting}
-                            className="h-12 flex-1 rounded-lg bg-[#3873E6] font-bold text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-blue-300"
+                            className="h-12 flex-1 rounded-lg bg-[var(--monomat-primary)] font-bold text-white hover:bg-[var(--monomat-primary-hover)] disabled:cursor-not-allowed disabled:bg-[var(--monomat-primary-disabled)]"
                         >
                             {isSubmitting ? '확인 중...' : '입장 확인'}
                         </button>

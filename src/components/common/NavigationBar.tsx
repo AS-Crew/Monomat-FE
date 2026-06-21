@@ -82,7 +82,7 @@ export function NavigationBar() {
                                 size={18}
                                 strokeWidth={2.2}
                             />
-                            <span className="ml-[18px] min-w-0 truncate text-[var(--monomat-border-input)]">
+                            <span className="ml-[18px] min-w-0 truncate text-[var(--monomat-text-strong)]">
                                 {LOBBY_NAVIGATION_LABELS.INVITE_CODE}
                             </span>
                             <span className="ml-auto mr-[9px] flex h-[22px] w-9 shrink-0 items-center justify-center rounded-full bg-[var(--monomat-page-bg)] text-[11px] text-[var(--monomat-text-muted)]">
