@@ -24,6 +24,7 @@ import {
     normalizeInviteCode,
     validateInviteCode,
 } from '../utils/inviteCode';
+import { getSyncedNowMs } from '../utils/serverTime';
 
 import type {
     GameChatDisplayMessage,
@@ -120,6 +121,12 @@ export function InGamePage() {
     const currentRoundStatus = useGameStore(
         (state) => state.currentRoundStatus,
     );
+    const serverTimeOffsetMs = useGameStore(
+        (state) => state.serverTimeOffsetMs,
+    );
+    const serverTimeOffsetRoundNo = useGameStore(
+        (state) => state.serverTimeOffsetRoundNo,
+    );
 
     const {
         connectionStatus,
@@ -173,7 +180,13 @@ export function InGamePage() {
         shouldPlay && playbackStarted
             ? playbackStarted.serverStartedAt
             : null;
-    const [countdownNow, setCountdownNow] = useState(() => Date.now());
+    const activeServerTimeOffsetMs =
+        serverTimeOffsetRoundNo === currentRoundNo
+            ? serverTimeOffsetMs
+            : null;
+    const [countdownClientNow, setCountdownClientNow] = useState(
+        () => Date.now(),
+    );
 
     useEffect(() => {
         if (playbackStartedAt == null) {
@@ -181,7 +194,7 @@ export function InGamePage() {
         }
 
         const timer = window.setInterval(() => {
-            setCountdownNow(Date.now());
+            setCountdownClientNow(Date.now());
         }, 250);
 
         return () => {
@@ -207,7 +220,12 @@ export function InGamePage() {
 
         const elapsedSeconds = Math.max(
             0,
-            (countdownNow - playbackStartedAt) / 1000,
+            (getSyncedNowMs(
+                countdownClientNow,
+                activeServerTimeOffsetMs,
+            ) -
+                playbackStartedAt) /
+                1000,
         );
 
         return Math.max(
