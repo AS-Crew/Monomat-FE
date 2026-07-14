@@ -90,6 +90,7 @@ let retryAttempt = 0;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let lifecyclePromise: Promise<void> = Promise.resolve();
 let recoveryPromise: Promise<void> | null = null;
+let suppressCloseRetryGeneration: number | null = null;
 let lastHandledError:
     | {
         signature: string;
@@ -156,6 +157,7 @@ async function deactivateCurrentClient(options: DeactivateOptions = {}) {
     clearRetryTimer();
     intentionalDisconnect = intentional;
     currentGeneration += 1;
+    suppressCloseRetryGeneration = null;
     currentClient = null;
 
     if (!preserveToken) {
@@ -287,6 +289,7 @@ async function replaceClient(
 
             useSocketStore.setState({
                 connectionStatus: 'connected',
+                lastError: null,
             });
         },
         onDisconnect: () => {
@@ -326,6 +329,13 @@ async function replaceClient(
                 return;
             }
 
+            if (suppressCloseRetryGeneration === generation) {
+                useSocketStore.setState({
+                    connectionStatus: 'disconnected',
+                });
+                return;
+            }
+
             const payload: StompErrorPayload = {
                 type: 'STOMP_ERROR',
                 code: 'WEBSOCKET_CLOSED',
@@ -342,6 +352,7 @@ async function replaceClient(
     });
 
     currentGeneration = generation;
+    suppressCloseRetryGeneration = null;
     currentClient = client;
     currentAccessToken = accessToken;
     intentionalDisconnect = false;
@@ -465,6 +476,10 @@ async function handleStompError(frame: IFrame, generation: number) {
 
     setSocketError(payload, signature);
 
+    if (payload.action === 'NONE') {
+        suppressCloseRetryGeneration = generation;
+    }
+
     if (!payload.recoverable && payload.action === 'NONE') {
         clearRetryTimer();
     }
@@ -540,6 +555,7 @@ export function resetSocketStoreForTest() {
     retryAttempt = 0;
     lifecyclePromise = Promise.resolve();
     recoveryPromise = null;
+    suppressCloseRetryGeneration = null;
     lastHandledError = null;
     useSocketStore.setState({
         stompClient: null,

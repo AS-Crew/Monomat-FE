@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -332,6 +333,63 @@ describe('useSocketStore STOMP error recovery', () => {
         await flushAsync();
         expect(createClientMock).toHaveBeenCalledTimes(2);
     });
+
+    it('WebSocket close 이후 재연결에 성공하면 복구된 오류 Toast를 정리한다', async () => {
+        await useSocketStore.getState().connect('access-token');
+
+        getClient(0).config.onWebSocketClose?.({} as CloseEvent);
+
+        expect(useSocketStore.getState().lastError?.code).toBe(
+            'WEBSOCKET_CLOSED',
+        );
+
+        await vi.advanceTimersByTimeAsync(1_000);
+        await flushAsync();
+
+        expect(createClientMock).toHaveBeenCalledTimes(2);
+
+        getClient(1).config.onConnect?.({} as IFrame);
+
+        expect(useSocketStore.getState().lastError).toBeNull();
+        expect(useSocketStore.getState().connectionStatus).toBe('connected');
+    });
+
+    it('NONE + recoverable=true 이후 close callback은 자동 재연결을 예약하지 않는다', async () => {
+        await useSocketStore.getState().connect('access-token');
+
+        getClient(0).config.onStompError?.(
+            createErrorFrame('NO_RECOVERY_REQUIRED', 'NONE', true),
+        );
+        await flushAsync();
+
+        const lastError = useSocketStore.getState().lastError;
+
+        getClient(0).config.onWebSocketClose?.({} as CloseEvent);
+        await vi.advanceTimersByTimeAsync(10_000);
+        await flushAsync();
+
+        expect(createClientMock).toHaveBeenCalledTimes(1);
+        expect(useSocketStore.getState().connectionStatus).toBe(
+            'disconnected',
+        );
+        expect(useSocketStore.getState().lastError).toBe(lastError);
+    });
+
+    it('RETRY_CONNECT action은 기존 제한 backoff 정책으로 새 Client를 생성한다', async () => {
+        await useSocketStore.getState().connect('access-token');
+
+        getClient(0).config.onStompError?.(
+            createErrorFrame('CONNECT_WS_SESSION_ID_MISSING', 'RETRY_CONNECT', true),
+        );
+        await flushAsync();
+
+        expect(createClientMock).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(1_000);
+        await flushAsync();
+
+        expect(createClientMock).toHaveBeenCalledTimes(2);
+    });
 });
 
 describe('React lifecycle', () => {
@@ -348,8 +406,39 @@ describe('React lifecycle', () => {
             .map((result) => result.value as MockStompClient)
             .filter((client) => client.active);
 
-        expect(createClientMock).toHaveBeenCalledTimes(2);
+        expect(createClientMock).toHaveBeenCalled();
+        expect(createClientMock).toHaveBeenCalledTimes(activeClients.length);
         expect(activeClients).toHaveLength(1);
+    });
+
+    it('StrictMode effect 재실행 후 최종 활성 Client는 하나만 유지된다', async () => {
+        render(
+            <StrictMode>
+                <SocketHarness />
+            </StrictMode>,
+        );
+
+        await flushAsync();
+
+        const clients = createClientMock.mock.results.map(
+            (result) => result.value as MockStompClient,
+        );
+        const activeClients = clients.filter((client) => client.active);
+        const lastClient = clients.at(-1);
+
+        expect(clients.length).toBeGreaterThan(0);
+        expect(clients.length).toBeLessThanOrEqual(2);
+        expect(activeClients).toHaveLength(1);
+        expect(activeClients[0]).toBe(lastClient);
+
+        for (const endedClient of clients.slice(0, -1)) {
+            expect(endedClient.active).toBe(false);
+            endedClient.config.onConnect?.({} as IFrame);
+        }
+
+        if (lastClient) {
+            expect(useSocketStore.getState().stompClient).toBe(lastClient);
+        }
     });
 
     it('effect cleanup 이후 이전 Client callback은 현재 상태를 덮어쓰지 않는다', async () => {

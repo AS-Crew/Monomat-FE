@@ -1,6 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSocketStore } from '../store/useSocketStore';
+
+const SOCKET_UNMOUNT_DISCONNECT_DELAY_MS = 0;
 
 // 소켓의 생명주기(연결/해제)를 관리하는 커스텀 훅입니다.
 // App.tsx처럼 인증된 사용자가 접근하는 최상위 컴포넌트에서 한 번만 호출합니다.
@@ -10,8 +12,15 @@ export function useSocket() {
     const accessToken = useAuthStore((state) => state.accessToken);
     const connect = useSocketStore((state) => state.connect);
     const disconnect = useSocketStore((state) => state.disconnect);
+    const unmountDisconnectTimerRef =
+        useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
+        if (unmountDisconnectTimerRef.current) {
+            clearTimeout(unmountDisconnectTimerRef.current);
+            unmountDisconnectTimerRef.current = null;
+        }
+
         if (!isHydrated) {
             return;
         }
@@ -26,7 +35,14 @@ export function useSocket() {
 
     useEffect(() => {
         return () => {
-            void disconnect();
+            if (unmountDisconnectTimerRef.current) {
+                clearTimeout(unmountDisconnectTimerRef.current);
+            }
+
+            unmountDisconnectTimerRef.current = setTimeout(() => {
+                unmountDisconnectTimerRef.current = null;
+                void disconnect();
+            }, SOCKET_UNMOUNT_DISCONNECT_DELAY_MS);
         };
     }, [disconnect]);
 }
