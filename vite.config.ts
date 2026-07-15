@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -23,6 +25,13 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
       },
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    env: {
+      VITE_WS_URL: '/ws',
+      VITE_ENABLE_MSW: 'false',
     },
   },
 });

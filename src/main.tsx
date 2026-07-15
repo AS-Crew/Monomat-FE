@@ -1,10 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 import './index.css';
 import App from './App.tsx';
+import { queryClient } from './services/queryClient';
 
 const ENABLE_MSW = import.meta.env.VITE_ENABLE_MSW === 'true';
 
@@ -25,18 +26,6 @@ async function enableMocking() {
         onUnhandledRequest: 'bypass',
     });
 }
-
-// QueryClient 인스턴스 생성
-// 포커스가 바뀔 때마다 데이터를 다시 가져오면 성능에 영향을 줄 수 있어 설정을 조정
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            staleTime: 1000 * 60 * 5,
-            refetchOnWindowFocus: false,
-            retry: 1,
-        },
-    },
-});
 
 enableMocking().then(() => {
     createRoot(document.getElementById('root')!).render(

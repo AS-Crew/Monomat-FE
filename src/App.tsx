@@ -8,6 +8,7 @@ import { useSocket } from './hooks/useSocket';
 // 공통 컴포넌트
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AppLayout } from './components/common/AppLayout';
+import { SocketErrorToast } from './components/common/SocketErrorToast';
 import { ViewportGuard } from './components/common/ViewportGuard';
 import { GAME_ROUTES } from './constants/game';
 import { LOBBY_ROUTES } from './constants/lobby';
@@ -59,6 +60,7 @@ function AppRoutes() {
 
     return (
         <BrowserRouter>
+            <SocketErrorToast />
             <Routes>
                 <Route path="/" element={<Home />} />
 
